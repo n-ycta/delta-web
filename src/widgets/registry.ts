@@ -25,12 +25,12 @@ const no = (reason: string) => ({ score: 0, reason });
  */
 export const widgetRegistry = new WidgetRegistry()
   .register({
-    type: 'timeseries', version: '1.2.0', label: tr("widgets.registry.s_06f34f792c"), icon: 'chart-line', category: 'metric', aliases: ['line', 'area', 'timeline'],
+    type: 'timeseries', version: '1.3.0', label: tr("widgets.registry.s_06f34f792c"), icon: 'chart-line', category: 'metric', aliases: ['line', 'area', 'timeline'],
     description: tr("widgets.registry.s_4bfbb533ae"),
     accepts: (m) => ({ gauge: { score: 90 }, ratio: { score: 80 }, counter: { score: 65 }, duration: { score: 60 }, event: { score: 50 }, distribution: no(tr("widgets.registry.s_ac5ccfbc8c")), categorical: no(tr("widgets.registry.s_bd71b4011d")) }[m.kind]),
     defaultSize: { w: 6, h: 7 }, minSize: { w: 3, h: 4 },
     defaultDisplay: (m) => ({ chart: m && (m.kind === 'counter' || m.kind === 'duration') ? 'bar' : 'line', showGrid: true }),
-    options: ['chart', 'stacked', 'legend', 'grid', 'compare', 'colors', 'decimals', 'yRange', 'thresholds', 'range'],
+    options: ['chart', 'interval', 'stacked', 'legend', 'grid', 'compare', 'colors', 'decimals', 'yRange', 'thresholds', 'range'],
     component: TimeseriesWidget,
   })
   .register({

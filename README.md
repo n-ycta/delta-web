@@ -82,3 +82,18 @@ Browser tests require a running local core and all source plugins; use the core'
 **Current limits:** live polling rather than a system-wide event stream; system historical CPU/memory is not stored yet; plugin processes are not OS-sandboxed. The store accepts the official indexed publisher, not arbitrary pasted repository URLs. See [Delta setup/security](https://github.com/n-ycta/delta#security-and-access).
 
 Licensed under [Apache 2.0](LICENSE). Third-party dependencies retain their own licenses.
+
+### Chart presentation
+
+Open a widget's menu → **Set up** → **3 · Display** to switch the same metric
+between **Connected line**, **Dots**, **Area**, **Time histogram / bars**, and
+**Step line**. The selected source, filters and aggregation stay unchanged.
+Choose a per-widget time range and bucket interval (automatic, 1/5/15/30 minutes,
+1/3/6 hours, a day or a week). Time bars show the source aggregation per time
+bucket, not the frequency distribution of measured values.
+
+Connected lines join observed values across empty buckets by default; the
+**Connect across empty buckets** switch restores visible gaps. This only changes
+the drawing: missing data is never replaced with zeros or fabricated values.
+For long ranges, very fine intervals are coarsened to respect the 2,000-bucket
+query limit. Presentation and cadence are saved with the dashboard.

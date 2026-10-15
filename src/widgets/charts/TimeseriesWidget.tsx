@@ -17,6 +17,7 @@ function TimeseriesChart({ r, m, cfg, ctx }: { r: MetricResult; m: MetricDescrip
   const rows = toRows(all);
   const span = r.to - r.from;
   const kind = cfg.display.chart ?? (m.kind === 'counter' || m.kind === 'duration' ? 'bar' : 'line');
+  const connected = cfg.display.connectNulls ?? true;
   const stacked = !!cfg.display.stacked && r.series.length > 1;
   const labels = Object.fromEntries(all.map((s) => [s.key, s.label]));
   const decimals = cfg.display.decimals ?? m.precision;
@@ -36,14 +37,13 @@ function TimeseriesChart({ r, m, cfg, ctx }: { r: MetricResult; m: MetricDescrip
             {(cfg.display.showThresholds ?? true) && m.thresholds?.map((t, i) => (
               <ReferenceLine key={i} y={t.value} stroke={t.severity === 'error' ? c.err : c.warn} strokeDasharray="4 3" ifOverflow="extendDomain" label={{ value: t.label ?? String(t.value), position: 'insideTopRight', fill: t.severity === 'error' ? c.err : c.warn, fontSize: 10, fontFamily: 'IBM Plex Mono' }} />
             ))}
-            {(r.compare ?? []).filter((s) => !hidden.includes(s.key)).map((s) => (
-              <Line key={s.key} dataKey={s.key} name={s.label} stroke={colors[s.key]} strokeOpacity={0.55} strokeDasharray="4 3" dot={s.points.some((p,i) => p.v !== null && (i === 0 || s.points[i-1].v === null) && (i === s.points.length-1 || s.points[i+1].v === null)) ? { r: 2.5, strokeWidth: 0, fill: colors[s.key] } : false} strokeWidth={1.2} isAnimationActive={false} connectNulls={false} type="monotone" />
-            ))}
-            {r.series.filter((s) => !hidden.includes(s.key)).map((s) => {
+            {all.filter((s) => !hidden.includes(s.key)).map((s) => {
+              const previous = (r.compare ?? []).includes(s);
               const common = { key: s.key, dataKey: s.key, name: s.label, isAnimationActive: false } as const;
-              if (kind === 'bar') return <Bar {...common} fill={colors[s.key]} stackId={stacked ? 'a' : undefined} radius={stacked ? 0 : [2, 2, 0, 0]} maxBarSize={28} />;
-              if (kind === 'area') return <Area {...common} type="monotone" stroke={colors[s.key]} fill={colors[s.key]} fillOpacity={stacked ? 0.55 : 0.12} strokeWidth={1.5} stackId={stacked ? 'a' : undefined} connectNulls={false} dot={s.points.some((p,i) => p.v !== null && (i === 0 || s.points[i-1].v === null) && (i === s.points.length-1 || s.points[i+1].v === null)) ? { r: 2.5, strokeWidth: 0, fill: colors[s.key] } : false} />;
-              return <Line {...common} type={kind === 'step' ? 'stepAfter' : 'monotone'} stroke={colors[s.key]} strokeWidth={1.7} dot={s.points.some((p,i) => p.v !== null && (i === 0 || s.points[i-1].v === null) && (i === s.points.length-1 || s.points[i+1].v === null)) ? { r: 2.5, strokeWidth: 0, fill: colors[s.key] } : false} activeDot={{ r: 3, strokeWidth: 0 }} connectNulls={false} />;
+              const dot = { r: 2.5, strokeWidth: 0, fill: colors[s.key], fillOpacity: previous ? 0.55 : 1 };
+              if (kind === 'bar') return <Bar {...common} fill={colors[s.key]} fillOpacity={previous ? 0.4 : 1} stackId={stacked ? (previous ? 'previous' : 'current') : undefined} radius={0} maxBarSize={28} />;
+              if (kind === 'area') return <Area {...common} type="linear" stroke={colors[s.key]} fill={colors[s.key]} fillOpacity={previous ? 0.06 : stacked ? 0.55 : 0.12} strokeOpacity={previous ? 0.55 : 1} strokeWidth={1.5} stackId={stacked ? (previous ? 'previous' : 'current') : undefined} connectNulls={connected} dot={dot} />;
+              return <Line {...common} type={kind === 'step' ? 'stepAfter' : 'linear'} stroke={colors[s.key]} strokeOpacity={kind === 'dots' ? 0 : previous ? 0.55 : 1} strokeWidth={1.7} dot={dot} activeDot={{ r: 4, strokeWidth: 0 }} connectNulls={connected} />;
             })}
           </ComposedChart>
         </ResponsiveContainer>

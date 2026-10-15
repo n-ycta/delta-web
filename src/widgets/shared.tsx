@@ -1,4 +1,5 @@
 import { tr } from '@/i18n';
+import { queryStep } from './intervals';
 import { useMemo, type ReactNode } from 'react';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { MetricDescriptor, MetricQuery, MetricResult, Series, WidgetConfig } from '@/core/contracts';
@@ -14,6 +15,7 @@ export function buildQuery(cfg: WidgetConfig, ctx: WidgetContext, overrides: Par
   return {
     pluginId: s.pluginId, metricId: s.metricId,
     range: { preset: cfg.display.rangeOverride ?? ctx.range },
+    stepMs: queryStep(cfg.display.stepMs, cfg.display.rangeOverride ?? ctx.range),
     aggregation: s.aggregation, groupBy: s.groupBy, filters: s.filters,
     compare: cfg.display.compare ? 'previous' : 'none',
     ...overrides,

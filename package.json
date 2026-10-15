@@ -1,9 +1,9 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.2.4",
+  "version": "0.2.5",
   "type": "module",
-  "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
+  "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
     "dev": "vite",
     "dev:http": "vite --mode http",
@@ -19,7 +19,8 @@
     "test:first-login": "node scripts/first-login.cjs",
     "test:onboarding": "node tests/onboarding-live.mjs",
     "test:key-browser": "node scripts/key-login-browser.cjs",
-    "test:notice-browser": "node scripts/notice-browser.cjs"
+    "test:notice-browser": "node scripts/notice-browser.cjs",
+    "test:chart-browser": "node scripts/chart-browser.cjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.0.14",

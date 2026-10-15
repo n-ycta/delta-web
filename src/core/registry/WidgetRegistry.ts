@@ -3,7 +3,7 @@ import type { ComponentType } from 'react';
 import type { MetricDescriptor, WidgetConfig, WidgetDisplay } from '../contracts';
 import { parse } from '../lib/semver';
 
-export type DisplayOption = 'chart' | 'stacked' | 'legend' | 'grid' | 'compare' | 'colors' | 'decimals' | 'yRange' | 'thresholds' | 'limit' | 'range' | 'text';
+export type DisplayOption = 'chart' | 'interval' | 'stacked' | 'legend' | 'grid' | 'compare' | 'colors' | 'decimals' | 'yRange' | 'thresholds' | 'limit' | 'range' | 'text';
 
 export interface Compatibility { score: number; reason?: string }
 

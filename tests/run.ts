@@ -1,3 +1,6 @@
+import { queryStep } from '../src/widgets/intervals';
+import { WidgetDisplay } from '../src/core/contracts/dashboard';
+import { buildQuery } from '../src/widgets/shared';
 import { isCoreEndpoint } from '../src/api/endpoints';
 /* Minimal dependency-free test runner: `npm test` */
 declare const process: { exit(code: number): never };
@@ -68,6 +71,16 @@ test('generateMetric is deterministic and grouped', () => {
 test('local and HTTP core endpoints validated without blocking initial login', () => {
   ok(isCoreEndpoint('/api')); ok(isCoreEndpoint('http://127.0.0.1:7700')); ok(isCoreEndpoint('https://delta.example/api'));
   ok(!isCoreEndpoint('//evil.example')); ok(!isCoreEndpoint('javascript:alert(1)')); ok(!isCoreEndpoint('https://user:secret@delta.example')); ok(!isCoreEndpoint('/api?token=secret'));
+});
+test('chart representations and sampling settings validate', () => {
+  for (const chart of ['dots','line','area','bar','step']) ok(WidgetDisplay.safeParse({chart,connectNulls:true,stepMs:1800000}).success);
+  ok(!WidgetDisplay.safeParse({stepMs:-1}).success); ok(!WidgetDisplay.safeParse({stepMs:1.5}).success);
+  eq(queryStep(undefined,'90d'),undefined); eq(queryStep(1800000,'24h'),1800000);
+  ok(7776000000 / queryStep(60000,'90d')! <= 2000);
+});
+test('query preserves range override, source aggregation, filters and cadence', () => {
+  const q=buildQuery({id:'x',type:'timeseries',typeVersion:'1.3.0',source:{kind:'metric',pluginId:'dev.delta.type',metricId:'wpm',aggregation:'avg',groupBy:'language',filters:{language:['ru']}},display:{chart:'dots',stepMs:1800000,rangeOverride:'7d',compare:true},layout:{x:0,y:0,w:6,h:7}}, {range:'24h',refreshSec:0,editing:false,onDisplayChange:()=>{}});
+  eq(q?.range,{preset:'7d'});eq(q?.stepMs,1800000);eq(q?.aggregation,'avg');eq(q?.filters,{language:['ru']});eq(q?.compare,'previous');
 });
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

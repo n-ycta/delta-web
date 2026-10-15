@@ -20,7 +20,9 @@ export type WidgetSource = z.infer<typeof WidgetSource>;
 export type MetricSource = z.infer<typeof MetricSource>;
 
 export const WidgetDisplay = z.object({
-  chart: z.enum(['line', 'area', 'bar', 'step']).optional(),
+  chart: z.enum(['dots', 'line', 'area', 'bar', 'step']).optional(),
+  connectNulls: z.boolean().optional(),
+  stepMs: z.number().int().min(1000).max(604800000).nullable().optional(),
   stacked: z.boolean().optional(),
   showLegend: z.boolean().optional(),
   showGrid: z.boolean().optional(),
