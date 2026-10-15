@@ -1,5 +1,5 @@
 import {z} from 'zod';import {DeltaError} from './delta-sdk.mjs';import {readFileSync} from 'node:fs';
-const ru=JSON.parse(readFileSync(new URL('./locales/ru.json',import.meta.url)));
+const ru=JSON.parse(readFileSync(new URL('./locales/en.json',import.meta.url)));
 const presets={'15m':900000,'1h':3600000,'6h':21600000,'24h':86400000,'7d':604800000,'30d':2592000000,'90d':7776000000};
 const Query=z.object({pluginId:z.string().min(1),metricId:z.string().min(1),range:z.union([z.object({preset:z.enum(Object.keys(presets))}),z.object({from:z.number().int().nonnegative(),to:z.number().int().positive()})]),stepMs:z.number().int().min(1000).optional(),aggregation:z.enum(['avg','sum','min','max','last','p95','count']).default('avg'),groupBy:z.string().optional(),filters:z.record(z.array(z.string())).optional(),compare:z.enum(['none','previous']).default('none')});
 export function reduce(values,aggregation){if(!values.length)return null;switch(aggregation){case 'sum':return values.reduce((a,b)=>a+b,0);case 'min':return Math.min(...values);case 'max':return Math.max(...values);case 'last':return values.at(-1);case 'count':return values.length;case 'p95':return [...values].sort((a,b)=>a-b)[Math.ceil(values.length*.95)-1];default:return values.reduce((a,b)=>a+b,0)/values.length}}

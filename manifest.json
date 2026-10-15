@@ -1,14 +1,14 @@
 {
   "id": "web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Delta web console bridge",
   "metadata": {
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "contract": "^1.4.0",
-      "description": "Веб-панель управления Delta",
+      "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
       "icon": "layout-dashboard",
       "category": "system",
@@ -22,7 +22,28 @@
       "capabilities": [
         "actions"
       ],
-      "metrics": []
+      "metrics": [],
+      "repository": "https://github.com/n-ycta/delta-web",
+      "defaultLocale": "en",
+      "screenshots": [],
+      "localizations": {
+        "en": {
+          "name": "Delta Web",
+          "description": "A modular control panel for your nodes, data and automation.",
+          "publisher": "Delta",
+          "icon": "layout-dashboard",
+          "category": "system",
+          "metrics": []
+        },
+        "ru": {
+          "name": "Delta Web",
+          "description": "Веб-панель управления Delta",
+          "publisher": "Delta",
+          "icon": "layout-dashboard",
+          "category": "system",
+          "metrics": []
+        }
+      }
     }
   },
   "capabilities": [

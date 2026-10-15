@@ -1,4 +1,4 @@
-import { tr } from '@/i18n';
+import { tr, locale } from '@/i18n';
 import { Link } from 'react-router-dom';
 import { useDashboards, useNodes, usePlugins } from '@/app/data';
 import { useQuery } from '@/app/query';
@@ -41,7 +41,7 @@ export function HomePage() {
   const greet = hour < 6 ? tr("pages.Home.s_03f0b82037") : hour < 12 ? tr("pages.Home.s_d73c91bbc4") : hour < 18 ? tr("pages.Home.s_51d822d031") : tr("pages.Home.s_37f9f18bdc");
   return (
     <div className="page">
-      <PageHead eyebrow={new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })} title={greet} sub={tr("pages.Home.s_0a2cf963b9")} />
+      <PageHead eyebrow={new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })} title={greet} sub={tr("pages.Home.s_0a2cf963b9")} />
       {showStrip && <Strip />}
       {dashboards.error && !dashboards.data && <ErrorState error={dashboards.error} onRetry={dashboards.refetch} />}
       {!home && !dashboards.error && <div className="grid-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} h={180} />)}</div>}

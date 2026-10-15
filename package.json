@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -13,7 +13,7 @@
     "test": "tsx tests/run.ts",
     "start": "node --env-file-if-exists=.env server/main.mjs",
     "test:server": "node --test tests/*.test.mjs",
-    "test:i18n": "node scripts/check-i18n.cjs",
+    "test:i18n": "node scripts/check-i18n.cjs && node scripts/check-locales.cjs",
     "test:e2e": "node tests/e2e-live.mjs",
     "test:browser": "node scripts/smoke-browser.cjs",
     "test:first-login": "node scripts/first-login.cjs"

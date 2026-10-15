@@ -1,7 +1,7 @@
-import { tr } from '@/i18n';
+import { tr, locale } from '@/i18n';
 export const MIN = 60_000, HOUR = 3_600_000, DAY = 86_400_000;
 
-const rtf = new Intl.RelativeTimeFormat('ru', { numeric: 'auto', style: 'short' });
+const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
 
 export function ago(ts: number | string | undefined, now = Date.now()): string {
   if (ts === undefined) return '—';
@@ -17,19 +17,19 @@ export function ago(ts: number | string | undefined, now = Date.now()): string {
 
 export function fmtTime(ts: number | string, withSeconds = false): string {
   const d = new Date(ts);
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: withSeconds ? '2-digit' : undefined });
+  return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: withSeconds ? '2-digit' : undefined });
 }
 export function fmtDateTime(ts: number | string): string {
   const d = new Date(ts);
-  return d.toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 export function fmtDate(ts: number | string): string {
-  return new Date(ts).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+  return new Date(ts).toLocaleDateString(locale, { day: '2-digit', month: 'short' });
 }
 export function fmtAxisTime(ts: number, spanMs: number): string {
   const d = new Date(ts);
-  if (spanMs <= 2 * DAY) return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+  if (spanMs <= 2 * DAY) return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
 export function fmtNumber(v: number | null | undefined, decimals = 1): string {
@@ -39,7 +39,7 @@ export function fmtNumber(v: number | null | undefined, decimals = 1): string {
   if (abs >= 1e9) return short(v / 1e9, 'G');
   if (abs >= 1e6) return short(v / 1e6, 'M');
   if (abs >= 1e4) return short(v / 1e3, 'k');
-  return v.toLocaleString('ru-RU', { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
+  return v.toLocaleString(locale, { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
 }
 
 export function fmtBytes(b: number): string {

@@ -1,4 +1,4 @@
-import { tr } from '@/i18n';
+import { tr, language, setLanguage } from '@/i18n';
 import { Link, useLocation } from 'react-router-dom';
 import { Bell, Menu as MenuIcon, Moon, Search, Sun } from 'lucide-react';
 import { useNotifications } from '@/app/data';
@@ -34,6 +34,9 @@ export function Topbar() {
         {parts.length === 0 && <><span className="sep">{tr("layout.Topbar.s_42099b4af0")}</span><span className="cur">{tr("layout.Topbar.s_fed758b7a8")}</span></>}
       </nav>
       <span className="spacer" />
+      <select className="select" style={{ width: 66 }} aria-label={tr('polish.language')} value={language} onChange={e => setLanguage(e.target.value as 'en' | 'ru')}>
+        <option value="en">{tr('polish.en')}</option><option value="ru">{tr('polish.ru')}</option>
+      </select>
       <button className="search-trigger" onClick={() => ui.set({ paletteOpen: true })}>
         <Search size={14} /><span className="st-text grow" style={{ textAlign: 'left' }}>{tr("layout.Topbar.s_5c3f90fcba")}</span><Kbd>{tr("layout.Topbar.s_64d86f339a")}</Kbd>
       </button>

@@ -1,4 +1,4 @@
-import { tr } from '@/i18n';
+import { tr, language } from '@/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ArrowUpCircle, ChevronLeft, Download, LayoutDashboard, Play, Power, RotateCcw, Trash2, Zap } from 'lucide-react';
@@ -122,6 +122,7 @@ function Overview({ e }: { e: PluginEntry }) {
   return (
     <div className="grid-aside">
       <div className="col gap-4">
+        <Screenshots screenshots={m.screenshots} name={m.name} />
         <p className="ink2" style={{ fontSize: 14, maxWidth: 720 }}>{m.description}</p>
         <Panel title={tr("pages.plugins.PluginDetail.s_3aeb33af51")} meta={`${m.metrics.length}`} flush>
           {m.metrics.length === 0 ? <Empty compact title={tr("pages.plugins.PluginDetail.s_b0657eba8b")} /> : (
@@ -277,4 +278,19 @@ function ContractTab({ e }: { e: PluginEntry }) {
       <Panel title={tr("pages.plugins.PluginDetail.s_79042410f0")} meta={tr("pages.plugins.PluginDetail.s_9c354f26f3")} flush><pre className="code" style={{ border: 0, borderRadius: 0, maxHeight: 640 }}>{JSON.stringify(e.manifest, null, 2)}</pre></Panel>
     </div>
   );
+}
+
+function Screenshots({ screenshots, name }: { screenshots: {url:string;alt?:string;locale?:string}[]; name:string }) {
+  const [index,setIndex] = useState(0);
+  const images = screenshots.filter(s => !s.locale || s.locale === language);
+  if (!images.length) return null;
+  const current = images[index % images.length];
+  return <section className="panel" aria-label={tr('polish.screenshots')}>
+    <img src={current.url} alt={current.alt || name} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:420,objectFit:'contain',borderRadius:4}} />
+    <div className="row" style={{justifyContent:'space-between',marginTop:12}}>
+      <Button onClick={() => setIndex((index+images.length-1)%images.length)} aria-label={tr('polish.previous')}>←</Button>
+      <span className="muted">{index%images.length+1} / {images.length}</span>
+      <Button onClick={() => setIndex((index+1)%images.length)} aria-label={tr('polish.next')}>→</Button>
+    </div>
+  </section>;
 }

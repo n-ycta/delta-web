@@ -1,0 +1,3 @@
+const fs=require('fs'),assert=require('assert/strict');const base=__dirname+'/../src/i18n/';const en=JSON.parse(fs.readFileSync(base+'en.json')),ru=JSON.parse(fs.readFileSync(base+'ru.json'));
+assert.deepEqual(Object.keys(en).sort(),Object.keys(ru).sort());let total=0;for(const [part,entries] of Object.entries(ru)){assert.deepEqual(Object.keys(en[part]).sort(),Object.keys(entries).sort());for(const [k,text] of Object.entries(entries)){assert.deepEqual(text.match(/\{\{\w+\}\}/g)||[],en[part][k].match(/\{\{\w+\}\}/g)||[]);assert(en[part][k].length>0||!text.length);total++}}
+console.log('EN/RU catalog parity:',total,'keys and interpolation tokens');
