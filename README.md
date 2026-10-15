@@ -30,6 +30,12 @@ Updates use published checksums and pinned catalog versions. The core is updated
 
 After updating Web, use **Reload console** to load its new interface. To get this update center from an older Web version, first update **Delta Web** on the existing Plugins page. Core 0.3.4 or later is required for pinned plugin updates and preserving disabled state; the update center can upgrade an officially installed older core first.
 
+## Event journal
+
+The Events page records **observed** core connectivity, peer availability, plugin/process state changes and successful/failed console management actions. It is not an OS-wide log or a claim that every command outside the console is captured. Observation and page refresh run every five seconds; Pause freezes page updates, Refresh explicitly fetches the latest records.
+
+History is stored privately under the node profile (`data/events`), independent of the selected Storage backend, and retained for 30 days / 5,000 events. Existing caller audit history is also shown. Global lifecycle changes are visible to callers allowed to read events; private console-action history is visible only to that caller and the owner. Settings, token values, command arguments, process output and typing content are never included in event records.
+
 ## Explore
 
 - Customizable home and saved dashboards, drag/resize widgets, comparisons, filters and multiple visualization types.

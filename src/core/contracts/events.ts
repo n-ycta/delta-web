@@ -32,6 +32,7 @@ export interface EventQuery {
   text?: string;
   limit?: number;
   before?: number;
+  after?: number;
 }
 
 /** Messages pushed from core to the console over the realtime channel. */

@@ -1,7 +1,7 @@
 import { tr } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Pause, Play, Search } from 'lucide-react';
+import { Pause, Play, Search, RefreshCw } from 'lucide-react';
 import { useQuery } from '@/app/query';
 import { useUi } from '@/app/stores';
 import { useApi } from '@/app/ApiContext';
@@ -51,7 +51,7 @@ export function EventsPage() {
 
   const qobj = useMemo(() => ({ severities: sevs.length ? sevs : undefined, sourceTypes: srcs.length ? srcs : undefined, text: debounced || undefined, limit: 60 }), [sevs.join(), srcs.join(), debounced]); // eslint-disable-line react-hooks/exhaustive-deps
   const key = `events/list/${JSON.stringify(qobj)}`;
-  const base = useQuery(key, (a) => a.listEvents(qobj));
+  const base = useQuery(key, (a) => a.listEvents(qobj), { refetchMs: tail ? 5000 : 0 });
   useEffect(() => { setOlder([]); setExhausted(false); setMoreErr(undefined); }, [key]);
 
   const matches = (e: CoreEvent) => (!sevs.length || sevs.includes(e.severity)) && (!srcs.length || srcs.includes(e.source.type)) && (!debounced || (e.message + e.code + e.source.id).toLowerCase().includes(debounced.toLowerCase()));
@@ -61,7 +61,7 @@ export function EventsPage() {
   const all = useMemo(() => {
     const seen = new Set<string>(); const out: CoreEvent[] = [];
     for (const e of [...liveNew, ...(base.data ?? []), ...older]) if (!seen.has(e.id)) { seen.add(e.id); out.push(e); }
-    return out;
+    return out.sort((a,b)=>b.ts-a.ts);
   }, [liveNew, base.data, older]);
 
   useEffect(() => { if (focusId) { const f = all.find((e) => e.id === focusId); if (f) setSelected(f); } }, [focusId, all.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -83,7 +83,8 @@ export function EventsPage() {
     <div className="page">
       <PageHead title={tr("pages.EventsPage.s_bb9ac87531")} sub={tr("pages.EventsPage.s_f4bad1225b")}
         actions={<>
-          <Button icon={tail ? <Pause size={14} /> : <Play size={14} />} onClick={() => { if (tail) setPausedAt(Date.now()); setTail(!tail); }}>{tail ? tr("pages.EventsPage.s_03498e395a") : tr("pages.EventsPage.s_0d49d12b38", { p0: (pending ? ` (+${pending})` : '') })}</Button>
+          <Button icon={tail ? <Pause size={14} /> : <Play size={14} />} onClick={() => { if (tail) setPausedAt(Date.now()); else base.refetch(); setTail(!tail); }}>{tail ? tr("pages.EventsPage.s_03498e395a") : tr("pages.EventsPage.s_0d49d12b38", { p0: (pending ? ` (+${pending})` : '') })}</Button>
+          <Button icon={<RefreshCw size={14}/>} loading={base.fetching} onClick={base.refetch}>{tr("events.refresh")}</Button>
           <Button onClick={() => downloadJson(`delta-events-${new Date().toISOString().slice(0, 10)}`, all)} disabled={!all.length}>{tr("pages.EventsPage.s_4910a3a93b")}</Button>
         </>} />
       <div className="row wrap" style={{ marginBottom: 12 }}>
@@ -92,24 +93,24 @@ export function EventsPage() {
         <span style={{ width: 1, height: 18, background: 'var(--rule-strong)' }} />
         <div className="row wrap gap-1">{SOURCES.map(([k, l]) => <button key={k} className="chip" aria-pressed={srcs.includes(k)} onClick={() => toggle('src', k)}>{l}</button>)}</div>
         <span className="spacer" />
-        <span className="row muted" style={{ fontSize: 12 }}>{tail ? <><span className="dot ok pulse" />{tr("pages.EventsPage.s_49e10be260")}</> : <><span className="dot off" />{tr("pages.EventsPage.s_9627af1c25")}</>}</span>
+        <span className="row muted" style={{ fontSize: 12 }} role="status">{base.error ? <><span className="dot error" />{tr("events.unavailable")}</> : tail && base.data ? <><span className="dot ok pulse" />{tr("events.polling")}</> : <><span className="dot off" />{tail ? tr("events.connecting") : tr("pages.EventsPage.s_9627af1c25")}</>}</span>
       </div>
       <div className="row gap-3 muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
         {counts.filter(([, c]) => c).map(([s, c]) => <span key={s}><span className={`sev ${s}`}>{SEVERITY_LABEL[s]}</span> <span className="num">{c}</span></span>)}
         <span className="spacer" />{all.length > 0 && <span>{tr("pages.EventsPage.s_8b0b0e0b57")}{all.length}</span>}
       </div>
       {base.loading && <SkeletonRows rows={12} h={22} />}
-      {base.error && !base.data && <ErrorState error={base.error} onRetry={base.refetch} />}
-      {base.data && all.length === 0 && <div className="panel"><Empty title={tr("pages.EventsPage.s_8a6d7ca74c")} action={(sevs.length || srcs.length || text) ? <Button onClick={() => { setText(''); setParams({}, { replace: true }); }}>{tr("pages.EventsPage.s_03ead01c5b")}</Button> : undefined}>{tr("pages.EventsPage.s_ca1208de8e")}</Empty></div>}
+      {base.error && <ErrorState error={base.error} onRetry={base.refetch} />}
+      {base.data && !base.error && all.length === 0 && <div className="panel"><Empty title={tr("pages.EventsPage.s_8a6d7ca74c")} action={(sevs.length || srcs.length || text) ? <Button onClick={() => { setText(''); setParams({}, { replace: true }); }}>{tr("pages.EventsPage.s_03ead01c5b")}</Button> : undefined}>{tr("pages.EventsPage.s_ca1208de8e")}</Empty></div>}
       {all.length > 0 && (
         <div className="panel">
-          <div className="logline" style={{ gridTemplateColumns: '128px 52px 150px 190px minmax(0,1fr)', background: 'var(--surface-2)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--muted)' }}><span>{tr("pages.EventsPage.s_c80d7e8172")}</span><span>{tr("pages.EventsPage.s_e2ad1df462")}</span><span>{tr("pages.EventsPage.s_8290a3dbc0")}</span><span>{tr("pages.EventsPage.s_6708837459")}</span><span>{tr("pages.EventsPage.s_dc72346ac4")}</span></div>
+          <div className="logline event-log-head" style={{ background: 'var(--surface-2)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--muted)' }}><span>{tr("pages.EventsPage.s_c80d7e8172")}</span><span>{tr("pages.EventsPage.s_e2ad1df462")}</span><span>{tr("pages.EventsPage.s_8290a3dbc0")}</span><span>{tr("pages.EventsPage.s_6708837459")}</span><span>{tr("pages.EventsPage.s_dc72346ac4")}</span></div>
           {all.map((e) => (
-            <div key={e.id} className="logline" role="button" tabIndex={0} onClick={() => setSelected(e)} onKeyDown={(k) => k.key === 'Enter' && setSelected(e)}
-              style={{ gridTemplateColumns: '128px 52px 150px 190px minmax(0,1fr)', cursor: 'pointer', background: e.id === focusId ? 'var(--selected)' : e.ts > startedAt ? 'color-mix(in srgb, var(--accent-weak) 45%, transparent)' : undefined }}>
+            <div key={e.id} className="logline event-log-row" role="button" tabIndex={0} onClick={() => setSelected(e)} onKeyDown={(k) => k.key === 'Enter' && setSelected(e)}
+              style={{ cursor: 'pointer', background: e.id === focusId ? 'var(--selected)' : e.ts > startedAt ? 'color-mix(in srgb, var(--accent-weak) 45%, transparent)' : undefined }}>
               <span className="muted">{fmtDateTime(e.ts)}</span><span className={`sev ${e.severity}`}>{SEVERITY_LABEL[e.severity]}</span>
               <span className="truncate ink2">{e.source.label ?? e.source.id}</span><span className="truncate">{e.code}</span>
-              <span className="truncate" style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5 }}>{e.message}</span>
+              <span className="truncate event-log-message" style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5 }}>{e.message}</span>
             </div>
           ))}
           <div className="row" style={{ padding: 10, justifyContent: 'center' }}>

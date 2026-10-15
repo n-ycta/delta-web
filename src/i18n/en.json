@@ -795,7 +795,7 @@
     "s_778b602bbd": "info",
     "s_8669d1109d": "Debugging.",
     "s_bb9ac87531": "Events",
-    "s_f4bad1225b": "A single kernel log: nodes, plugins, access and actions in the console. New events come in real time.",
+    "s_f4bad1225b": "Observed node/plugin lifecycle changes and console actions. History is retained for 30 days, up to 5,000 events.",
     "s_03498e395a": "Pause",
     "s_0d49d12b38": "Continue.{{p0}}",
     "s_4910a3a93b": "JSON exports",
@@ -805,7 +805,7 @@
     "s_8b0b0e0b57": "shown ",
     "s_8a6d7ca74c": "No event found.",
     "s_03ead01c5b": "Reset the filters",
-    "s_ca1208de8e": "Try to expand the filters or wait for new events.",
+    "s_ca1208de8e": "No recorded changes yet. New observations and console actions appear automatically.",
     "s_c80d7e8172": "Time.",
     "s_e2ad1df462": "Ur.",
     "s_8290a3dbc0": "Source",
@@ -1791,5 +1791,11 @@
     "invalid_settings": "Invalid update settings.",
     "permissions": "Cannot protect private update files.",
     "managed_install_required": "Core self-update requires the official per-user installation in this node profile. Source/system-package binaries are not replaced."
+  },
+  "events": {
+    "refresh": "Refresh",
+    "unavailable": "Event journal unavailable",
+    "polling": "Auto-refresh · 5s",
+    "connecting": "Connecting…"
   }
 }

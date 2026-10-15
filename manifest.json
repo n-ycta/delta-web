@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -344,5 +344,5 @@
       "admin": true
     }
   ],
-  "version": "0.4.0"
+  "version": "0.4.1"
 }

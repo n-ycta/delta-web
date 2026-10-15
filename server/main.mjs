@@ -1,3 +1,4 @@
+import {createEventJournal,withEventAudit} from './events.mjs';
 import {createUpdateService,updateHandlers} from './update-service.mjs';
 import {createTelemetry} from './telemetry.mjs';
 import {createMcp} from './mcp.mjs';import {createSessions} from './sessions.mjs';
@@ -6,6 +7,7 @@ const client=new DeltaClient(),root=resolve('dist'),controller=new AbortControll
 const manifest=JSON.parse(await readFile(new URL('../manifest.json',import.meta.url),'utf8'));
 const monitor=createTelemetry(client,process.env.STORAGE_COMPONENT||'storage'),stopMonitor=monitor.start();
 const updater=await createUpdateService(),stopUpdates=updater.start();
+const events=await createEventJournal(client),stopEvents=events.start();
 const mcp=await createMcp(client),sessions=await createSessions(client);
 const server=createServer(async(req,res)=>{
  try{
@@ -28,4 +30,5 @@ const server=createServer(async(req,res)=>{
  }catch(e){res.writeHead(e.code==='ENOENT'?404:503);res.end('Delta service unavailable')}
 });
 server.listen(Number(process.env.PORT||7710),process.env.HOST||'127.0.0.1');for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>controller.abort());
-await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor,updater),...mcp.handlers,...updateHandlers(updater)},{signal:controller.signal});stopMonitor();stopUpdates();server.close();
+const updates=updateHandlers(updater);for(const name of ['web.updates_settings','web.updates_install'])updates[name]=withEventAudit(events,name,updates[name]);
+await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor,updater,events),...mcp.handlers,...updates},{signal:controller.signal});stopMonitor();stopUpdates();stopEvents();server.close();

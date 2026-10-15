@@ -410,3 +410,11 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .updates-heading > .grow { flex:1 1 280px; min-width:0; }
 .updates-heading > .btn, .update-item > .btn, .update-item > .badge { flex-shrink:0; }
 .update-item > .grow { flex:1 1 220px; min-width:0; }
+
+.event-log-head,.event-log-row {grid-template-columns:128px 52px 150px 190px minmax(0,1fr);}
+@media(max-width:800px){
+ .event-log-head {display:none;}
+ .event-log-row {grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:12px;}
+ .event-log-row > :nth-child(3),.event-log-row > :nth-child(4) {min-width:0;white-space:normal;overflow-wrap:anywhere;}
+ .event-log-message {grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;}
+}

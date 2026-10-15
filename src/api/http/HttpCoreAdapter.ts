@@ -1,6 +1,6 @@
 import type { UpdateSettings, UpdateStatus } from '../updates';
 import { tr, language } from '@/i18n';
-import type { ConnectionConfig, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
+import type { ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
 import type { CoreApi } from '../types';
 import { CoreApiError } from '../types';
 
@@ -11,6 +11,8 @@ export class HttpCoreAdapter implements CoreApi {
   readonly endpoint: string;
   private listeners = new Set<(m: RealtimeMessage) => void>();
   private timer?: ReturnType<typeof setTimeout>;
+  private eventCursor=0;
+  private eventIds=new Set<string>();
   constructor(private opts: HttpAdapterOptions) { this.endpoint = opts.baseUrl.replace(/\/$/, '').replace(/\/v1$/, ''); }
   private async call<T = any>(action: string, args: unknown = {}): Promise<T> {
     const ctrl = new AbortController();
@@ -50,7 +52,7 @@ export class HttpCoreAdapter implements CoreApi {
   updateNodeConnection(id: string, config: ConnectionConfig) { return this.call('nodes_connection', { id, config }); }
   createPairingTicket(kind: string, name: string) { return this.call('nodes_pair', { kind, name }); }
   removeNode(id: string) { return this.call<void>('nodes_remove', { id }); }
-  listEvents(query: EventQuery) { return this.call('events_list', { query }); }
+  listEvents(query: EventQuery) { return this.call<CoreEvent[]>('events_list', { query }); }
   listNotifications() { return this.call('notifications_list'); }
   markNotifications(ids: string[] | 'all', read: boolean) { return this.call<void>('notifications_mark', { ids, read }); }
   listDashboards() { return this.call('dashboards_list'); }
@@ -75,6 +77,11 @@ export class HttpCoreAdapter implements CoreApi {
       nodes.forEach((node: any) => this.emit({ type: 'node.update', nodeId: node.id, patch: node }));
       const plugins = await this.listPlugins(); plugins.forEach((p: any) => this.emit({ type: 'plugin.update', pluginId: p.instance.pluginId }));
     } catch { this.emit({ type: 'connection', state: 'reconnecting' }); }
+    try {
+      const events = await this.listEvents({limit:1000,...(this.eventCursor?{after:this.eventCursor-1}:{})});
+      for(const event of [...events].reverse()){if(!this.eventIds.has(event.id)){this.eventIds.add(event.id);this.emit({type:'event',event})}this.eventCursor=Math.max(this.eventCursor,event.ts)}
+      if(this.eventIds.size>5000)this.eventIds=new Set(events.map(e=>e.id));
+    } catch { /* A token without events.read must still receive node/plugin updates. */ }
     if (this.listeners.size) this.timer = setTimeout(() => void this.poll(), 15000);
   }
 }
