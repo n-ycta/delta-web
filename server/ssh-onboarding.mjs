@@ -548,6 +548,27 @@ export class SSHOnboarding {
         await sleep(500);
       }
       if (!ready) fail("tunnel");
+      // sshd GatewayPorts=yes can override a requested loopback bind. Never pair
+      // until the server's actual listener is confirmed private.
+      await runSSH(
+        c,
+        `python3 - ${remotePort} <<'PY'
+import sys
+port=int(sys.argv[1]); found=False
+for path in ['/proc/net/tcp','/proc/net/tcp6']:
+ try:
+  lines=open(path).readlines()[1:]
+ except FileNotFoundError:
+  continue
+ for line in lines:
+  cols=line.split(); addr,p=cols[1].split(':')
+  if cols[3]=='0A' and int(p,16)==port:
+   assert addr in ('0100007F','00000000000000000000000001000000'), 'SSH reverse listener is not private'
+   found=True
+assert found, 'SSH reverse listener not found'
+PY`,
+      ).catch(() => fail("tunnel"));
+
       await save({ phase: "pairing", peerId: remote.nodeId });
       const inv = await this.client.call("peers.invite", {
         trust_admin: a.trust === "mutual",
