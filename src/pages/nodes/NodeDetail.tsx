@@ -119,7 +119,7 @@ function Overview({ n }: { n: NodeInfo }) {
             : <div><div className="label">{tr("pages.nodes.NodeDetail.s_b78a6d1c81")}</div><div className="v">{off || n.latencyMs === undefined ? '—' : n.latencyMs}<small>{tr("pages.nodes.NodeDetail.s_bbb0e8e8cd")}</small></div></div>}
         </div>
         <Panel title={tr("pages.nodes.NodeDetail.s_3e559b8cc3")} actions={<Segmented value={range} onChange={setRange} options={Object.keys(RANGES).map((k) => ({ value: k as keyof typeof RANGES, label: k }))} />}>
-          {hist.error && !hist.data ? <ErrorState compact error={hist.error} onRetry={hist.refetch} /> : (
+          {hist.data && !Object.values(hist.data).some(s=>s.points.some((p:{v:number|null})=>p.v!==null)) ? <div className="muted">{tr('analytics.historyStarting')}</div> : hist.error && !hist.data ? <ErrorState compact error={hist.error} onRetry={hist.refetch} /> : (
             <div className="grid-3">
               {(['cpu', 'mem', 'latency'] as const).map((k, i) => (
                 <div key={k}>
@@ -130,7 +130,7 @@ function Overview({ n }: { n: NodeInfo }) {
             </div>
           )}
         </Panel>
-        <Panel title={tr("pages.nodes.NodeDetail.s_f10ad2a9af")} meta={availPct !== null && <span className="num muted">{availPct.toFixed(2)}{tr("pages.nodes.NodeDetail.s_4345cb1fa2")}</span>}>
+        <Panel title={tr("pages.nodes.NodeDetail.s_f10ad2a9af")} actions={<span className="muted" style={{fontSize:11}}>{tr('analytics.observedAvailability')}</span>} meta={availPct !== null && <span className="num muted">{availPct.toFixed(2)}{tr("pages.nodes.NodeDetail.s_4345cb1fa2")}</span>}>
           {up.error && !up.data ? <ErrorState compact error={up.error} onRetry={up.refetch} /> : up.data ? (
             <>
               <div className="uptime">{up.data.map((d) => <span key={d.day} className={d.state === 'up' ? '' : d.state} title={tr("pages.nodes.NodeDetail.s_68c5ac7fd0", { p0: (fmtDate(d.day)), p1: (d.state === 'nodata' ? tr("pages.nodes.NodeDetail.s_fdc64e6ca7") : `${(d.availability * 100).toFixed(1)}%`) })} />)}</div>

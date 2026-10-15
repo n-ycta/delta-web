@@ -379,3 +379,10 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .plugin-notice { flex-wrap: wrap; align-items: flex-start; }
 .plugin-notice > .grow { min-width: 0; flex-basis: 320px; overflow-wrap: anywhere; }
 .plugin-notice > .btn { max-width: 100%; white-space: normal; flex-shrink: 0; }
+
+.bubble-widget { display:flex;flex-direction:column;gap:6px;height:100%;min-height:0; }
+.bubble-plot { flex:1;min-height:100px;overflow:hidden; }
+.bubble-widget details { font-size:12px; max-height:40%; overflow:auto; }
+.bubble-widget summary { cursor:pointer; color:var(--ink-2); }
+.bubble-widget g:focus { outline:none; }
+.bubble-widget g:focus circle { stroke-width:3; }

@@ -40,6 +40,7 @@ export const MetricDescriptor = z.object({
   dimensions: z.array(Dimension).default([]),
   aggregations: z.array(Aggregation).min(1).default(['avg']),
   defaultAggregation: Aggregation.optional(),
+  queryCapability: z.string().optional(),
   defaultFilters: z.record(z.array(z.string())).optional(),
   /** Visualization hints, may contain ids this console does not know (they are reported, not fatal). */
   visualizations: z.array(z.string()).default([]),
@@ -58,7 +59,7 @@ const SettingBase = z.object({
 });
 
 export const SettingField = z.discriminatedUnion('type', [
-  SettingBase.extend({ type: z.literal('string'), default: z.string().optional(), placeholder: z.string().optional(), pattern: z.string().optional() }),
+  SettingBase.extend({ type: z.literal('string'), default: z.string().optional(), placeholder: z.string().optional(), pattern: z.string().optional(), multiline:z.boolean().optional() }),
   SettingBase.extend({ type: z.literal('secret'), placeholder: z.string().optional() }),
   SettingBase.extend({ type: z.literal('number'), default: z.number().optional(), min: z.number().optional(), max: z.number().optional(), step: z.number().optional(), unit: z.string().optional() }),
   SettingBase.extend({ type: z.literal('boolean'), default: z.boolean().optional() }),
@@ -134,6 +135,8 @@ export const PluginInstance = z.object({
   installedAt: z.number().optional(),
   lastSyncAt: z.number().optional(),
   eventsPerMin: z.number().optional(),
+  activityUnit: z.string().optional(),
+  lastInputAt: z.number().optional(),
   error: z.object({ code: z.string(), message: z.string(), hint: z.string().optional() }).optional(),
 });
 export type PluginInstance = z.infer<typeof PluginInstance>;

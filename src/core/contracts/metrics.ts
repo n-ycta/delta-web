@@ -16,7 +16,7 @@ export type MetricQuery = z.input<typeof MetricQuery>;
 
 export interface SeriesPoint { t: number; v: number | null }
 export interface Series { key: string; label: string; color?: string; points: SeriesPoint[] }
-export interface CategoryValue { key: string; label: string; value: number; color?: string }
+export interface CategoryValue { key: string; label: string; value: number; color?: string; flagged?: boolean }
 
 export interface MetricResult {
   query: MetricQuery;

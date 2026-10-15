@@ -92,9 +92,10 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
               <Field label={tr("dashboards.WidgetEditor.s_eddce20420")} help={tr("dashboards.WidgetEditor.s_a4bf95f5ec")}>
                 <select className="select" value={src.groupBy ?? ''} onChange={(e) => setSource({ groupBy: e.target.value || undefined })}>
                   <option value="">{tr("dashboards.WidgetEditor.s_049f703b1a")}</option>
-                  {metric.dimensions.filter((d) => d.values?.length).map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+                  {metric.dimensions.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                 </select>
               </Field>
+              {metric.dimensions.filter(d=>!d.values?.length).map(d=><Field key={d.id} label={tr('dashboards.WidgetEditor.s_f1e10191f1',{p0:d.label})} help={tr('analytics.dynamicFilter')}><input className="input" defaultValue={(src.filters?.[d.id]||[]).join(', ')} onBlur={e=>{const values=e.target.value.split(',').map(s=>s.trim()).filter(Boolean);const filters={...(src.filters||{})};if(values.length)filters[d.id]=values;else delete filters[d.id];setSource({filters})}} /></Field>)}
               {metric.dimensions.filter((d) => d.values?.length).map((d) => (
                 <Field key={d.id} label={tr("dashboards.WidgetEditor.s_f1e10191f1", { p0: (d.label) })} help={tr("dashboards.WidgetEditor.s_a2d8896472")}>
                   <div className="row wrap gap-1">
