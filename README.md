@@ -97,3 +97,9 @@ Connected lines join observed values across empty buckets by default; the
 the drawing: missing data is never replaced with zeros or fabricated values.
 For long ranges, very fine intervals are coarsened to respect the 2,000-bucket
 query limit. Presentation and cadence are saved with the dashboard.
+
+## Plugin-owned notices and OS permission actions
+
+A status endpoint may return notices with `id`, `severity`, `message`, localized strings and an optional `actionId`. The web console displays the action only if it is declared in the plugin manifest, uses the manifest description for dangerous-action confirmation, and forwards the caller's authority and UI `_locale`. It never authorizes a plugin using the web service's own administrator identity. The same generic renderer is used on plugin pages and related metric dashboards. OS-specific policy, security warnings and authorization state belong to the plugin, not to the web console.
+
+The compact sidebar uses a centred 64px rail, 44px navigation targets, 20px navigation glyphs and a top-mounted expand button. Mobile navigation ignores the desktop collapse preference.
