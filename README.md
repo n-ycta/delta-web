@@ -20,6 +20,16 @@ Invoke-WebRequest https://raw.githubusercontent.com/n-ycta/delta-web/main/instal
 
 Open **http://127.0.0.1:7710**. Setup automatically opens a one-use owner session on desktop systems. Headless devices print an SSH tunnel instruction. Existing installations can reopen a setup session using the core installer with `--open` / `-Open`.
 
+## Updates from the console
+
+Open **Settings → Updates** to check and install stable official releases of the core, Web itself and installed managed plugins. Checks run hourly by default while the Web service is running, even with the browser closed. Available versions and completed/failed jobs appear in the notification center.
+
+Automatic installation is **off by default**. Enabling it requires confirmation and saving the setting; core and plugin automation can be selected separately. Manual installation always asks for confirmation. Only a node owner can manage updates.
+
+Updates use published checksums and pinned catalog versions. The core is updated first, ordinary plugins next, Web last. A separate local worker survives restarts; on a systemd installation it runs in a separate user unit. Disabled plugins stay disabled. A failed core health check restores the previous executable and checks the same node identity. Source builds or system-packaged core binaries are not overwritten. This is not a substitute for database backups before incompatible future migrations.
+
+After updating Web, use **Reload console** to load its new interface. To get this update center from an older Web version, first update **Delta Web** on the existing Plugins page. Core 0.3.4 or later is required for pinned plugin updates and preserving disabled state; the update center can upgrade an officially installed older core first.
+
 ## Explore
 
 - Customizable home and saved dashboards, drag/resize widgets, comparisons, filters and multiple visualization types.

@@ -1,3 +1,4 @@
+import type { UpdateSettings, UpdateStatus } from './updates';
 import { tr } from '@/i18n';
 import type {
   AuditEntry, ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricQuery, MetricResult, NodeCommandId,
@@ -40,6 +41,10 @@ export interface CoreApi {
   readonly endpoint: string;
 
   info(): Promise<CoreInfo>;
+  updateStatus(): Promise<UpdateStatus>;
+  checkUpdates(): Promise<UpdateStatus>;
+  configureUpdates(values:UpdateSettings): Promise<UpdateSettings>;
+  installUpdates(target:string): Promise<{accepted:boolean;jobId:string}>;
 
   // plugins
   listPlugins(): Promise<RawPluginRecord[]>;

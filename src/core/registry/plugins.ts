@@ -1,3 +1,4 @@
+import { compare, isValid } from '@/core/lib/semver';
 import { localizeManifest } from './localize';
 import { tr } from '@/i18n';
 import type { PluginEntry, PluginInstance, PluginManifest, ValidationReport } from '../contracts';
@@ -32,5 +33,5 @@ export function normalizePlugins(records: RawRecord[], knownVisualizations: stri
 }
 
 export const isInstalled = (e: PluginEntry) => !!e.instance.installedVersion;
-export const hasUpdate = (e: PluginEntry) => isInstalled(e) && e.instance.installedVersion !== e.instance.latestVersion && e.instance.status !== 'updating';
+export const hasUpdate = (e: PluginEntry) => isInstalled(e) && !!e.instance.installedVersion && !!e.instance.latestVersion && isValid(e.instance.installedVersion) && isValid(e.instance.latestVersion) && compare(e.instance.latestVersion,e.instance.installedVersion)>0 && e.instance.status !== 'updating';
 export const isLive = (e: PluginEntry) => ['active', 'degraded'].includes(e.instance.status);

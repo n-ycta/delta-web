@@ -400,3 +400,13 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .viz-option > .col { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
 .viz-option > .score { flex: 0 0 auto; }
 .widget-source-meta { white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+
+.update-item {display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);min-width:0;flex-wrap:wrap;}
+.update-item:last-child {border-bottom:0;}
+.update-item .grow {overflow-wrap:anywhere;}
+.updates-page .form-row > * {min-width:0;}
+.updates-page input[type=number] {max-width:160px;}
+
+.updates-heading > .grow { flex:1 1 280px; min-width:0; }
+.updates-heading > .btn, .update-item > .btn, .update-item > .badge { flex-shrink:0; }
+.update-item > .grow { flex:1 1 220px; min-width:0; }

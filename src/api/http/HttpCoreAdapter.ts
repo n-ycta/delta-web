@@ -1,3 +1,4 @@
+import type { UpdateSettings, UpdateStatus } from '../updates';
 import { tr, language } from '@/i18n';
 import type { ConnectionConfig, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
 import type { CoreApi } from '../types';
@@ -27,6 +28,10 @@ export class HttpCoreAdapter implements CoreApi {
     } finally { clearTimeout(timer); }
   }
   info() { return this.call('info'); }
+  updateStatus(){return this.call<UpdateStatus>('updates_status')}
+  checkUpdates(){return this.call<UpdateStatus>('updates_check')}
+  configureUpdates(values:UpdateSettings){return this.call<UpdateSettings>('updates_settings',{values})}
+  installUpdates(target:string){return this.call<{accepted:boolean;jobId:string}>('updates_install',{target})}
   listPlugins() { return this.call('plugins_list'); }
   getPluginLogs(id: string, limit = 80) { return this.call('plugins_logs', { id, limit }); }
   installPlugin(id: string, request: unknown) { return this.call('plugins_install', { id, request }); }
