@@ -1697,7 +1697,9 @@
     "requestFailed": "Delta request failed",
     "invalidKey": "Invalid private key",
     "invalidPhrase": "Invalid recovery phrase",
-    "invalidChallenge": "Invalid or expired sign-in challenge"
+    "invalidChallenge": "Invalid or expired sign-in challenge",
+    "uninstallFailed": "Could not uninstall plugin",
+    "purgeUnavailable": "Data deletion is not supported by this version. Saved data will be retained."
   },
   "pluginContract": {
     "status": "Runtime status and notices",
