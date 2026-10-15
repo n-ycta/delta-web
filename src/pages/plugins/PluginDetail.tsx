@@ -1,3 +1,4 @@
+import { PluginNotices } from '@/ui/PluginNotices';
 import { tr, language } from '@/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -38,7 +39,7 @@ export function PluginDetail() {
   const toggle = useMutation((api, en: boolean) => api.setPluginEnabled(pid, en), { invalidate: ['plugins'], onSuccess: (_r, en) => toast({ severity: 'success', title: en ? tr("pages.plugins.PluginDetail.s_891aa7aba1") : tr("pages.plugins.PluginDetail.s_01abca4746") }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_7c3f2ca256"), body: e.message }) });
   const update = useMutation((api) => api.updatePlugin(pid), { invalidate: ['plugins'], onSuccess: () => toast({ severity: 'info', title: tr("pages.plugins.PluginDetail.s_2c3417789a") }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_b653539cd4"), body: e.message }) });
   const remove = useMutation((api) => api.uninstallPlugin(pid, { purgeData: purge }), { invalidate: ['plugins', 'nodes'], onSuccess: () => { setRemoveOpen(false); toast({ severity: 'info', title: tr("pages.plugins.PluginDetail.s_f433903ca1") }); nav('/plugins'); }, onError: (err) => toast({ severity: 'error', title: tr('polish.uninstallFailed'), body: err.message }) });
-  const action = useMutation((api, a: string) => api.runPluginAction(pid, a), { onSuccess: (r) => toast({ severity: 'success', title: tr("pages.plugins.PluginDetail.s_068de1f047"), body: tr("pages.plugins.PluginDetail.s_15d4eb7208", { p0: (r.durationMs) }) }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_b5d97a28d9"), body: e.message + (e.hint ? ` — ${e.hint}` : '') }) });
+  const action = useMutation((api, a: string) => api.runPluginAction(pid, a), { invalidate: ['plugins'], onSuccess: (r) => toast({ severity: 'success', title: tr("pages.plugins.PluginDetail.s_068de1f047"), body: tr("pages.plugins.PluginDetail.s_15d4eb7208", { p0: (r.durationMs) }) }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_b5d97a28d9"), body: e.message + (e.hint ? ` — ${e.hint}` : '') }) });
 
   if (p.loading) return <div className="page"><Skeleton h={48} w={360} /><div style={{ height: 20 }} /><SkeletonRows rows={8} /></div>;
   if (p.error && !p.data) return <div className="page"><ErrorState error={p.error} onRetry={p.refetch} /></div>;
@@ -86,7 +87,7 @@ export function PluginDetail() {
         <div className="banner err" style={{ borderRadius: 6, border: 0, marginBottom: 16 }}><AlertTriangle size={15} /><span className="grow">{tr("pages.plugins.PluginDetail.s_8410e6fe3e")}{e.validation.issues.find((i) => i.severity === 'error')?.message}</span><Button size="sm" onClick={() => setParams({ tab: 'contract' })}>{tr("pages.plugins.PluginDetail.s_a8d745fa66")}</Button></div>
       )}
 
-      {inst.notices?.map(n => <div key={n.id} className={`banner ${n.severity}`} role="status" style={{marginBottom:12}}>{n.localizations?.[language] ?? n.message}</div>)}
+      <PluginNotices entry={e} />
       <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
         { id: 'overview', label: tr("pages.plugins.PluginDetail.s_39c6387206") },
         { id: 'settings', label: tr("pages.plugins.PluginDetail.s_7f17c7c62a"), count: m.settings.length || undefined },
@@ -108,7 +109,7 @@ export function PluginDetail() {
         body={tr("pages.plugins.PluginDetail.s_7c9db4c1ba")}>
         <label className="check"><input type="checkbox" checked={purge} disabled title={tr("polish.purgeUnavailable")} /><span>{tr("pages.plugins.PluginDetail.s_eca26d0685")}<span className="muted">{tr("polish.purgeUnavailable")}</span></span></label>
       </Confirm>
-      <Confirm open={!!actionConfirm} onClose={() => setActionConfirm(null)} danger title={tr("pages.plugins.PluginDetail.s_18c108aa70")} confirmLabel={tr("pages.plugins.PluginDetail.s_224c8e93c8")} body={m.actions.find((a) => a.id === actionConfirm)?.label} onConfirm={() => { action.run(actionConfirm!); setActionConfirm(null); }} />
+      <Confirm open={!!actionConfirm} onClose={() => setActionConfirm(null)} danger title={tr("pages.plugins.PluginDetail.s_18c108aa70")} confirmLabel={tr("pages.plugins.PluginDetail.s_224c8e93c8")} body={m.actions.find((a) => a.id === actionConfirm)?.description ?? m.actions.find((a) => a.id === actionConfirm)?.label} onConfirm={() => { action.run(actionConfirm!); setActionConfirm(null); }} />
     </div>
   );
 }

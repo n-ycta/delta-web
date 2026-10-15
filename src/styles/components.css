@@ -1,7 +1,10 @@
 /* ---------- shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); height: 100%; }
-.shell[data-collapsed='true'] { --sidebar: 56px; }
-.sidebar { border-right: 1px solid var(--rule); display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
+.shell[data-collapsed='true'] { --sidebar: 64px; }
+.sidebar { min-width: 0; border-right: 1px solid var(--rule); display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
+.sidebar-head { position: relative; flex-shrink: 0; }
+.sidebar-head .brand { padding-right: 48px; }
+.sidebar-toggle.btn { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; padding: 0; flex-shrink: 0; }
 .brand { height: var(--topbar); display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--rule); flex-shrink: 0; }
 .brand-mark { width: 20px; height: 20px; border-radius: 3px; background: var(--ink); position: relative; flex-shrink: 0; }
 .brand-mark::before { content: ''; position: absolute; left: 5px; top: 5px; width: 3px; height: 10px; background: var(--accent); }
@@ -309,7 +312,10 @@ mark { background: var(--accent-weak); color: inherit; border-radius: 2px; }
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; z-index: 55; transform: translateX(-100%); transition: transform .2s var(--ease); background: var(--bg); }
   .shell[data-mobile-nav='true'] .sidebar { transform: none; }
-  .shell[data-collapsed='true'] .nav-label, .shell[data-collapsed='true'] .nav-section, .shell[data-collapsed='true'] .brand-text, .shell[data-collapsed='true'] .nav-sub { display: initial; }
+  .shell[data-collapsed='true'] .nav-label, .shell[data-collapsed='true'] .nav-section, .shell[data-collapsed='true'] .brand-text, .shell[data-collapsed='true'] .nav-sub, .shell[data-collapsed='true'] .sidebar-foot-text, .shell[data-collapsed='true'] .nav-item .count { display: initial; }
+  .shell[data-collapsed='true'] .brand-text, .shell[data-collapsed='true'] .sidebar-foot-text { display: flex; }
+  .shell[data-collapsed='true'] .nav-sub, .shell[data-collapsed='true'] .nav-section { display: block; }
+  .sidebar-head .brand { padding-right: 16px; }
   .mobile-only { display: inline-flex !important; }
   .desktop-only { display: none !important; }
   .search-trigger { width: auto; }
@@ -355,3 +361,21 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .plugin-settings .field { min-width: 0; }
 .plugin-settings .field-help { max-width: 64ch; line-height: 1.5; }
 @media (max-width: 760px) { .plugin-settings .form-row { grid-template-columns: 1fr; gap: 10px; } }
+
+/* Compact desktop rail: every glyph shares one centre; the toggle stays at the top. */
+@media (min-width: 901px) {
+  .shell[data-collapsed='true'] .sidebar-head { padding-bottom: 44px; }
+  .shell[data-collapsed='true'] .brand { padding: 0; justify-content: center; gap: 0; }
+  .shell[data-collapsed='true'] .delta-logo { width: 28px; height: 28px; }
+  .shell[data-collapsed='true'] .sidebar-toggle { top: var(--topbar); right: 50%; transform: translateX(50%); }
+  .shell[data-collapsed='true'] .nav { padding: 4px 0; scrollbar-width: thin; scrollbar-gutter: stable both-edges; }
+  .shell[data-collapsed='true'] .nav-item { width: 44px; height: 44px; margin: 0 auto; padding: 0; justify-content: center; gap: 0; }
+  .shell[data-collapsed='true'] .nav-item > svg { width: 20px; height: 20px; }
+  .shell[data-collapsed='true'] .nav-item.active::before { left: -6px; top: 12px; bottom: 12px; }
+  .shell[data-collapsed='true'] .sidebar-foot { justify-content: center; padding: 12px 0; gap: 0; }
+  .shell[data-collapsed='true'] .profile-avatar { flex-basis: 28px; width: 28px; height: 28px; }
+}
+
+.plugin-notice { flex-wrap: wrap; align-items: flex-start; }
+.plugin-notice > .grow { min-width: 0; flex-basis: 320px; overflow-wrap: anywhere; }
+.plugin-notice > .btn { max-width: 100%; white-space: normal; flex-shrink: 0; }
