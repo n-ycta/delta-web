@@ -18,7 +18,7 @@ export function BreakdownWidget({ config, ctx }: WidgetProps) {
   return (
     <MetricData cfg={config} ctx={ctx} overrides={{ groupBy, compare: 'none' }}>
       {(r, m) => {
-        const cats = toCategories(r).slice(0, config.display.limit ?? 8);
+        const all=toCategories(r).filter(d=>Number.isFinite(d.value)&&d.value>0).sort((a,b)=>b.value-a.value);const top=all.slice(0, config.display.limit ?? 8);const rest=all.slice(top.length).reduce((s,d)=>s+d.value,0);const cats=rest?[...top,{key:'__other',label:tr('analytics.other'),value:rest}]:top;
         const total = cats.reduce((s, x) => s + x.value, 0) || 1;
         const color = (k: string, i: number) => config.display.colors?.[k] ?? c.series[i % c.series.length];
         return (

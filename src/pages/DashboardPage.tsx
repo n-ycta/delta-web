@@ -28,7 +28,15 @@ export function DashboardPage() {
 
   const stored = dashboards.data?.find((d) => d.id === id);
   const generated = useMemo(() => (genFor && plugin.data && !stored ? generatePluginDashboard(plugin.data, widgetRegistry) : undefined), [genFor, plugin.data, stored]);
-  const d: DashboardConfig | undefined = stored ?? generated;
+  // Add newly declared metrics to saved generated dashboards without moving user widgets.
+  const d: DashboardConfig | undefined = useMemo(()=>{
+    if(!stored||stored.origin!=='generated'||!plugin.data)return stored??generated;
+    const fresh=generatePluginDashboard(plugin.data,widgetRegistry);
+    const existing=new Set(stored.widgets.flatMap(w=>w.source.kind==='metric'?[w.source.metricId]:[]));
+    let y=stored.widgets.reduce((n,w)=>Math.max(n,w.layout.y+w.layout.h),0);
+    const added=fresh.widgets.filter(w=>w.source.kind==='metric'&&!existing.has(w.source.metricId)&&w.type!=='stat').map(w=>{const next={...w,layout:{...w.layout,x:0,y,w:12}};y+=w.layout.h;return next});
+    return {...stored,widgets:[...stored.widgets,...added]};
+  },[stored,generated,plugin.data]);
 
   if (dashboards.error && !dashboards.data) return <div className="page"><ErrorState error={dashboards.error} onRetry={dashboards.refetch} /></div>;
   if (!dashboards.data || (genFor && plugin.loading)) return <div className="page"><Skeleton h={28} w={260} /><div style={{ height: 16 }} /><div className="grid-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} h={180} />)}</div></div>;

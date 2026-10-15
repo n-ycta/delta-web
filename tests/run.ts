@@ -82,5 +82,14 @@ test('query preserves range override, source aggregation, filters and cadence', 
   const q=buildQuery({id:'x',type:'timeseries',typeVersion:'1.3.0',source:{kind:'metric',pluginId:'dev.delta.type',metricId:'wpm',aggregation:'avg',groupBy:'language',filters:{language:['ru']}},display:{chart:'dots',stepMs:1800000,rangeOverride:'7d',compare:true},layout:{x:0,y:0,w:6,h:7}}, {range:'24h',refreshSec:0,editing:false,onDisplayChange:()=>{}});
   eq(q?.range,{preset:'7d'});eq(q?.stepMs,1800000);eq(q?.aggregation,'avg');eq(q?.filters,{language:['ru']});eq(q?.compare,'previous');
 });
+test('generated metric widget IDs are stable across polling and categorical words support dynamic dimensions',()=>{
+ const source=normalizePlugins([{manifest:M.typing,latest:M.typing,instance:{pluginId:M.typing.id,status:'active',installedVersion:M.typing.version,latestVersion:M.typing.version,nodeIds:[],settings:{},grantedPermissions:[]}}],known)[0];
+ ok(source);
+ const a=generatePluginDashboard(source,widgetRegistry),b=generatePluginDashboard(source,widgetRegistry);
+ eq(a.widgets.map(w=>w.id),b.widgets.map(w=>w.id));
+ const metric={...v(M.typing).manifest!.metrics[0],id:'word_frequency',kind:'categorical' as const,dimensions:[{id:'word',label:'Word',type:'string' as const}],aggregations:['sum' as const],defaultAggregation:'sum' as const,visualizations:['bubbles','bar','breakdown','table']};
+ eq(widgetRegistry.best(metric)?.type,'bubbles');
+});
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

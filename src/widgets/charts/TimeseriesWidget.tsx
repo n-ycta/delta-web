@@ -17,7 +17,7 @@ function TimeseriesChart({ r, m, cfg, ctx }: { r: MetricResult; m: MetricDescrip
   const rows = toRows(all);
   const span = r.to - r.from;
   const kind = cfg.display.chart ?? (m.kind === 'counter' || m.kind === 'duration' ? 'bar' : 'line');
-  const connected = cfg.display.connectNulls ?? true;
+  const connected = cfg.display.connectNulls ?? false;
   const stacked = !!cfg.display.stacked && r.series.length > 1;
   const labels = Object.fromEntries(all.map((s) => [s.key, s.label]));
   const decimals = cfg.display.decimals ?? m.precision;

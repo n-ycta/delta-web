@@ -1,3 +1,4 @@
+import {BubblesWidget} from './charts/BubblesWidget';
 import { tr } from '@/i18n';
 import type { MetricDescriptor } from '@/core/contracts';
 import { WidgetRegistry } from '@/core/registry/WidgetRegistry';
@@ -16,7 +17,7 @@ import { AlertsWidget } from './system/AlertsWidget';
 import { PluginActivityWidget } from './system/PluginActivityWidget';
 import { NoteWidget } from './system/NoteWidget';
 
-const hasDims = (m: MetricDescriptor) => m.dimensions.some((d) => (d.values?.length ?? 0) > 1);
+const hasDims = (m: MetricDescriptor) => m.dimensions.some((d) => !d.values || d.values.length > 1);
 const no = (reason: string) => ({ score: 0, reason });
 
 /**
@@ -24,6 +25,7 @@ const no = (reason: string) => ({ score: 0, reason });
  * before the app mounts (see docs/extending.md).
  */
 export const widgetRegistry = new WidgetRegistry()
+ .register({type:'bubbles',version:'1.0.0',label:tr('analytics.bubbles'),description:tr('analytics.bubblesDescription'),icon:'circle',category:'metric',accepts:m=>m.kind==='categorical'?{score:95}:{score:0},defaultSize:{w:8,h:9},minSize:{w:3,h:6},defaultDisplay:()=>({limit:20}),options:['limit','colors','range'],component:BubblesWidget})
   .register({
     type: 'timeseries', version: '1.3.0', label: tr("widgets.registry.s_06f34f792c"), icon: 'chart-line', category: 'metric', aliases: ['line', 'area', 'timeline'],
     description: tr("widgets.registry.s_4bfbb533ae"),
@@ -94,7 +96,7 @@ export const widgetRegistry = new WidgetRegistry()
     description: tr("widgets.registry.s_0e98484d05"),
     accepts: () => ({ score: 15 }),
     defaultSize: { w: 6, h: 6 }, minSize: { w: 3, h: 3 },
-    options: ['decimals', 'range'],
+    options: ['decimals', 'limit', 'range'],
     component: TableWidget,
   })
   .register({ type: 'node-grid', version: '1.0.0', label: tr("widgets.registry.s_3293ac18db"), icon: 'server', category: 'system', description: tr("widgets.registry.s_814c2a5232"), defaultSize: { w: 8, h: 6 }, minSize: { w: 3, h: 3 }, options: [], component: NodeGridWidget })

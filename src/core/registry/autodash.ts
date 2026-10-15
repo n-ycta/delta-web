@@ -38,7 +38,7 @@ export function nextFreeY(widgets: WidgetConfig[]) { return widgets.reduce((m, w
 
 export function widgetForMetric(reg: WidgetRegistry, pluginId: string, m: MetricDescriptor, type?: string): Omit<WidgetConfig, 'layout'> & { size: { w: number; h: number } } {
   const def = (type && reg.get(type)) || reg.best(m)!;
-  const groupBy = m.dimensions[0] && (def.type === 'timeseries' || def.type === 'comparison' || def.type === 'bar') && m.dimensions[0].values?.length ? m.dimensions[0].id : undefined;
+  const groupBy = m.kind==='categorical'?m.dimensions[0]?.id:m.dimensions[0] && (def.type === 'timeseries' || def.type === 'comparison' || def.type === 'bar') && m.dimensions[0].values?.length ? m.dimensions[0].id : undefined;
   return {
     id: uid('w'), type: def.type, typeVersion: def.version,
     source: { kind: 'metric', pluginId, metricId: m.id, aggregation: m.defaultAggregation ?? m.aggregations[0], groupBy, filters: m.defaultFilters },
@@ -63,7 +63,7 @@ export function generatePluginDashboard(entry: PluginEntry, reg: WidgetRegistry)
   return {
     id: `gen_${manifest.id}`, name: manifest.name, description: tr("core.registry.autodash.s_9667cadb3b", { p0: (manifest.id), p1: (manifest.version) }),
     icon: manifest.icon, origin: 'generated', generatedFrom: manifest.id, range: '7d', refreshSec: 60, pinned: false,
-    widgets: ws.map(({ size: _s, ...w }, i) => ({ ...w, layout: layout[i] })), createdAt: t, updatedAt: t,
+    widgets: ws.map(({ size: _s, ...w }, i) => ({ ...w, id:`gen_${manifest.id}_${i}_${w.type}`, layout: layout[i] })), createdAt: t, updatedAt: t,
   };
 }
 
