@@ -406,14 +406,14 @@
     "s_06709524a0": "Broad authorization “{{p0}}Check before installation."
   },
   "core.lib.format": {
-    "s_c47cbe7f58": "recently",
+    "s_c47cbe7f58": "just now",
     "s_b4fa0a0422": "{{p0}}s",
-    "s_4277fc4482": "{{p0}}d. {{p1}}?",
-    "s_637d8f185b": "{{p0}}? {{p1}}?",
-    "s_fb2046057d": "{{p0}}?",
-    "s_15d4eb7208": "{{p0}} miss",
-    "s_b0a667e324": "{{p0}} mine",
-    "s_41e0f62522": "{{p0}} ?"
+    "s_4277fc4482": "{{p0}}d {{p1}}h",
+    "s_637d8f185b": "{{p0}}h {{p1}}m",
+    "s_fb2046057d": "{{p0}}m",
+    "s_15d4eb7208": "{{p0}} ms",
+    "s_b0a667e324": "{{p0}} min",
+    "s_41e0f62522": "{{p0}} h"
   },
   "core.registry.WidgetRegistry": {
     "s_9589dd4f82": "The migration error: {{p0}}",
@@ -436,8 +436,8 @@
   "dashboards.DashboardView": {
     "s_6fcdbbe8f7": "Auto-update",
     "s_4311c78bc2": "car: off",
-    "s_389a059cde": "every 15c",
-    "s_566a88d6b7": "every 30c",
+    "s_389a059cde": "every 15s",
+    "s_566a88d6b7": "every 30s",
     "s_d677974a70": "mine",
     "s_6c85158f53": "every 5 minutes",
     "s_2b2dff43bf": "Update now.",
@@ -621,7 +621,7 @@
   },
   "layout.Sidebar": {
     "s_a4cbd21f4a": "Delta",
-    "s_12062dd4e9": "console 0.9",
+    "s_12062dd4e9": "console 0.2",
     "s_39c6387206": "Overview",
     "s_292999fc23": "Dashboards",
     "s_1991e69ece": "Ecosystem",
@@ -640,16 +640,16 @@
   },
   "layout.Topbar": {
     "s_dd904bebd6": "menu",
-    "s_1b46c650da": "Pathway",
+    "s_1b46c650da": "Breadcrumbs",
     "s_736fcab46d": "delta",
     "s_42099b4af0": "/",
     "s_fed758b7a8": "overview",
-    "s_5c3f90fcba": "Search and teams",
+    "s_5c3f90fcba": "Search and commands",
     "s_64d86f339a": "⌘K",
     "s_a65090a30f": "Adapter: {{p0}} · {{p1}}",
     "s_26cc3217be": "ms",
-    "s_75a42acf9f": "no. No.",
-    "s_5838e4e9c6": "reconnection",
+    "s_75a42acf9f": "offline",
+    "s_5838e4e9c6": "reconnecting",
     "s_553c45f1b8": "Theme",
     "s_ee3c35f311": "Notifications"
   },
@@ -822,18 +822,18 @@
   },
   "pages.Home": {
     "s_3609281642": "Core",
-    "s_4b54d244be": "Nodes on the network",
+    "s_4b54d244be": "Nodes online",
     "s_fcbe5033ba": "/ ",
-    "s_c94c451fb7": "Plugins active.",
+    "s_c94c451fb7": "Active plugins",
     "s_6574bcdcf4": "Data flow",
-    "s_1771630f60": "min",
+    "s_1771630f60": "events/min",
     "s_7c80872ccf": "Problems",
     "s_0ac56e640c": "+{{p0}} pre-pro.",
     "s_03f0b82037": "Good night",
     "s_d73c91bbc4": "Good morning",
     "s_51d822d031": "Good afternoon",
     "s_37f9f18bdc": "Good evening",
-    "s_0a2cf963b9": "Ecosystem summary. The composition and layout of this page is customizable -- this is your personal dashboard."
+    "s_0a2cf963b9": "Your ecosystem at a glance. Customize this page as your personal dashboard."
   },
   "pages.NotFound": {
     "s_e662af0dca": "Section not found.",
@@ -1472,7 +1472,7 @@
     "s_9e506acb19": "Repeat."
   },
   "ui.status": {
-    "s_667904ef22": "Active.",
+    "s_667904ef22": "Active",
     "s_60c64dc0ea": "Degradation",
     "s_72aecd9ad8": "Error",
     "s_c9467860d8": "Down.",
@@ -1597,7 +1597,7 @@
   },
   "widgets.system.PluginActivityWidget": {
     "s_3cf538dc55": "Sinhr. {{p0}}",
-    "s_4398873b3b": "um"
+    "s_4398873b3b": "/min"
   },
   "runtime": {
     "demoUser": "Demo owner",
@@ -1612,7 +1612,7 @@
     "crumb_contracts": "Contracts",
     "crumb_access": "Access",
     "crumb_settings": "Settings",
-    "uptime": "work {{duration}}"
+    "uptime": "up {{duration}}"
   },
   "polish": {
     "language": "Language",
@@ -1668,6 +1668,12 @@
     "maxRows": "Maximum rows",
     "redactFields": "Redacted field names (comma-separated)",
     "copy": "Copy configuration",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "targetNode": "Target device",
+    "liveRequired": "This operation requires a live Delta node",
+    "requestFailed": "Delta request failed",
+    "invalidKey": "Invalid private key",
+    "invalidPhrase": "Invalid recovery phrase",
+    "invalidChallenge": "Invalid or expired sign-in challenge"
   }
 }

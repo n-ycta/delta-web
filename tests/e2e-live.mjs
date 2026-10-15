@@ -11,7 +11,7 @@ assert.equal((await trainer.call('typing.ingest',{session})).accepted,false);
 const enSession={...session,id:randomUUID(),language:'en',characters:450,corrections:9};assert.equal((await trainer.call('typing.ingest',{session:enSession})).metrics.wpm,90);
 await user.call('typing.flush');
 const query={pluginId:'dev.delta.type',metricId:'wpm',range:{from:now-120000,to:now+1},groupBy:'language',filters:{language:['ru']},compare:'previous'};
-const result=await user.call('web.metrics_query',{query});assert.equal(result.summary.current,60);assert.equal(result.series[0].key,'ru');assert.equal(result.series[0].label,'Русский');
+const result=await user.call('web.metrics_query',{query});assert.equal(result.summary.current,60);assert.equal(result.series[0].key,'ru');assert.equal(result.series[0].label,'Russian');
 assert.equal((await user.call('web.metrics_query',{query:{...query,filters:{language:['en']}}})).summary.current,90);
 const home=(await user.call('web.dashboards_list')).find(d=>d.origin==='home');assert(home);await user.call('web.dashboards_save',{dashboard:{...home,name:'E2E Home'}});assert.equal((await user.call('web.dashboards_list')).find(d=>d.id===home.id).name,'E2E Home');await user.call('web.dashboards_save',{dashboard:home});
 const nodes=await user.call('web.nodes_list');assert(nodes.length>=1);assert(nodes[0].cpu>=0&&nodes[0].cpu<=100);assert.equal(nodes[0].connection.transport,'http');assert((await user.call('web.nodes_command',{id:nodes[0].id,command:'ping'})).ok);
@@ -20,4 +20,4 @@ await assert.rejects(restricted.call('web.access_create',{input:{name:'attack',r
 // Direct transport format: duplicate UUID+time records stay idempotent.
 const record={id:randomUUID(),time:now,source:'e2e',node:'n',metric:'test',value:1,dimensions:{language:'ru'},payload:{}};
 assert.equal((await user.call('storage.write',{records:[record]})).inserted,1);assert.equal((await user.call('storage.write',{records:[record]})).inserted,0);
-console.log('PASS live Delta → web/type → PostgreSQL/TimescaleDB: discovery, RU aggregates, dedupe, metrics, dashboards, nodes, delegation, TTL token creation');
+console.log('PASS live Delta → web/type → active storage backend: discovery, RU aggregates, dedupe, metrics, dashboards, nodes, delegation, TTL token creation');

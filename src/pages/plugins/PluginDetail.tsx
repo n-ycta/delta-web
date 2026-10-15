@@ -191,13 +191,14 @@ function Overview({ e }: { e: PluginEntry }) {
 }
 
 function SettingsTab({ e }: { e: PluginEntry }) {
-  const save = useMutation((api, v: Record<string, unknown>) => api.updatePluginSettings(e.manifest.id, v), {
+  const nodes=useNodes(),[nodeId,setNodeId]=useState(e.instance.nodeIds[0]);
+  const save = useMutation((api, v: Record<string, unknown>) => api.updatePluginSettings(e.manifest.id, v, nodeId), {
     invalidate: ['plugins'],
     onSuccess: () => toast({ severity: 'success', title: tr("pages.plugins.PluginDetail.s_0c39426c5e"), body: e.manifest.capabilities.includes('settings.live') ? tr("pages.plugins.PluginDetail.s_131423fd41") : tr("pages.plugins.PluginDetail.s_238bcc2230") }),
     onError: (err) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_8976fe0108"), body: err.message }),
   });
   const canManage = useCan('plugins.manage');
-  return <div style={{ maxWidth: 920 }}><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
+  return <div style={{ maxWidth: 920 }}><label>{tr("polish.targetNode")}<select className="input" value={nodeId} onChange={e=>setNodeId(e.target.value)}>{e.instance.nodeIds.map(id=><option key={id} value={id}>{nodes.data?.find(n=>n.id===id)?.name||id}</option>)}</select></label><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
 }
 
 function PermissionsTab({ e }: { e: PluginEntry }) {

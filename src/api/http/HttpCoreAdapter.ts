@@ -1,4 +1,4 @@
-import { tr } from '@/i18n';
+import { tr, language } from '@/i18n';
 import type { ConnectionConfig, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
 import type { CoreApi } from '../types';
 import { CoreApiError } from '../types';
@@ -17,7 +17,7 @@ export class HttpCoreAdapter implements CoreApi {
     try {
       const res = await fetch(this.endpoint + '/v1/call', { method: 'POST', signal: ctrl.signal,
         headers: { 'content-type': 'application/json', ...(this.opts.token ? { authorization: `Bearer ${this.opts.token}` } : {}) },
-        body: JSON.stringify({ capability: `web.${action}`, args }) });
+        body: JSON.stringify({ capability: `web.${action}`, args: {...(args as object), _locale: language} }) });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new CoreApiError(data.error?.code ?? `HTTP_${res.status}`, data.error?.message ?? res.statusText, res.status, res.status >= 500);
       return data.result as T;
@@ -33,7 +33,7 @@ export class HttpCoreAdapter implements CoreApi {
   updatePlugin(id: string) { return this.call('plugins_update', { id }); }
   setPluginEnabled(id: string, enabled: boolean) { return this.call('plugins_enable', { id, enabled }); }
   uninstallPlugin(id: string, opts: { purgeData: boolean }) { return this.call<void>('plugins_uninstall', { id, ...opts }); }
-  updatePluginSettings(id: string, values: Record<string, unknown>) { return this.call('plugins_settings', { id, values }); }
+  updatePluginSettings(id: string, values: Record<string, unknown>, nodeId?: string) { return this.call('plugins_settings', { id, values, nodeId }); }
   setPluginPermissions(id: string, scopes: string[]) { return this.call('plugins_permissions', { id, scopes }); }
   setPluginNodes(id: string, nodeIds: string[]) { return this.call('plugins_nodes', { id, nodeIds }); }
   runPluginAction(id: string, actionId: string) { return this.call('plugins_action', { id, actionId }); }
