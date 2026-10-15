@@ -35,7 +35,7 @@ export function MetricData({ cfg, ctx, overrides, children, isEmpty }: {
   if (res.error && !res.data) return <ErrorState compact error={res.error} onRetry={res.refetch} />;
   const r = res.data!;
   const empty = isEmpty ? isEmpty(r) : !r.series.some((s) => s.points.some((p) => p.v !== null)) && !r.categories?.length && !r.buckets?.length;
-  if (empty) return <Empty compact title={tr("widgets.shared.s_8c7349e9ee")}>{tr("widgets.shared.s_dc798432ac")}</Empty>;
+  if (empty) return <Empty compact title={r.emptyState?.title ?? tr("widgets.shared.s_8c7349e9ee")}>{r.emptyState?.description ?? tr("widgets.shared.s_dc798432ac")}</Empty>;
   return <>{children(r, ctx.metric)}</>;
 }
 

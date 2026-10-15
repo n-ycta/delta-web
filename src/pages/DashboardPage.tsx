@@ -1,7 +1,7 @@
 import { tr } from '@/i18n';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Download, MoreHorizontal, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
+import { Download, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useDashboards, usePlugin } from '@/app/data';
 import { useCan } from '@/app/stores';
 import { generatePluginDashboard } from '@/core/registry/autodash';
@@ -46,9 +46,9 @@ export function DashboardPage() {
   return (
     <div className="page">
       <PageHead
-        eyebrow={isGen ? <span className="row" style={{ gap: 6 }}><Wand2 size={12} />{tr("pages.DashboardPage.s_a33e55a5bf")}{d.generatedFrom}</span> : tr("pages.DashboardPage.s_c957a35c33")}
+        eyebrow={tr("pages.DashboardPage.s_c957a35c33")}
         title={<span className="row" style={{ gap: 10 }}><Icon name={d.icon ?? 'layout-dashboard'} size={20} className="muted" />{d.name}</span>}
-        sub={generated ? tr("pages.DashboardPage.s_8f15e6b9a0") : d.description}
+        sub={isGen || d.generatedFrom ? undefined : d.description}
         actions={<Menu trigger={(t) => <Button {...t} iconOnly variant="ghost"><MoreHorizontal size={15} /></Button>} items={[
           { label: tr("pages.DashboardPage.s_715e8f0c32"), icon: <Pencil size={14} />, onSelect: () => setRename(d.name), disabled: !canWrite },
           { label: tr("pages.DashboardPage.s_4910a3a93b"), icon: <Download size={14} />, onSelect: () => downloadJson(`${d.name}.delta-dashboard.json`, d) },
