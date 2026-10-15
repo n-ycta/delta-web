@@ -106,7 +106,7 @@ export function EventsPage() {
         <div className="panel">
           <div className="logline event-log-head" style={{ background: 'var(--surface-2)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--muted)' }}><span>{tr("pages.EventsPage.s_c80d7e8172")}</span><span>{tr("pages.EventsPage.s_e2ad1df462")}</span><span>{tr("pages.EventsPage.s_8290a3dbc0")}</span><span>{tr("pages.EventsPage.s_6708837459")}</span><span>{tr("pages.EventsPage.s_dc72346ac4")}</span></div>
           {all.map((e) => (
-            <div key={e.id} className="logline event-log-row" role="button" tabIndex={0} onClick={() => setSelected(e)} onKeyDown={(k) => k.key === 'Enter' && setSelected(e)}
+            <div key={e.id} data-event-id={e.id} className="logline event-log-row" role="button" tabIndex={0} onClick={() => setSelected(e)} onKeyDown={(k) => k.key === 'Enter' && setSelected(e)}
               style={{ cursor: 'pointer', background: e.id === focusId ? 'var(--selected)' : e.ts > startedAt ? 'color-mix(in srgb, var(--accent-weak) 45%, transparent)' : undefined }}>
               <span className="muted">{fmtDateTime(e.ts)}</span><span className={`sev ${e.severity}`}>{SEVERITY_LABEL[e.severity]}</span>
               <span className="truncate ink2">{e.source.label ?? e.source.id}</span><span className="truncate">{e.code}</span>

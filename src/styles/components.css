@@ -330,8 +330,8 @@ mark { background: var(--accent-weak); color: inherit; border-radius: 2px; }
   .strip { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .strip > * { border-bottom: 1px solid var(--rule); }
   .grid-aside, .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr) !important; }
-  .logline { display: flex !important; flex-wrap: wrap; gap: 2px 8px; padding: 6px 12px; }
-  .logline > :last-child { flex-basis: 100%; white-space: normal; }
+  .logline:not(.event-log-head):not(.event-log-row) { display: flex !important; flex-wrap: wrap; gap: 2px 8px; padding: 6px 12px; }
+  .logline:not(.event-log-head):not(.event-log-row) > :last-child { flex-basis: 100%; white-space: normal; }
 }
 
 .delta-logo { width: 30px; height: 30px; flex-shrink: 0; }
