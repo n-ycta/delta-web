@@ -1,12 +1,12 @@
 {
   "id": "web",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Delta web console bridge",
   "metadata": {
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
