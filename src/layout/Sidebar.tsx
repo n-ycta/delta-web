@@ -1,5 +1,5 @@
 import { tr } from '@/i18n';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { FileCheck2, Gauge, KeyRound, LayoutDashboard, PanelLeftClose, PanelLeftOpen, UserRound, Puzzle, ScrollText, Server, Settings } from 'lucide-react';
 import { useDashboards, useNodes, usePlugins } from '@/app/data';
 import { usePrefs, useRole, useUi, useRuntimeAccess } from '@/app/stores';
@@ -23,7 +23,6 @@ export function Sidebar() {
   const dashboards = useDashboards();
   const role = useRole();
   const userName = useRuntimeAccess(s => s.name);
-  const loc = useLocation();
   const pluginIssues = plugins.data?.filter((p) => ['error', 'degraded'].includes(p.instance.status)).length ?? 0;
   const updates = plugins.data?.filter(hasUpdate).length ?? 0;
   const nodeIssues = nodes.data?.filter((n) => n.status !== 'online').length ?? 0;
@@ -31,14 +30,19 @@ export function Sidebar() {
   const pinned = (dashboards.data ?? []).filter((d) => d.origin !== 'home' && d.pinned);
   return (
     <aside className="sidebar">
+      <div className="sidebar-head">
       <div className="brand">
         <img className="delta-logo" src="./delta-logo.svg" alt={tr("layout.Sidebar.s_a4cbd21f4a")} />
         <span className="brand-text col" style={{ gap: 0 }}><span className="brand-name">{tr("layout.Sidebar.s_a4cbd21f4a")}</span><span className="brand-sub">{tr("layout.Sidebar.s_12062dd4e9")}</span></span>
       </div>
-      <nav className="nav">
+        <button className="btn ghost icon sidebar-toggle desktop-only" onClick={() => set({ sidebarCollapsed: !sidebarCollapsed })} aria-expanded={!sidebarCollapsed} aria-controls="sidebar-navigation" aria-label={sidebarCollapsed ? tr("layout.Sidebar.s_fd3ae0eaeb") : tr("layout.Sidebar.s_4faa82f560")} title={sidebarCollapsed ? tr("layout.Sidebar.s_fd3ae0eaeb") : tr("layout.Sidebar.s_4faa82f560")}>
+          {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+        </button>
+      </div>
+      <nav className="nav" id="sidebar-navigation">
         <Item to="/" end icon={<Gauge size={16} />} label={tr("layout.Sidebar.s_39c6387206")} />
         <Item to="/dashboards" icon={<LayoutDashboard size={16} />} label={tr("layout.Sidebar.s_292999fc23")} count={(dashboards.data ?? []).filter((d) => d.origin !== 'home').length || undefined} />
-        {pinned.length > 0 && (loc.pathname.startsWith('/dashboards') || true) && (
+        {pinned.length > 0 && (
           <div className="nav-sub">
             {pinned.map((d) => <Item key={d.id} to={`/dashboards/${d.id}`} icon={<Icon name={d.icon ?? 'layout-dashboard'} size={13} />} label={d.name} />)}
           </div>
@@ -60,9 +64,6 @@ export function Sidebar() {
           <span className="truncate" style={{ fontWeight: 500 }}>{userName || tr("runtime.noUser")}</span>
           <span className="muted" style={{ fontSize: 11 }}>{ROLE_LABEL[role]}{role !== 'owner' && tr("layout.Sidebar.s_64fc2b8469")}</span>
         </span>
-        <button className="btn ghost icon sm desktop-only" onClick={() => set({ sidebarCollapsed: !sidebarCollapsed })} title={sidebarCollapsed ? tr("layout.Sidebar.s_fd3ae0eaeb") : tr("layout.Sidebar.s_4faa82f560")}>
-          {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-        </button>
       </div>
     </aside>
   );

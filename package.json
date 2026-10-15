@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
   "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -21,7 +21,9 @@
     "test:key-browser": "node scripts/key-login-browser.cjs",
     "test:notice-browser": "node scripts/notice-browser.cjs",
     "test:chart-browser": "node scripts/chart-browser.cjs",
-    "test:regression-ui": "node scripts/regression-ui.cjs"
+    "test:regression-ui": "node scripts/regression-ui.cjs",
+    "test:sidebar-browser": "node scripts/sidebar-browser.cjs",
+    "test:input-access-browser": "node scripts/input-access-browser.cjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.0.14",

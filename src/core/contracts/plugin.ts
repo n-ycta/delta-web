@@ -121,7 +121,7 @@ export type PluginManifestInput = z.input<typeof PluginManifest>;
 export const PluginStatus = z.enum(['active', 'disabled', 'error', 'degraded', 'installing', 'updating', 'available', 'incompatible']);
 export type PluginStatus = z.infer<typeof PluginStatus>;
 
-export const PluginNotice = z.object({id:z.string(),severity:z.enum(['info','warn','err']),message:z.string(),localizations:z.record(z.string()).optional()});
+export const PluginNotice = z.object({id:z.string(),severity:z.enum(['info','warn','err']),message:z.string(),actionId:Id.optional(),localizations:z.record(z.string()).optional()});
 export const PluginInstance = z.object({
   notices: z.array(PluginNotice).optional(),
   pluginId: ReverseDnsId,

@@ -1,4 +1,5 @@
-import { tr, language } from '@/i18n';
+import { PluginNotices } from '@/ui/PluginNotices';
+import { tr } from '@/i18n';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -106,7 +107,7 @@ export function DashboardView({ dashboard, onSave, headerExtra, editable = true 
         )}
       </div>
 
-      {plugins.data?.filter(p => draft.widgets.some(w => w.source.kind === 'metric' && w.source.pluginId === p.manifest.id)).flatMap(p => (p.instance.notices ?? []).map(n => <div key={p.manifest.id+n.id} className={`banner ${n.severity}`} role="status" style={{marginBottom:12}}>{p.manifest.name}{': '}{n.localizations?.[language] ?? n.message}</div>))}
+      {plugins.data?.filter(p => draft.widgets.some(w => w.source.kind === 'metric' && w.source.pluginId === p.manifest.id)).map(p => <PluginNotices key={p.manifest.id} entry={p} prefix />)}
       {draft.widgets.length === 0 ? (
         <div className="panel"><Empty icon={<LayoutGrid size={18} />} title={tr("dashboards.DashboardView.s_a9565abd8b")} action={canWrite && <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(true); setEditor({ open: true, widget: null }); }}>{tr("dashboards.DashboardView.s_f574ac76be")}</Button>}>
           {tr("dashboards.DashboardView.s_2f714fc777")}</Empty></div>
