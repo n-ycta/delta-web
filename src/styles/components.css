@@ -406,3 +406,7 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .update-item .grow {overflow-wrap:anywhere;}
 .updates-page .form-row > * {min-width:0;}
 .updates-page input[type=number] {max-width:160px;}
+
+.updates-heading > .grow { flex:1 1 280px; min-width:0; }
+.updates-heading > .btn, .update-item > .btn, .update-item > .badge { flex-shrink:0; }
+.update-item > .grow { flex:1 1 220px; min-width:0; }

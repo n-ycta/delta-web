@@ -1789,6 +1789,7 @@
     "nothing_to_update": "No newer stable release is available.",
     "independent_worker": "Cannot launch an independent worker; the core was not stopped.",
     "invalid_settings": "Invalid update settings.",
-    "permissions": "Cannot protect private update files."
+    "permissions": "Cannot protect private update files.",
+    "managed_install_required": "Core self-update requires the official per-user installation in this node profile. Source/system-package binaries are not replaced."
   }
 }
