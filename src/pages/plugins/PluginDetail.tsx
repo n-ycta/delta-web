@@ -86,6 +86,7 @@ export function PluginDetail() {
         <div className="banner err" style={{ borderRadius: 6, border: 0, marginBottom: 16 }}><AlertTriangle size={15} /><span className="grow">{tr("pages.plugins.PluginDetail.s_8410e6fe3e")}{e.validation.issues.find((i) => i.severity === 'error')?.message}</span><Button size="sm" onClick={() => setParams({ tab: 'contract' })}>{tr("pages.plugins.PluginDetail.s_a8d745fa66")}</Button></div>
       )}
 
+      {inst.notices?.map(n => <div key={n.id} className={`banner ${n.severity}`} role="status" style={{marginBottom:12}}>{n.localizations?.[language] ?? n.message}</div>)}
       <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
         { id: 'overview', label: tr("pages.plugins.PluginDetail.s_39c6387206") },
         { id: 'settings', label: tr("pages.plugins.PluginDetail.s_7f17c7c62a"), count: m.settings.length || undefined },
@@ -198,7 +199,7 @@ function SettingsTab({ e }: { e: PluginEntry }) {
     onError: (err) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_8976fe0108"), body: err.message }),
   });
   const canManage = useCan('plugins.manage');
-  return <div style={{ maxWidth: 920 }}><label>{tr("polish.targetNode")}<select className="input" value={nodeId} onChange={e=>setNodeId(e.target.value)}>{e.instance.nodeIds.map(id=><option key={id} value={id}>{nodes.data?.find(n=>n.id===id)?.name||id}</option>)}</select></label><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
+  return <div style={{ maxWidth: 920 }}><label className="field plugin-target">{tr("polish.targetNode")}<select className="select" value={nodeId} onChange={e=>setNodeId(e.target.value)}>{e.instance.nodeIds.map(id=><option key={id} value={id}>{nodes.data?.find(n=>n.id===id)?.name||id}</option>)}</select></label><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
 }
 
 function PermissionsTab({ e }: { e: PluginEntry }) {

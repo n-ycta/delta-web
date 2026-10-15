@@ -55,3 +55,14 @@ widgetRegistry.register({
 ## Новый адаптер ядра
 
 Реализуйте `CoreApi` (`src/api/types.ts`) и верните его из `createCoreApi`. UI не нужно менять.
+
+
+## Plugin-owned diagnostics and sensitive setting confirmations
+
+A manifest may declare `endpoints: {status: "component.status", settings: "component.settings"}`. Endpoints must stay within that component's namespace. The read-only status endpoint returns sanitized `settings` (never secret values) and optional `notices: [{id, severity: "info"|"warn"|"err", message, localizations: {ru: "..."}}]`. The console displays notices on the plugin page and dashboards using its metrics; it does not decide plugin security policy. Status/settings operate on the installed node. Capability descriptions may include source-owned `localizations[locale].description`.
+
+A boolean setting can include `confirmation: {id, title, body, acceptLabel}` and localized presentation fields. Switching it on opens the generic confirmation dialog. Accepted IDs are submitted under `_confirmations`. **The plugin must enforce acknowledgement itself** for API/CLI clients; web UI alone is not a security boundary. Confirmation IDs and policy cannot be translated or replaced by presentation patches.
+
+Metrics can specify `defaultFilters` to keep distinct data modes separate in newly generated widgets. Existing saved widgets keep their filters; edit them explicitly if they should select a new mode. Plugin status refreshes every ten seconds without resetting unchanged/unsaved settings.
+
+Native selects retain theme-aware options as a fallback; supporting browsers use `appearance: base-select` for styled pickers. Native popups on older browsers remain OS-dependent.
