@@ -20,3 +20,4 @@ jobs:
       - run: npm test
       - run: npm run test:server
       - run: npm run test:i18n
+      - run: node tests/updater-core-live.mjs
