@@ -7,3 +7,18 @@ test('scope glob matching and missing scopes fail closed',()=>{assert(allowed({s
 test('dashboard configuration validated server-side',async()=>{const h=createBridge({});await assert.rejects(h['web.dashboards_save']({dashboard:{id:'x'}},{name:'a'}),e=>e.code==='bad_request')});
 
 test('call:* never delegates administrative node commands through web service',async()=>{let privileged=false;const client={call:async name=>{if(name==='core.catalog')return [{name:'supervisor.restart',admin:true,node:'n'}];privileged=true;},request:async()=>[{name:'supervisor.restart',admin:true}]};const h=createBridge(client);await assert.rejects(h['web.nodes_command']({id:'n',command:'restart-component',args:{component:'typing'}},{scopes:['call:*']}),e=>e.code==='forbidden');assert.equal(privileged,false);assert.equal(allowed({scopes:['call:*']},'supervisor.restart',true),false);assert.equal(allowed({scopes:['admin:supervisor.restart']},'supervisor.restart',true),true);});
+
+test('arbitrary plugin owns sanitized settings and notices; web forwards without Type IDs',async()=>{
+ const ui={id:'dev.example.sensor',name:'Sensor',endpoints:{status:'sensor.status'},settings:[]};
+ const client={call:async name=>{const values={'core.info':{node_id:'local'},'core.components':[{id:'sensor',version:'1',metadata:{ui}}],'supervisor.list':[{id:'sensor',enabled:true,running:true}],'packages.catalog':{plugins:[]},'peers.list':[],'packages.jobs':[],'sensor.status':{settings:{enabled:false},notices:[{id:'access',severity:'warn',message:'Plugin-owned warning'}]}};assert(name in values,name);return values[name];}};
+ const rows=await createBridge(client)['web.plugins_list']();const p=rows.find(p=>p.manifest.id===ui.id);assert.equal(p.instance.settings.enabled,false);assert.equal(p.instance.notices[0].message,'Plugin-owned warning');
+});
+test('known registration errors localize without rewriting arbitrary diagnostics',async()=>{
+ const client={call:async name=>({'core.info':{node_id:'local'},'core.components':[],'supervisor.list':[{id:'offline_plugin',enabled:true,running:false}],'packages.catalog':{plugins:[{id:'dev.example.offline',component:'offline_plugin',version:'1.0.0',manifest:{id:'dev.example.offline'}}]},'peers.list':[],'packages.jobs':[]}[name])};
+ const row=(await createBridge(client)['web.plugins_list']({_locale:'ru'})).find(p=>p.manifest.id==='dev.example.offline');assert.equal(row.instance.error.message,'Плагин не зарегистрирован');
+});
+test('uninstall removes the managed component and subsequent discovery marks it available',async()=>{
+ let installed=true;const id='dev.example.removable',component='removable',ui={id,name:'Removable',settings:[]};
+ const client={call:async(name,args)=>{if(name==='supervisor.remove'){assert.equal(args.id,component);installed=false;return {removed:component}};const values={'core.info':{node_id:'local'},'core.components':installed?[{id:component,version:'1.0.0',metadata:{ui}}]:[],'supervisor.list':installed?[{id:component,enabled:true,running:true}]:[],'packages.catalog':{plugins:[{id,component,version:'1.0.0',manifest:ui}]},'peers.list':[],'packages.jobs':[],'storage.document_put':{}};assert(name in values,name);return values[name];}};
+ const h=createBridge(client);await h['web.plugins_uninstall']({id,purgeData:false},{name:'owner',scopes:['admin']});const row=(await h['web.plugins_list']()).find(p=>p.manifest.id===id);assert.equal(row.instance.status,'available');assert.equal(row.instance.installedVersion,undefined);assert.deepEqual(row.instance.nodeIds,[]);
+});

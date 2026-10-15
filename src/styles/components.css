@@ -336,3 +336,22 @@ mark { background: var(--accent-weak); color: inherit; border-radius: 2px; }
 .palette-option { min-width: 0; max-width: 100%; flex-wrap: wrap; }
 .palette-name { flex: 0 1 80px; min-width: 0; overflow-wrap: anywhere; }
 .palette-swatches { min-width: 0; max-width: 100%; }
+
+/* Profile glyph must never shrink into an ellipse in a flex sidebar. */
+.profile-avatar { display: grid; place-items: center; flex: 0 0 26px; width: 26px; height: 26px; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--rule-strong); background: var(--surface-2); color: var(--ink-2); }
+select option, select optgroup { color: var(--ink); background-color: var(--surface); }
+@supports (appearance: base-select) {
+  select.select, select.select::picker(select) { appearance: base-select; }
+  select.select { background-image: none; padding-right: 9px; align-items: center; }
+  select.select::picker-icon { color: var(--muted); }
+  select.select::picker(select) { border: 1px solid var(--rule-strong); border-radius: var(--r-md); background: var(--surface); color: var(--ink); padding: 4px; box-shadow: 0 4px 16px var(--overlay); }
+  select.select option { min-height: var(--ctl); padding: 5px 8px; border-radius: var(--r-sm); cursor: pointer; }
+  select.select option:hover, select.select option:focus { background: var(--hover); outline: none; }
+  select.select option:checked { background: var(--selected); }
+}
+.plugin-target { margin-bottom: 18px; max-width: 360px; }
+.plugin-setting-label { overflow-wrap: anywhere; }
+.plugin-settings .form-row { grid-template-columns: minmax(180px, 30%) minmax(0, 1fr); gap: 24px; padding: 18px 0; }
+.plugin-settings .field { min-width: 0; }
+.plugin-settings .field-help { max-width: 64ch; line-height: 1.5; }
+@media (max-width: 760px) { .plugin-settings .form-row { grid-template-columns: 1fr; gap: 10px; } }

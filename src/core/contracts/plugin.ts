@@ -40,6 +40,7 @@ export const MetricDescriptor = z.object({
   dimensions: z.array(Dimension).default([]),
   aggregations: z.array(Aggregation).min(1).default(['avg']),
   defaultAggregation: Aggregation.optional(),
+  defaultFilters: z.record(z.array(z.string())).optional(),
   /** Visualization hints, may contain ids this console does not know (they are reported, not fatal). */
   visualizations: z.array(z.string()).default([]),
   thresholds: z.array(z.object({ value: z.number(), severity: z.enum(['warn', 'error']), label: z.string().optional() })).optional(),
@@ -53,6 +54,7 @@ const SettingBase = z.object({
   help: z.string().optional(),
   group: z.string().optional(),
   requiresRestart: z.boolean().optional(),
+  confirmation: z.object({ id: z.string(), title: z.string(), body: z.string(), acceptLabel: z.string() }).optional(),
 });
 
 export const SettingField = z.discriminatedUnion('type', [
@@ -100,6 +102,7 @@ export const PluginManifest = z.object({
   repository: z.string().url().optional(),
   defaultLocale: z.enum(['en','ru']).default('en'),
   localizations: z.record(z.record(z.unknown())).optional(),
+  endpoints: z.object({status:z.string().optional(),settings:z.string().optional()}).optional(),
   screenshots: z.array(z.object({ url: z.string().url(), alt: z.string().default(''), locale: z.enum(['en','ru']).optional() })).default([]),
   permissions: z.array(PermissionRequest).default([]),
   settings: z.array(SettingField).default([]),
@@ -118,7 +121,9 @@ export type PluginManifestInput = z.input<typeof PluginManifest>;
 export const PluginStatus = z.enum(['active', 'disabled', 'error', 'degraded', 'installing', 'updating', 'available', 'incompatible']);
 export type PluginStatus = z.infer<typeof PluginStatus>;
 
+export const PluginNotice = z.object({id:z.string(),severity:z.enum(['info','warn','err']),message:z.string(),localizations:z.record(z.string()).optional()});
 export const PluginInstance = z.object({
+  notices: z.array(PluginNotice).optional(),
   pluginId: ReverseDnsId,
   status: PluginStatus,
   installedVersion: SemverStr.optional(),
@@ -147,6 +152,8 @@ export const KNOWN_CAPABILITIES: Record<string, string> = {
   'metrics.realtime': tr("core.contracts.plugin.s_ddf80a0661"),
   'events.stream': tr("core.contracts.plugin.s_9ad64a41fa"),
   'actions': tr("core.contracts.plugin.s_82abc91d7b"),
+  'status.read': tr('pluginContract.status'),
+  'settings.read': tr('pluginContract.settings'),
   'settings.live': tr("core.contracts.plugin.s_c52a75b7a8"),
   'export.csv': tr("core.contracts.plugin.s_4dc23635b8"),
   'storage.local': tr("core.contracts.plugin.s_3befbc9a45"),

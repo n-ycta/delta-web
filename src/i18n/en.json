@@ -913,11 +913,11 @@
     "s_b1491593c2": "No secrets (tokens and passwords must be re-entered)",
     "s_c949572544": "Interface preferences",
     "s_2007ff2dec": "Download JSON",
-    "s_3f8c55176b": "import",
+    "s_3f8c55176b": "Import",
     "s_8cdc51667a": "Select a file...",
     "s_d396c16bf8": "File rejected by validator",
     "s_b2046f5276": "Preview of changes",
-    "s_8c41ee924a": "export ",
+    "s_8c41ee924a": "Export ",
     "s_40e99fbc0b": "Dashboards: ",
     "s_3697bef0b3": "new",
     "s_acf9690dfa": "new",
@@ -1697,6 +1697,12 @@
     "requestFailed": "Delta request failed",
     "invalidKey": "Invalid private key",
     "invalidPhrase": "Invalid recovery phrase",
-    "invalidChallenge": "Invalid or expired sign-in challenge"
+    "invalidChallenge": "Invalid or expired sign-in challenge",
+    "uninstallFailed": "Could not uninstall plugin",
+    "purgeUnavailable": "Data deletion is not supported by this version. Saved data will be retained."
+  },
+  "pluginContract": {
+    "status": "Runtime status and notices",
+    "settings": "Read current settings"
   }
 }
