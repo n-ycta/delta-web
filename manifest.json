@@ -362,6 +362,11 @@
       "name": "nodes_trust",
       "params": {},
       "admin": true
+    },
+    {
+      "name": "nodes_ssh_preflight",
+      "params": {},
+      "admin": true
     }
   ],
   "version": "0.5.0"

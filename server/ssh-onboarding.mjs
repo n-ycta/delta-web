@@ -11,7 +11,7 @@ import {
   rm,
   readdir,
 } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { resolve, join, win32, posix } from "node:path";
 import { createServer } from "node:net";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -59,6 +59,26 @@ export const messages = {
   prerequisite: [
     "Install the OpenSSH client on this computer, and update Delta Core on both devices to a version supporting explicit peer trust.",
     "Установите клиент OpenSSH на этом компьютере и обновите Delta Core на обоих устройствах до версии с настройкой доверия узлов.",
+  ],
+  ssh_missing: [
+    "OpenSSH is not installed or is not visible to the Web service on this computer. Install the OpenSSH client here, not on the VPS.",
+    "На этом компьютере не найден клиент OpenSSH. Установите его на ПК, где работает Web, а не на VPS.",
+  ],
+  ssh_unusable: [
+    "The local SSH executable could not be run as an OpenSSH client. Check its permissions and the service environment.",
+    "Локальный SSH-клиент не удалось запустить. Проверьте его права и окружение службы Web.",
+  ],
+  local_core_old: [
+    "The running core on this computer does not support peer trust. Use Update core below to install a compatible version (0.4.0 or newer).",
+    "Работающее ядро на этом ПК не поддерживает доверие узлов. Нажмите «Обновить ядро» ниже, чтобы установить совместимую версию (0.4.0 или новее).",
+  ],
+  local_core_unavailable: [
+    "Cannot verify the running local core. Check the Web-to-core connection before connecting a server.",
+    "Не удалось проверить работающее ядро на ПК. Сначала восстановите соединение Web с ядром.",
+  ],
+  remote_core_old: [
+    "The running core on the VPS still lacks peer trust after setup. The local computer passed its checks. Check the server service and update its core to 0.4.0 or newer.",
+    "После установки ядро на VPS всё ещё не поддерживает доверие узлов. Проверки ПК пройдены. Проверьте службу сервера и обновите его ядро до 0.4.0 или новее.",
   ],
   busy: [
     "Another device installation is in progress.",
@@ -214,6 +234,54 @@ async function freeRemotePort(c) {
     }),
   );
 }
+export async function findOpenSSH({
+  run = exec,
+  os = process.platform,
+  env = process.env,
+} = {}) {
+  const paths = os === "win32" ? win32 : posix;
+  const executable = os === "win32" ? "ssh.exe" : "ssh";
+  const fromPath = (env.PATH || "")
+    .split(paths.delimiter)
+    .filter((p) => p && paths.isAbsolute(p))
+    .map((p) => paths.join(p, executable));
+  const candidates = [
+    ...fromPath,
+    ...(os === "win32"
+      ? env.SystemRoot || env.WINDIR
+        ? [
+            win32.join(
+              env.SystemRoot || env.WINDIR,
+              "System32",
+              "OpenSSH",
+              "ssh.exe",
+            ),
+          ]
+        : []
+      : ["/usr/bin/ssh", "/bin/ssh", "/usr/local/bin/ssh"]),
+  ];
+  let unusable = false;
+  for (const path of [...new Set(candidates)]) {
+    try {
+      const result = await run(path, ["-V"], {
+        timeout: 5000,
+        windowsHide: true,
+        maxBuffer: 16384,
+      });
+      const version = (
+        String(result.stderr || "") +
+        " " +
+        String(result.stdout || "")
+      ).match(/OpenSSH(?:_for_Windows)?_[0-9][0-9A-Za-z._-]*/)?.[0];
+      if (version) return { available: true, path, version };
+      unusable = true;
+    } catch (e) {
+      if (e.code !== "ENOENT") unusable = true;
+    }
+  }
+  return { available: false, error: unusable ? "ssh_unusable" : "ssh_missing" };
+}
+
 export function tunnelArgs(
   a,
   dir,
@@ -317,7 +385,7 @@ async function remoteRPC(c, remote, capability, args = {}) {
     await runSSH(c, full, JSON.stringify({ capability, args })),
   );
   if (!result.ok)
-    fail(result.error?.code === "not_found" ? "prerequisite" : "pairing");
+    fail(result.error?.code === "not_found" ? "remote_core_old" : "pairing");
   return result.result;
 }
 export class SSHOnboarding {
@@ -328,6 +396,7 @@ export class SSHOnboarding {
     this.probe = dependencies.probe || probeHost;
     this.connect = dependencies.connect || connect;
     this.install = dependencies.install || this.perform.bind(this);
+    this.findSSH = dependencies.findSSH || findOpenSSH;
     this.tickets = new Map();
     this.active = false;
   }
@@ -356,9 +425,42 @@ export class SSHOnboarding {
     }
     return this;
   }
+  async preflight() {
+    const [ssh, core] = await Promise.all([
+      this.findSSH(),
+      Promise.all([
+        this.client.call("core.info"),
+        this.client.request("GET", "/capabilities"),
+      ])
+        .then(([info, caps]) => ({
+          version: String(info.version || "unknown").slice(0, 64),
+          supported:
+            Array.isArray(caps) && caps.some((c) => c.name === "peers.trust"),
+        }))
+        .catch(() => ({ supported: false, error: "local_core_unavailable" })),
+    ]);
+    const errors = [
+      ...(core.supported ? [] : [core.error || "local_core_old"]),
+      ...(ssh.available ? [] : [ssh.error]),
+    ];
+    return {
+      ready: errors.length === 0,
+      core,
+      ssh,
+      errors,
+      platform: process.platform,
+      checkedAt: Date.now(),
+    };
+  }
+  async requireLocalReady() {
+    const report = await this.preflight();
+    if (!report.ready) fail(report.errors[0]);
+    return report;
+  }
   async inspect(raw) {
     const a = target.safeParse(raw);
     if (!a.success) fail("invalid");
+    await this.requireLocalReady();
     const p = await this.probe(a.data);
     for (const [k, v] of this.tickets)
       if (v.expires < Date.now()) this.tickets.delete(k);
@@ -383,6 +485,8 @@ export class SSHOnboarding {
       (a.auth === "key" && !a.privateKey)
     )
       fail("invalid");
+    if (this.active) fail("busy");
+    await this.requireLocalReady();
     if (this.active) fail("busy");
     const t = this.tickets.get(a.ticket);
     this.tickets.delete(a.ticket);
@@ -452,11 +556,7 @@ export class SSHOnboarding {
     const dir = join(this.dir, job.id),
       component = "ssh-" + job.id;
     try {
-      await exec("ssh", ["-V"], { timeout: 5000 }).catch(() =>
-        fail("prerequisite"),
-      );
-      const caps = await this.client.request("GET", "/capabilities");
-      if (!caps.some((c) => c.name === "peers.trust")) fail("prerequisite");
+      const readiness = await this.requireLocalReady();
       const local = await this.client.call("core.info"),
         cfg = JSON.parse(
           await readFile(join(this.home, "config.json"), "utf8"),
@@ -482,7 +582,7 @@ export class SSHOnboarding {
             x.name === "peers.trust" && (!x.node || x.node === remote.nodeId),
         )
       )
-        fail("prerequisite");
+        fail("remote_core_old");
       if (
         (await remoteRPC(c, remote, "peers.list")).some(
           (p) => p.node_id === local.node_id,
@@ -528,7 +628,7 @@ export class SSHOnboarding {
       await this.client.call("supervisor.add", {
         id: component,
         command: [
-          "ssh",
+          readiness.ssh.path,
           ...tunnelArgs(a, dir, localPort, remotePort, remote.port, cfg.port),
         ],
         scopes: [],
@@ -686,6 +786,7 @@ export function sshHandlers(service) {
       }
     };
   return {
+    "web.nodes_ssh_preflight": wrap(() => service.preflight()),
     "web.nodes_ssh_probe": wrap((a) => service.inspect(a)),
     "web.nodes_ssh_install": wrap((a) => service.start(a)),
     "web.nodes_ssh_status": wrap((a) => service.status(a.id)),

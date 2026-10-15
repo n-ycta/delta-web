@@ -1,7 +1,7 @@
 import type { UpdateSettings, UpdateStatus } from '../updates';
 import { tr, language } from '@/i18n';
 import type { ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
-import type { CoreApi, SSHTarget, SSHProbe, SSHInstall, SSHJob } from '../types';
+import type { CoreApi, SSHTarget, SSHPreflight, SSHProbe, SSHInstall, SSHJob } from '../types';
 import { CoreApiError } from '../types';
 
 export interface HttpAdapterOptions { baseUrl: string; token?: string; timeoutMs?: number }
@@ -45,6 +45,7 @@ export class HttpCoreAdapter implements CoreApi {
   setPluginNodes(id: string, nodeIds: string[]) { return this.call('plugins_nodes', { id, nodeIds }); }
   runPluginAction(id: string, actionId: string) { return this.call('plugins_action', { id, actionId }); }
   queryMetric(query: MetricQuery) { return this.call('metrics_query', { query }); }
+  sshPreflight(){return this.call<SSHPreflight>('nodes_ssh_preflight')}
   probeSSH(target:SSHTarget){return this.call<SSHProbe>('nodes_ssh_probe',target)}
   installSSH(input:SSHInstall){return this.call<{jobId:string}>('nodes_ssh_install',input)}
   sshJob(id:string){return this.call<SSHJob>('nodes_ssh_status',{id})}

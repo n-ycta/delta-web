@@ -36,6 +36,7 @@ export interface NodeHistory { cpu: Series; mem: Series; latency: Series }
 
 export interface PairingTicket { code: string; expiresAt: number; command: string }
 
+export interface SSHPreflight { ready:boolean; core:{version?:string;supported:boolean;error?:string}; ssh:{available:boolean;path?:string;version?:string;error?:string}; errors:string[];platform:string;checkedAt:number }
 export interface SSHTarget { host:string; port:number; username:string }
 export interface SSHProbe { ticket:string; fingerprint:string; algorithm:string; expiresAt:number }
 export interface SSHInstall extends SSHTarget { ticket:string; fingerprint:string; auth:'password'|'key'; password?:string; privateKey?:string; passphrase?:string; trust:'calls'|'manage'|'mutual'; acknowledgeAdmin:boolean }
@@ -66,6 +67,7 @@ export interface CoreApi {
   // data
   queryMetric(q: MetricQuery): Promise<MetricResult>;
 
+  sshPreflight():Promise<SSHPreflight>;
   probeSSH(target:SSHTarget):Promise<SSHProbe>;
   installSSH(input:SSHInstall):Promise<{jobId:string}>;
   sshJob(id:string):Promise<SSHJob>;

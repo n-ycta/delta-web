@@ -9,6 +9,11 @@
 
 ## [Unreleased]
 
+- Check the running core version and OpenSSH availability before SSH authentication; distinguish missing dependencies from an outdated or unavailable core.
+- Offer a direct, confirmed core update in the SSH wizard, show progress, and recheck readiness when it finishes.
+- Show a truthful failure heading instead of suggesting that a failed connection is still running.
+- Resolve OpenSSH to an absolute executable path, including standard Linux and Windows locations.
+
 - Improve release documentation and changelog-backed release publishing; no new runtime release is created for this maintenance change.
 
 ## [v0.5.0]

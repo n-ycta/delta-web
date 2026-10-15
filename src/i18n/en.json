@@ -1848,6 +1848,23 @@
     "transport": "SSH",
     "trustHelp_calls": "Capability calls only — no administration",
     "trustHelp_manage": "This computer manages the VPS",
-    "trustHelp_mutual": "Equal peers — administration in both directions"
+    "trustHelp_mutual": "Equal peers — administration in both directions",
+    "localChecks": "Checks on this computer",
+    "checkingLocal": "Checking the running core and OpenSSH before asking for server credentials…",
+    "runningCore": "Running core on this computer",
+    "sshClient": "OpenSSH client on this computer",
+    "unavailable": "not available",
+    "localReady": "Local checks passed. You can connect the server.",
+    "updateCore": "Open core updates",
+    "recheck": "Check again",
+    "failed": "Connection failed — node not added",
+    "legacyPrerequisite": "This saved attempt failed a prerequisite check. See the current local checks above, resolve any issues and start a new connection.",
+    "error_ssh_missing": "OpenSSH is not installed or is not visible to the Web service on this computer. Install the OpenSSH client here, not on the VPS.",
+    "error_ssh_unusable": "The local SSH executable could not be run as an OpenSSH client. Check its permissions and the service environment.",
+    "error_local_core_old": "The running core on this computer does not support peer trust. Use Update core below to install a compatible version (0.4.0 or newer).",
+    "error_local_core_unavailable": "Cannot verify the running local core. Check the Web-to-core connection before connecting a server.",
+    "error_remote_core_old": "The running core on the VPS still lacks peer trust after setup. The local computer passed its checks. Check the server service and update its core to 0.4.0 or newer.",
+    "updateCoreNow": "Update core",
+    "coreUpdating": "Updating the core. The connection may briefly disappear; checks will repeat when it returns."
   }
 }
