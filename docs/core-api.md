@@ -1,46 +1,17 @@
-# Core API v2 — что ожидает консоль
+# Delta protocol v1
 
-Базовый URL задаётся в настройках (`/api/v1` по умолчанию в `.env.http`). Авторизация: `Authorization: Bearer <token>`.
-Ошибки — JSON `{ code, message, hint? }`; статусы ≥500 и 429 считаются повторяемыми.
+Предыдущая спецификация REST v2 заменена реальным API присланного ядра. UI → `POST /api/v1/call` (same-origin proxy) → ядро `POST /v1/call`:
 
-| Метод | Путь | Тело / ответ |
-|---|---|---|
-| GET | `/info` | `CoreInfo` |
-| GET | `/plugins` | `RawPluginRecord[]` — `{ manifest: unknown, latest: unknown, instance: PluginInstance }` |
-| GET | `/plugins/:id/logs?limit=` | `LogLine[]` |
-| POST | `/plugins/:id/install` | `InstallRequest` → `PluginInstance` |
-| POST | `/plugins/:id/update` | → `PluginInstance` |
-| POST | `/plugins/:id/enable` · `/disable` | → `PluginInstance` |
-| DELETE | `/plugins/:id?purge=bool` | — |
-| PATCH | `/plugins/:id/settings` | `Record<string, unknown>` → `PluginInstance` |
-| PUT | `/plugins/:id/permissions` | `{ scopes }` → `PluginInstance` |
-| PUT | `/plugins/:id/nodes` | `{ nodeIds }` → `PluginInstance` |
-| POST | `/plugins/:id/actions/:actionId` | → `CommandResult` |
-| POST | `/metrics/query` | `MetricQuery` → `MetricResult` |
-| GET | `/nodes` | `NodeInfo[]` |
-| GET | `/nodes/:id/history?range=ms` | `{ cpu, mem, latency: Series }` |
-| GET | `/nodes/:id/uptime?days=` | `UptimeCell[]` |
-| POST | `/nodes/:id/commands` | `{ command: NodeCommandId, args? }` → `CommandResult` |
-| PUT | `/nodes/:id/connection` | `ConnectionConfig` → `NodeInfo` |
-| POST | `/nodes/pairing` | `{ kind, name }` → `PairingTicket` |
-| DELETE | `/nodes/:id` | — |
-| GET | `/events?severity=&source=&sourceId=&q=&limit=&before=` | `CoreEvent[]` (по убыванию времени) |
-| GET | `/notifications` · POST `/notifications/mark` | `Notification[]` · `{ ids \| 'all', read }` |
-| GET/PUT/DELETE | `/console/dashboards[/:id]` | `DashboardConfig` |
-| GET | `/access/principals` · PATCH/DELETE `/access/principals/:id` | `Principal` |
-| POST | `/access/tokens` | `{ name, role, scopes, ttlDays }` → `{ principal, secret }` |
-| GET | `/access/audit?limit=` | `AuditEntry[]` |
-
-## Realtime: `WS {base}/stream?token=`
-
-Сообщения `RealtimeMessage` (JSON):
-
-```ts
-{ type: 'event', event: CoreEvent }
-{ type: 'node.update', nodeId, patch: Partial<NodeInfo> }
-{ type: 'plugin.update', pluginId }
-{ type: 'notification', notification }
+```json
+{"capability":"web.metrics_query","args":{"query":{"pluginId":"dev.delta.type","metricId":"wpm","range":{"preset":"24h"},"groupBy":"language"}}}
 ```
 
-Адаптер сам публикует `{ type: 'connection', state }` и переподключается с экспоненциальной паузой (до 30 с).
-Все типы — в `src/core/contracts` и `src/api/types.ts`; это источник истины для реализации ядра.
+Ответы: `{ok:true,result:...}` или `{ok:false,error:{code,message}}`. Авторизация Bearer. Токены не помещаются в URL. Внешний bridge регистрируется `POST /v1/components`, получает session и опрашивает `/v1/components/web/next`, результаты передаёт в `/result`.
+
+API UI сохранён как `CoreApi`, но транспорт теперь capabilities из `manifest.json`. Browser proxy использует пользовательский токен; server service token не отдаётся браузеру. Long-poll у плагинов; UI обновляет ноды/плагины каждые 15 с, WebSocket ядро не поддерживает. Сквозные сообщения событий/notifications пока не публикуются ядром автоматически.
+
+Метрики: строгая схема запроса, max/min/avg/sum/last/p95/count, RU/EN фильтр, разбиение по измерениям, предыдущий период с выравниванием временной оси. Пустые интервалы = null; лимит 10000 records выдаёт явную ошибку, а не частичную аналитику. Время в storage — Unix ms, в ядре — Unix seconds; преобразование производится bridge.
+
+`metadata.ui` внешнего компонента содержит UI manifest contract ^1.4.0. UI самостоятельно валидирует его и выбирает визуализации. Ядро не знает React/SQL.
+
+Реальные операции: обнаружение плагинов, локальная/peer телеметрия, ping, supervisor start/stop/restart/remove/logs, typing settings/flush, токены create/revoke с TTL, pairing invite, приватные дашборды и аудит через storage. Управление supervisor/tokens admin-only в Delta v1. Глобальная история/обновление packages/роль существующего токена не поддержаны.
