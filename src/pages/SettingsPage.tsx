@@ -19,7 +19,7 @@ import { downloadJson } from '@/dashboards/useDashboardActions';
 import { widgetRegistry } from '@/widgets/registry';
 
 type Tab = 'general' | 'connection' | 'backup' | 'developer';
-const PREF_KEYS = ['theme', 'density', 'palette', 'hour12', 'homeStrip', 'sidebarCollapsed'] as const;
+const PREF_KEYS = ['theme', 'density', 'palette', 'hour12', 'homeStrip', 'realNoticeHidden', 'sidebarCollapsed'] as const;
 
 export function SettingsPage() {
   const [params, setParams] = useSearchParams();
@@ -69,6 +69,7 @@ function General() {
       </Row>
       <Row label={tr("pages.SettingsPage.s_747942b4fa")}><Segmented value={p.hour12 ? '12' : '24'} onChange={(v) => p.set({ hour12: v === '12' })} options={[{ value: '24', label: tr("pages.SettingsPage.s_8b737da86f") }, { value: '12', label: tr("pages.SettingsPage.s_22575db1d9") }]} /></Row>
       <Row label={tr("pages.SettingsPage.s_f581466381")} help={tr("pages.SettingsPage.s_6963561d90")}><Switch checked={p.homeStrip} onChange={(v) => p.set({ homeStrip: v })} /></Row>
+      <Row label={tr('runtime.showNotice')} help={tr('runtime.showNoticeHelp')}><Switch checked={!p.realNoticeHidden} onChange={(v) => p.set({ realNoticeHidden: !v })} label={tr('runtime.showNotice')} /></Row>
       <Row label={tr("pages.SettingsPage.s_bf76aec854")}><Switch checked={!p.sidebarCollapsed} onChange={(v) => p.set({ sidebarCollapsed: !v })} label={tr("pages.SettingsPage.s_ea3f25bcf4")} /></Row>
     </Panel>
   );

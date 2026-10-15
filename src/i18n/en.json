@@ -1612,7 +1612,10 @@
     "crumb_contracts": "Contracts",
     "crumb_access": "Access",
     "crumb_settings": "Settings",
-    "uptime": "up {{duration}}"
+    "uptime": "up {{duration}}",
+    "dismissNotice": "Dismiss service notice",
+    "showNotice": "Show service notice",
+    "showNoticeHelp": "The blue information banner. Connection errors remain visible."
   },
   "polish": {
     "language": "Language",

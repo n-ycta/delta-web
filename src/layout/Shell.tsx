@@ -1,7 +1,7 @@
 import { tr } from '@/i18n';
 import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, X } from 'lucide-react';
 import { usePrefs, useUi, useRuntimeAccess } from '@/app/stores';
 import { useResolvedTheme } from '@/app/theme';
 import { useApi } from '@/app/ApiContext';
@@ -38,7 +38,10 @@ export function Shell({ children }: { children: ReactNode }) {
       {ui.mobileNav && <div className="overlay mobile-only" style={{ zIndex: 54 }} onClick={() => ui.set({ mobileNav: false })} />}
       <div className="main">
         <Topbar />
-        {api.mode === 'http' && <div className="banner info" role="note"><span>{tr('runtime.realNotice')}</span></div>}
+        {api.mode === 'http' && !prefs.realNoticeHidden && <div className="banner info" role="note">
+          <span className="grow">{tr('runtime.realNotice')}</span>
+          <Button variant="ghost" size="sm" iconOnly aria-label={tr('runtime.dismissNotice')} title={tr('runtime.dismissNotice')} style={{ flexShrink: 0, color: 'inherit' }} onClick={() => prefs.set({ realNoticeHidden: true })}><X size={15} /></Button>
+        </div>}
         {disconnected && (
           <div className="banner err" role="status">
             <WifiOff size={14} />

@@ -16,11 +16,12 @@ interface Prefs {
   palette: string;
   hour12: boolean;
   homeStrip: boolean;
+  realNoticeHidden: boolean;
   set: (p: Partial<Omit<Prefs, 'set'>>) => void;
 }
 
 export const usePrefs = create<Prefs>()(persist((set) => ({
-  theme: 'system', density: 'comfortable', sidebarCollapsed: false, viewAs: null, palette: 'delta', hour12: false, homeStrip: true,
+  theme: 'system', density: 'comfortable', sidebarCollapsed: false, viewAs: null, palette: 'delta', hour12: false, homeStrip: true, realNoticeHidden: false,
   set: (p) => set(p),
 }), { name: 'delta.console.prefs', version: 1 }));
 

@@ -1612,7 +1612,10 @@
     "crumb_contracts": "Контракты",
     "crumb_access": "Доступ",
     "crumb_settings": "Настройки",
-    "uptime": "работает {{duration}}"
+    "uptime": "работает {{duration}}",
+    "dismissNotice": "Закрыть информационную плашку",
+    "showNotice": "Показывать информационную плашку",
+    "showNoticeHelp": "Синее информационное сообщение. Ошибки соединения остаются видимыми."
   },
   "polish": {
     "language": "Язык",
