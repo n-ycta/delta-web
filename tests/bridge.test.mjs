@@ -17,3 +17,8 @@ test('known registration errors localize without rewriting arbitrary diagnostics
  const client={call:async name=>({'core.info':{node_id:'local'},'core.components':[],'supervisor.list':[{id:'offline_plugin',enabled:true,running:false}],'packages.catalog':{plugins:[{id:'dev.example.offline',component:'offline_plugin',version:'1.0.0',manifest:{id:'dev.example.offline'}}]},'peers.list':[],'packages.jobs':[]}[name])};
  const row=(await createBridge(client)['web.plugins_list']({_locale:'ru'})).find(p=>p.manifest.id==='dev.example.offline');assert.equal(row.instance.error.message,'Плагин не зарегистрирован');
 });
+test('uninstall removes the managed component and subsequent discovery marks it available',async()=>{
+ let installed=true;const id='dev.example.removable',component='removable',ui={id,name:'Removable',settings:[]};
+ const client={call:async(name,args)=>{if(name==='supervisor.remove'){assert.equal(args.id,component);installed=false;return {removed:component}};const values={'core.info':{node_id:'local'},'core.components':installed?[{id:component,version:'1.0.0',metadata:{ui}}]:[],'supervisor.list':installed?[{id:component,enabled:true,running:true}]:[],'packages.catalog':{plugins:[{id,component,version:'1.0.0',manifest:ui}]},'peers.list':[],'packages.jobs':[],'storage.document_put':{}};assert(name in values,name);return values[name];}};
+ const h=createBridge(client);await h['web.plugins_uninstall']({id,purgeData:false},{name:'owner',scopes:['admin']});const row=(await h['web.plugins_list']()).find(p=>p.manifest.id===id);assert.equal(row.instance.status,'available');assert.equal(row.instance.installedVersion,undefined);assert.deepEqual(row.instance.nodeIds,[]);
+});
