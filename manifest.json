@@ -25,7 +25,20 @@
       "metrics": [],
       "repository": "https://github.com/n-ycta/delta-web",
       "defaultLocale": "en",
-      "screenshots": [],
+      "screenshots": [
+        {
+          "url": "https://raw.githubusercontent.com/n-ycta/delta/main/docs/images/overview.png",
+          "alt": "Delta console overview"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/n-ycta/delta/main/docs/images/metrics.png",
+          "alt": "Typing metric dashboard"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/n-ycta/delta/main/docs/images/mcp.png",
+          "alt": "MCP gateway configuration"
+        }
+      ],
       "localizations": {
         "en": {
           "name": "Delta Web",
