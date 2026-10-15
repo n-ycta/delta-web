@@ -1,3 +1,4 @@
+import { noticeKey, noticeFingerprint, dismissNotice } from '../src/ui/pluginNoticeState';
 import { queryStep } from '../src/widgets/intervals';
 import { WidgetDisplay } from '../src/core/contracts/dashboard';
 import { buildQuery } from '../src/widgets/shared';
@@ -91,5 +92,16 @@ test('generated metric widget IDs are stable across polling and categorical word
  eq(widgetRegistry.best(metric)?.type,'bubbles');
 });
 
+console.log('plugin notice dismissals');
+test('dismissal tracks content and is scoped to plugin, node and connection',()=>{
+ const entry={manifest:{id:'dev.delta.type'},instance:{nodeIds:['a']}} as Parameters<typeof noticeKey>[1];
+ const n={id:'type.words',severity:'info' as const,message:'Enabled',localizations:{ru:'Включено',en:'Enabled'}};
+ const key=noticeKey('local-owner',entry,n),fp=noticeFingerprint(n);
+ eq(noticeFingerprint({...n,localizations:{en:'Enabled',ru:'Включено'}}),fp);
+ ok(noticeFingerprint({...n,message:'Changed'})!==fp);ok(noticeFingerprint({...n,severity:'warn'})!==fp);
+ ok(noticeKey('other-owner',entry,n)!==key);ok(noticeKey('local-owner',{...entry,instance:{...entry.instance,nodeIds:['b']}},n)!==key);
+ eq(dismissNotice({},key,fp)[key],fp);
+ const many=Object.fromEntries(Array.from({length:600},(_,i)=>[String(i),'old']));eq(Object.keys(dismissNotice(many,key,fp)).length,500);
+});
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);
