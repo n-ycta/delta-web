@@ -16,6 +16,7 @@ export interface CoreInfo {
   startedAt: number;
   region?: string;
   features: string[];
+  principal?: { name: string; role: Role; scopes: string[] };
 }
 
 export interface RawPluginRecord {

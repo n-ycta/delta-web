@@ -58,6 +58,7 @@ export const NodeInfo = z.object({
   uptimeSec: z.number(),
   agentVersion: z.string(),
   cpu: z.number(),
+  telemetryUnavailable: z.array(z.string()).optional(),
   cores: z.number(),
   memUsed: z.number(),
   memTotal: z.number(),

@@ -57,5 +57,11 @@ export const useUi = create<Ui>((set) => ({
 
 export const toast = (t: Omit<Toast, 'id'>) => useUi.getState().toast(t);
 
-export function useRole(): Role { return usePrefs((s) => s.viewAs) ?? 'owner'; }
+export const useRuntimeAccess = create<{ role: Role; name: string; scopes: string[]; set: (value: { role: Role; name: string; scopes: string[] }) => void }>((set) => ({ role: 'viewer', name: '', scopes: [], set }));
+export function useRole(): Role {
+  const actual = useRuntimeAccess(s => s.role);
+  const preview = usePrefs(s => s.viewAs);
+  const rank: Record<Role, number> = { viewer: 0, analyst: 1, operator: 2, owner: 3 };
+  return preview && rank[preview] < rank[actual] ? preview : actual;
+}
 export function useCan(p: ConsolePermission): boolean { const role = useRole(); return ROLE_PERMISSIONS[role].includes(p); }

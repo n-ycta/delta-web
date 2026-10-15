@@ -2,9 +2,10 @@ import { tr } from '@/i18n';
 import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { WifiOff } from 'lucide-react';
-import { usePrefs, useUi } from '@/app/stores';
+import { usePrefs, useUi, useRuntimeAccess } from '@/app/stores';
 import { useResolvedTheme } from '@/app/theme';
 import { useApi } from '@/app/ApiContext';
+import { useQuery } from '@/app/query';
 import { queryClient } from '@/app/query';
 import { Toasts } from '@/ui/Toasts';
 import { Button } from '@/ui/primitives';
@@ -20,6 +21,11 @@ export function Shell({ children }: { children: ReactNode }) {
   const theme = useResolvedTheme();
   const ui = useUi();
   const api = useApi();
+  const info = useQuery('info', a => a.info());
+  useEffect(() => {
+    if (api.mode === 'mock') useRuntimeAccess.getState().set({ role: 'owner', name: tr('runtime.demoUser'), scopes: ['admin'] });
+    else useRuntimeAccess.getState().set(info.data?.principal ?? { role: 'viewer', name: '', scopes: [] });
+  }, [api.mode, info.data]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.density = prefs.density;
@@ -32,6 +38,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {ui.mobileNav && <div className="overlay mobile-only" style={{ zIndex: 54 }} onClick={() => ui.set({ mobileNav: false })} />}
       <div className="main">
         <Topbar />
+        {api.mode === 'http' && <div className="banner info" role="note"><span>{tr('runtime.realNotice')}</span></div>}
         {disconnected && (
           <div className="banner err" role="status">
             <WifiOff size={14} />

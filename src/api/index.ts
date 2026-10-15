@@ -9,7 +9,7 @@ export interface ConnectionSettings { mode: 'mock' | 'http'; baseUrl: string; to
 const KEY = 'delta.console.connection';
 
 export function readConnectionSettings(): ConnectionSettings {
-  const env = { mode: (import.meta.env.VITE_CORE_MODE as 'mock' | 'http') ?? 'mock', baseUrl: (import.meta.env.VITE_CORE_URL as string) ?? '/api' };
+  const env = { mode: (import.meta.env.VITE_CORE_MODE as 'mock' | 'http') ?? 'http', baseUrl: (import.meta.env.VITE_CORE_URL as string) ?? '/api' };
   try { return { ...env, ...JSON.parse(localStorage.getItem(KEY) ?? '{}'), token: sessionStorage.getItem(KEY + '.token') ?? undefined }; } catch { return env; }
 }
 export function writeConnectionSettings(s: ConnectionSettings) {
