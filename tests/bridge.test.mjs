@@ -22,3 +22,11 @@ test('uninstall removes the managed component and subsequent discovery marks it 
  const client={call:async(name,args)=>{if(name==='supervisor.remove'){assert.equal(args.id,component);installed=false;return {removed:component}};const values={'core.info':{node_id:'local'},'core.components':installed?[{id:component,version:'1.0.0',metadata:{ui}}]:[],'supervisor.list':installed?[{id:component,enabled:true,running:true}]:[],'packages.catalog':{plugins:[{id,component,version:'1.0.0',manifest:ui}]},'peers.list':[],'packages.jobs':[],'storage.document_put':{}};assert(name in values,name);return values[name];}};
  const h=createBridge(client);await h['web.plugins_uninstall']({id,purgeData:false},{name:'owner',scopes:['admin']});const row=(await h['web.plugins_list']()).find(p=>p.manifest.id===id);assert.equal(row.instance.status,'available');assert.equal(row.instance.installedVersion,undefined);assert.deepEqual(row.instance.nodeIds,[]);
 });
+test('generic notice action preserves caller authority and forwards UI locale to plugin',async()=>{
+ const id='dev.example.sensor',ui={id,settings:[],actions:[{id:'authorize',label:'Authorize'}]};let forwarded;
+ const client={call:async(name,args)=>{if(name==='sensor.authorize'){forwarded=args;return {pending:true}}const d={'core.info':{node_id:'local'},'core.components':[{id:'sensor',version:'1.0.0',metadata:{ui}}],'supervisor.list':[{id:'sensor',enabled:true,running:true}],'packages.catalog':{plugins:[]},'peers.list':[],'packages.jobs':[],'storage.document_put':{}};assert(name in d,name);return d[name]}};
+ const h=createBridge(client);
+ await assert.rejects(h['web.plugins_action']({id,actionId:'authorize',_locale:'ru'},{name:'viewer',scopes:['call:web.plugins_action']}),e=>e.code==='forbidden');assert.equal(forwarded,undefined);
+ await h['web.plugins_action']({id,actionId:'authorize',_locale:'ru'},{name:'owner',scopes:['admin']});assert.deepEqual(forwarded,{_locale:'ru'});
+ await assert.rejects(h['web.plugins_action']({id,actionId:'undeclared'},{name:'owner',scopes:['admin']}),e=>e.code==='not_found');
+});
