@@ -17,9 +17,9 @@ export class DeltaClient {
  }
  call(capability, args = {}, node) { return this.request('POST', '/call', { capability, args, ...(node ? {node} : {}) }); }
 }
-export function allowed(caller, capability) {
+export function allowed(caller, capability, adminOnly = false) {
  if (caller?.scopes?.includes('admin')) return true;
- return (caller?.scopes || []).some(s => (s.startsWith('call:') || s.startsWith('admin:')) && new RegExp('^'+s.slice(s.startsWith('admin:')?6:5).split('*').map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+'$').test(capability));
+ return (caller?.scopes || []).some(s => ((!adminOnly && s.startsWith('call:')) || s.startsWith('admin:')) && new RegExp('^'+s.slice(s.startsWith('admin:')?6:5).split('*').map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+'$').test(capability));
 }
 export async function servePlugin(client, manifest, handlers, {signal} = {}) {
  let session;

@@ -10,7 +10,15 @@ export function createBridge(client,storage='storage'){
  const ns=(caller,prefix)=>prefix+'_'+createHash('sha256').update(JSON.stringify([caller.kind,caller.peer_id,caller.name])).digest('hex').slice(0,24);
  const listDocs=async(c,n)=>(await client.call(storage+'.document_list',{namespace:ns(c,n)})).map(r=>r.value);
  const writeDoc=(c,n,key,value)=>client.call(storage+'.document_put',{namespace:ns(c,n),key,value});
- const delegated=async(c,cap,args={},node)=>{if(!allowed(c,cap))throw new DeltaError('forbidden',ru.delegation);return client.call(cap,args,node)};
+ const delegated=async(c,cap,args={},node)=>{
+  if(!allowed(c,cap))throw new DeltaError('forbidden',ru.delegation);
+  if(!c.scopes?.includes('admin')){
+   const catalog=node?await client.call('core.catalog'):await client.request('GET','/capabilities');
+   const spec=catalog.find(s=>s.name===cap&&(!node||s.node===node||s.node_name===node));
+   if(!spec||!allowed(c,cap,!!spec.admin))throw new DeltaError('forbidden',ru.delegation);
+  }
+  return client.call(cap,args,node);
+ };
  let cachedIndex={plugins:[]},indexAt=0;
  const index=async()=>{if(Date.now()-indexAt>60000){try{cachedIndex=await client.call('packages.catalog');indexAt=Date.now()}catch(e){indexAt=Date.now();}}return cachedIndex;};
  const components=()=>client.call('core.components');
