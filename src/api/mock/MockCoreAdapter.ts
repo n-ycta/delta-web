@@ -1,0 +1,465 @@
+import type {
+  AuditEntry, ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricDescriptor, MetricQuery, MetricResult,
+  NodeCommandId, NodeInfo, Notification, PluginInstance, Principal, RealtimeMessage, Role, UptimeCell,
+} from '@/core/contracts';
+import { NODE_COMMANDS } from '@/core/contracts';
+import { hashString, mulberry32, uid } from '@/core/lib/random';
+import type { CommandResult, CoreApi, CoreInfo, InstallRequest, LogLine, NodeHistory, PairingTicket, RawPluginRecord } from '../types';
+import { CoreApiError } from '../types';
+import { generateMetric, nodeSeries } from './generate';
+import { makeEvent, pluginLogs, REGISTRY, seedAudit, seedEvents, seedInstances, seedNodes, seedNotifications, seedPrincipals } from './seed';
+
+const STORE_KEY = 'delta.mock.db.v4';
+const CONTROL_KEY = 'delta.mock.control';
+
+export interface MockControl { latencyMin: number; latencyMax: number; errorRate: number; offline: boolean; liveEvents: boolean }
+export const DEFAULT_CONTROL: MockControl = { latencyMin: 120, latencyMax: 450, errorRate: 0, offline: false, liveEvents: true };
+
+export function readMockControl(): MockControl {
+  try { return { ...DEFAULT_CONTROL, ...JSON.parse(localStorage.getItem(CONTROL_KEY) ?? '{}') }; } catch { return DEFAULT_CONTROL; }
+}
+export function writeMockControl(c: MockControl) { localStorage.setItem(CONTROL_KEY, JSON.stringify(c)); }
+export function resetMockDatabase() { localStorage.removeItem(STORE_KEY); }
+
+interface Db {
+  instances: Record<string, PluginInstance>;
+  nodes: NodeInfo[];
+  events: CoreEvent[];
+  notifications: Notification[];
+  dashboards: DashboardConfig[];
+  principals: Principal[];
+  audit: AuditEntry[];
+  /** pluginId → id of manifest in REGISTRY to serve as "installed" (index 0 = manifest, 1 = latest) */
+  installedFromLatest: Record<string, boolean>;
+}
+
+function freshDb(): Db {
+  return { instances: seedInstances(), nodes: seedNodes(), events: seedEvents(), notifications: seedNotifications(), dashboards: [], principals: seedPrincipals(), audit: seedAudit(), installedFromLatest: {} };
+}
+
+const rawId = (m: unknown) => (m && typeof m === 'object' && 'id' in m ? String((m as { id: unknown }).id) : '');
+
+/**
+ * In-browser simulation of the Delta core. Implements the full CoreApi contract, persists
+ * state to localStorage and pushes realtime messages, so every UI scenario works offline.
+ */
+export class MockCoreAdapter implements CoreApi {
+  readonly mode = 'mock' as const;
+  readonly endpoint = 'mock://in-browser';
+  private db: Db;
+  private listeners = new Set<(m: RealtimeMessage) => void>();
+  private timers: number[] = [];
+  private control = readMockControl();
+  private startedAt = Date.now() - 41 * 86400e3;
+
+  constructor() {
+    this.db = this.load();
+    // keep node "liveness" fresh relative to now after reload
+    const t = Date.now();
+    this.db.nodes.forEach((n) => { if (n.status !== 'offline') n.lastSeen = Math.max(n.lastSeen, t - 10e3 - (n.id === 'pixel-8' ? 85e3 : 0)); });
+    if (typeof window !== 'undefined') window.addEventListener('storage', (e) => { if (e.key === CONTROL_KEY) this.control = readMockControl(); });
+  }
+
+  setControl(c: MockControl) { this.control = c; writeMockControl(c); this.emit({ type: 'connection', state: c.offline ? 'closed' : 'open', latencyMs: c.latencyMin }); }
+  getControl() { return this.control; }
+
+  private load(): Db {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        const db = JSON.parse(raw) as Db;
+        // events/notifications are regenerated relative to now for a believable demo timeline
+        return { ...freshDb(), ...db, events: [...db.events.filter((e) => e.source.type === 'console'), ...seedEvents()].sort((a, b) => b.ts - a.ts).slice(0, 400) };
+      }
+    } catch { /* corrupt store → reset */ }
+    return freshDb();
+  }
+  private persist() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...this.db, events: this.db.events.slice(0, 400) })); } catch { /* quota */ }
+  }
+
+  private async net<T>(fn: () => T | Promise<T>, opts: { noFail?: boolean } = {}): Promise<T> {
+    const { latencyMin, latencyMax, errorRate, offline } = this.control;
+    await new Promise((r) => setTimeout(r, latencyMin + Math.random() * Math.max(0, latencyMax - latencyMin)));
+    if (offline) throw new CoreApiError('NETWORK', 'Нет соединения с ядром', 0, true, 'Ядро не отвечает. Проверьте сеть или адрес подключения.');
+    if (!opts.noFail && errorRate > 0 && Math.random() < errorRate) throw new CoreApiError('CORE_503', 'Ядро временно перегружено (503)', 503, true, 'Повторите запрос через несколько секунд');
+    return structuredClone(await fn());
+  }
+
+  private emit(msg: RealtimeMessage) { this.listeners.forEach((l) => l(msg)); }
+  private pushEvent(e: Omit<CoreEvent, 'id' | 'ts'>) {
+    const ev = makeEvent(e);
+    this.db.events.unshift(ev);
+    this.emit({ type: 'event', event: ev });
+    if (e.severity === 'error' || e.severity === 'critical' || (e.severity === 'warn' && e.source.type !== 'console')) {
+      const n: Notification = { id: uid('n'), ts: ev.ts, severity: e.severity, title: e.message, read: false, eventId: ev.id, link: e.source.type === 'node' ? `/nodes/${e.source.id}` : e.source.type === 'plugin' ? `/plugins/${e.source.id}` : undefined };
+      this.db.notifications.unshift(n);
+      this.emit({ type: 'notification', notification: n });
+    }
+    this.persist();
+    return ev;
+  }
+  private audit(action: string, target: string) {
+    this.db.audit.unshift({ id: uid('a'), ts: Date.now(), actor: 'Вы', action, target, ip: '10.0.0.31' });
+  }
+
+  private manifestFor(id: string) {
+    const r = REGISTRY.find((x) => rawId(x.manifest) === id);
+    if (!r) throw new CoreApiError('NOT_FOUND', `Плагин ${id} не найден`, 404, false);
+    return r;
+  }
+  private inst(id: string) {
+    const i = this.db.instances[id];
+    if (!i) throw new CoreApiError('NOT_FOUND', `Плагин ${id} не найден`, 404, false);
+    return i;
+  }
+
+  info(): Promise<CoreInfo> {
+    return this.net(() => ({ name: 'delta@fra-01', coreVersion: '2.3.1', apiVersion: '2.1.0', startedAt: this.startedAt, region: 'eu-central', features: ['realtime.ws', 'metrics.v2', 'dashboards.sync', 'audit'] }), { noFail: true });
+  }
+
+  listPlugins(): Promise<RawPluginRecord[]> {
+    return this.net(() => REGISTRY.map((r) => {
+      const id = rawId(r.manifest);
+      const inst = this.db.instances[id];
+      return { manifest: this.db.installedFromLatest[id] ? r.latest : r.manifest, latest: r.latest, instance: inst };
+    }));
+  }
+  getPluginLogs(pluginId: string, limit = 80): Promise<LogLine[]> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      if (!i.installedVersion) return [];
+      return pluginLogs(pluginId, limit).map((l, k) => ({ ...l, nodeId: i.nodeIds[k % Math.max(1, i.nodeIds.length)] }));
+    });
+  }
+
+  private later(ms: number, fn: () => void) { this.timers.push(window.setTimeout(fn, ms)); }
+
+  installPlugin(pluginId: string, req: InstallRequest): Promise<PluginInstance> {
+    return this.net(() => {
+      const r = this.manifestFor(pluginId);
+      const m = r.latest as { name: string; version: string };
+      const i = this.inst(pluginId);
+      if (i.installedVersion) throw new CoreApiError('CONFLICT', 'Плагин уже установлен', 409, false);
+      if (!req.nodeIds.length) throw new CoreApiError('VALIDATION', 'Выберите хотя бы один узел', 422, false);
+      Object.assign(i, { status: 'installing', nodeIds: req.nodeIds, grantedPermissions: req.permissions, settings: req.settings ?? {} });
+      this.db.installedFromLatest[pluginId] = true;
+      this.audit('plugin.install', `${pluginId}@${m.version}`);
+      this.persist();
+      this.later(2600, () => {
+        Object.assign(i, { status: 'active', installedVersion: m.version, installedAt: Date.now(), lastSyncAt: Date.now(), eventsPerMin: 3 });
+        this.db.nodes.forEach((n) => { if (req.nodeIds.includes(n.id) && !n.pluginIds.includes(pluginId)) n.pluginIds.push(pluginId); });
+        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: m.name }, code: 'INSTALLED', message: `${m.name} ${m.version} установлен на ${req.nodeIds.length} узл.` });
+        this.emit({ type: 'plugin.update', pluginId });
+      });
+      return i;
+    });
+  }
+  updatePlugin(pluginId: string): Promise<PluginInstance> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      const r = this.manifestFor(pluginId);
+      const latest = r.latest as { version: string; name: string };
+      const from = i.installedVersion;
+      i.status = 'updating';
+      this.persist();
+      this.later(3000, () => {
+        i.status = i.error ? 'degraded' : 'active';
+        i.installedVersion = latest.version;
+        this.db.installedFromLatest[pluginId] = true;
+        this.audit('plugin.update', `${pluginId} ${from} → ${latest.version}`);
+        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: latest.name }, code: 'UPDATED', message: `${latest.name} обновлён: ${from} → ${latest.version}` });
+        this.emit({ type: 'plugin.update', pluginId });
+      });
+      return i;
+    });
+  }
+  setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginInstance> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      i.status = enabled ? (i.error ? 'error' : 'active') : 'disabled';
+      this.audit(enabled ? 'plugin.enable' : 'plugin.disable', pluginId);
+      this.pushEvent({ severity: 'info', source: { type: 'console', id: 'console' }, code: enabled ? 'PLUGIN_ENABLED' : 'PLUGIN_DISABLED', message: `${pluginId} ${enabled ? 'включён' : 'отключён'}` });
+      return i;
+    });
+  }
+  uninstallPlugin(pluginId: string, opts: { purgeData: boolean }): Promise<void> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      Object.assign(i, { status: 'available', installedVersion: undefined, nodeIds: [], grantedPermissions: [], settings: {}, error: undefined, lastSyncAt: undefined, eventsPerMin: undefined });
+      delete this.db.installedFromLatest[pluginId];
+      this.db.nodes.forEach((n) => { n.pluginIds = n.pluginIds.filter((p) => p !== pluginId); n.processes = n.processes.filter((p) => p.component !== pluginId); });
+      this.audit('plugin.uninstall', `${pluginId}${opts.purgeData ? ' (+данные)' : ''}`);
+      this.pushEvent({ severity: 'warn', source: { type: 'console', id: 'console' }, code: 'PLUGIN_REMOVED', message: `${pluginId} удалён${opts.purgeData ? ' вместе с данными' : ', данные сохранены'}` });
+    });
+  }
+  updatePluginSettings(pluginId: string, values: Record<string, unknown>): Promise<PluginInstance> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      const secrets = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '__unchanged__'));
+      i.settings = { ...i.settings, ...secrets };
+      if (pluginId === 'dev.delta.browser' && typeof values.syncToken === 'string' && values.syncToken.length > 3 && values.syncToken !== '__unchanged__') {
+        i.error = undefined; i.status = 'active'; i.lastSyncAt = Date.now(); i.eventsPerMin = 2;
+        this.db.nodes.forEach((n) => n.processes.forEach((p) => { if (p.component === pluginId) { p.status = 'running'; p.cpu = 0.3; p.memMb = 61; } }));
+        this.db.nodes.forEach((n) => { n.errors = n.errors.filter((e) => e.component !== pluginId); });
+        this.later(800, () => this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: 'История браузера' }, code: 'AUTH_OK', message: 'Синхронизация восстановлена, загружено 1 204 записи' }));
+      }
+      this.audit('plugin.settings.update', pluginId);
+      this.persist();
+      return i;
+    });
+  }
+  setPluginPermissions(pluginId: string, scopes: string[]): Promise<PluginInstance> {
+    return this.net(() => { const i = this.inst(pluginId); i.grantedPermissions = scopes; this.audit('permission.set', `${pluginId}: ${scopes.length}`); this.persist(); return i; });
+  }
+  setPluginNodes(pluginId: string, nodeIds: string[]): Promise<PluginInstance> {
+    return this.net(() => {
+      const i = this.inst(pluginId); i.nodeIds = nodeIds;
+      this.db.nodes.forEach((n) => { n.pluginIds = n.pluginIds.filter((p) => p !== pluginId); if (nodeIds.includes(n.id)) n.pluginIds.push(pluginId); });
+      this.persist(); return i;
+    });
+  }
+  runPluginAction(pluginId: string, actionId: string): Promise<CommandResult> {
+    return this.net(() => {
+      const i = this.inst(pluginId);
+      if (i.status === 'disabled') throw new CoreApiError('PLUGIN_DISABLED', 'Плагин отключён', 409, false, 'Включите плагин, чтобы выполнять действия');
+      if (pluginId === 'dev.delta.home' && actionId === 'reconnect') {
+        this.later(1500, () => { i.error = undefined; i.status = 'active'; this.persist(); this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: 'Дом' }, code: 'SENSOR_BACK', message: 'Датчик «Кабинет / CO₂» снова в сети' }); this.emit({ type: 'plugin.update', pluginId }); });
+      }
+      this.audit(`plugin.action.${actionId}`, pluginId);
+      return { ok: true, durationMs: 300 + Math.round(Math.random() * 900), output: [`→ ${actionId}`, 'accepted by core', 'dispatched to ' + i.nodeIds.join(', '), 'done'] };
+    });
+  }
+
+  queryMetric(q: MetricQuery): Promise<MetricResult> {
+    return this.net(() => {
+      const r = REGISTRY.find((x) => rawId(x.manifest) === q.pluginId);
+      const i = this.db.instances[q.pluginId];
+      if (!r || !i?.installedVersion) throw new CoreApiError('PLUGIN_NOT_INSTALLED', `Плагин ${q.pluginId} не установлен`, 404, false);
+      const m = ((this.db.installedFromLatest[q.pluginId] ? r.latest : r.manifest) as { metrics: MetricDescriptor[] }).metrics.find((x) => x.id === q.metricId);
+      if (!m) throw new CoreApiError('METRIC_NOT_FOUND', `Метрика ${q.metricId} не объявлена плагином`, 404, false);
+      const full = { unit: '', precision: 1, better: 'neutral', dimensions: [], aggregations: ['avg'], visualizations: [], tags: [], ...(m as Partial<MetricDescriptor>) } as MetricDescriptor;
+      const res = generateMetric(q, full);
+      if (i.status === 'error' && q.pluginId === 'dev.delta.browser') {
+        // data stopped arriving when auth expired
+        const cutoff = i.lastSyncAt ?? Date.now();
+        res.series = res.series.map((s) => ({ ...s, points: s.points.map((p) => (p.t > cutoff ? { ...p, v: null } : p)) }));
+      }
+      return res;
+    });
+  }
+
+  listNodes(): Promise<NodeInfo[]> { return this.net(() => this.db.nodes); }
+  getNodeHistory(nodeId: string, rangeMs: number): Promise<NodeHistory> {
+    return this.net(() => {
+      const n = this.db.nodes.find((x) => x.id === nodeId);
+      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
+      const memPct = n.memTotal ? (n.memUsed / n.memTotal) * 100 : 40;
+      const h = { cpu: nodeSeries(nodeId, 'cpu', rangeMs, Math.max(n.cpu, 8)), mem: nodeSeries(nodeId, 'mem', rangeMs, Math.max(memPct, 20)), latency: nodeSeries(nodeId, 'latency', rangeMs, n.latencyMs ?? 30) };
+      if (n.status === 'offline') {
+        const cut = n.lastSeen;
+        for (const s of [h.cpu, h.mem, h.latency]) s.points = s.points.map((p) => (p.t > cut ? { ...p, v: null } : p));
+      }
+      return h;
+    });
+  }
+  getNodeUptime(nodeId: string, days: number): Promise<UptimeCell[]> {
+    return this.net(() => {
+      const rnd = mulberry32(hashString(nodeId));
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const flaky = nodeId === 'pixel-8' || nodeId === 'tab-s9' ? 0.25 : nodeId === 'hel-02' ? 0.12 : 0.04;
+      return Array.from({ length: days }, (_, i) => {
+        const day = today.getTime() - (days - 1 - i) * 86400e3;
+        const r = rnd();
+        if (nodeId === 'mba' && i < 20) return { day, state: 'nodata' as const, availability: 0 };
+        if (nodeId === 'tab-s9' && i === days - 1) return { day, state: 'down' as const, availability: 0.42 };
+        const state = r < flaky * 0.2 ? 'down' : r < flaky ? 'partial' : 'up';
+        return { day, state, availability: state === 'up' ? 0.995 + rnd() * 0.005 : state === 'partial' ? 0.85 + rnd() * 0.12 : 0.3 + rnd() * 0.4 };
+      });
+    });
+  }
+  runNodeCommand(nodeId: string, command: NodeCommandId, args: Record<string, string> = {}): Promise<CommandResult> {
+    return this.net(async () => {
+      const n = this.db.nodes.find((x) => x.id === nodeId);
+      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
+      const spec = NODE_COMMANDS.find((c) => c.id === command)!;
+      if (!n.allowedCommands.includes(command)) throw new CoreApiError('FORBIDDEN', `Агент ${n.name} не разрешает «${spec.label}»`, 403, false, 'Разрешённые команды задаются в политике агента (agent.toml → [commands])');
+      if (n.status === 'offline') throw new CoreApiError('NODE_UNREACHABLE', `${n.name} не в сети — команда поставлена в очередь не будет`, 504, true, 'Дождитесь подключения узла или проверьте его питание');
+      this.audit(`node.command.${command}`, `${n.name}${args.component ? ' / ' + args.component : ''}`);
+      const out: string[] = [`$ delta-agent ${command}${Object.values(args).length ? ' ' + Object.values(args).join(' ') : ''}`];
+      const dur = 200 + Math.round(Math.random() * 1200);
+      await new Promise((r) => setTimeout(r, dur));
+      switch (command) {
+        case 'ping': out.push(`pong from ${n.address}: rtt=${n.latencyMs ?? 20}ms agent=${n.agentVersion}`); break;
+        case 'sync-now': out.push('flushing 4 plugin buffers…', `uploaded ${Math.round(Math.random() * 1800 + 200)} records`, 'ok'); n.lastSeen = Date.now(); break;
+        case 'collect-logs': out.push('collecting journal (24h)…', `archive: logs-${n.id}-${new Date().toISOString().slice(0, 10)}.tar.zst (3.4 MB)`, 'uploaded to core:/artifacts'); break;
+        case 'clear-cache': out.push('removed 214 MB from /var/cache/delta'); break;
+        case 'update-agent': {
+          const latest = '1.8.2';
+          if (n.agentVersion === latest) { out.push(`already at ${latest}`); break; }
+          out.push(`downloading delta-agent ${latest}…`, 'verifying signature (minisign)… ok', 'restarting agent…');
+          n.agentVersion = latest; n.components.forEach((c) => { if (c.id === 'delta-agent') { c.version = latest; c.status = 'ok'; } });
+          break;
+        }
+        case 'restart-component': {
+          const c = n.components.find((x) => x.id === args.component);
+          if (!c) throw new CoreApiError('VALIDATION', 'Укажите компонент', 422, false);
+          if (!c.restartable) throw new CoreApiError('FORBIDDEN', `${c.name} нельзя перезапустить удалённо`, 403, false);
+          n.processes.forEach((p) => { if (p.component === c.id) { p.status = 'restarting'; } });
+          out.push(`stopping ${c.name}… ok`, `starting ${c.name}…`);
+          this.later(2200, () => {
+            n.processes.forEach((p) => { if (p.component === c.id) { p.status = c.id === 'dev.delta.browser' && this.db.instances['dev.delta.browser']?.status === 'error' ? 'crashed' : 'running'; p.restarts++; p.startedAt = Date.now(); p.pid += 17; if (p.status === 'running' && p.memMb === 0) { p.memMb = 210; p.cpu = 2; } } });
+            if (c.status === 'error' || c.status === 'stopped') {
+              if (c.id === 'replica' && n.diskUsed / n.diskTotal > 0.9) {
+                n.processes.forEach((p) => { if (p.component === 'replica') p.status = 'crashed'; });
+                this.pushEvent({ severity: 'error', source: { type: 'node', id: n.id, label: n.name }, code: 'REPL_START_FAILED', message: 'pg-replica: не удалось запустить — нет места на диске. Выполните «Очистить кэш».' });
+              } else { c.status = 'ok'; }
+            }
+            this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'COMPONENT_RESTARTED', message: `${c.name} перезапущен` });
+            this.emit({ type: 'node.update', nodeId: n.id, patch: { processes: n.processes, components: n.components } });
+          });
+          break;
+        }
+        case 'reboot':
+          out.push('scheduling reboot in 3s…', 'connection will drop');
+          this.later(1500, () => { n.status = 'connecting'; this.emit({ type: 'node.update', nodeId: n.id, patch: { status: 'connecting' } }); this.persist(); });
+          this.later(9000, () => { n.status = 'online'; n.uptimeSec = 9; n.lastSeen = Date.now(); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'NODE_BACK', message: `${n.name} снова в сети после перезагрузки` }); this.emit({ type: 'node.update', nodeId: n.id, patch: { status: 'online' } }); });
+          break;
+        case 'exec': {
+          const cmd = (args.cmd ?? '').trim();
+          const allow: Record<string, string[]> = {
+            'df -h': ['Filesystem  Size  Used Avail Use% Mounted on', `/dev/sda1   ${Math.round(n.diskTotal / 1024 ** 3)}G  ${Math.round(n.diskUsed / 1024 ** 3)}G  ${Math.round((n.diskTotal - n.diskUsed) / 1024 ** 3)}G  ${Math.round((n.diskUsed / n.diskTotal) * 100)}% /`],
+            'uptime': [` up ${Math.floor(n.uptimeSec / 86400)} days, load average: 0.42, 0.51, 0.47`],
+            'systemctl status delta-agent': ['● delta-agent.service - Delta node agent', '   Active: active (running)', `   Version: ${n.agentVersion}`],
+            'journalctl -u delta-agent -n 5': ['… heartbeat ok', '… flush 128 records', '… rollup 5m', '… heartbeat ok', '… settings reloaded'],
+          };
+          if (!allow[cmd]) throw new CoreApiError('FORBIDDEN', `«${cmd || '(пусто)'}» нет в allowlist агента`, 403, false, `Разрешено: ${Object.keys(allow).join(' · ')}`);
+          out.push(...allow[cmd]);
+          break;
+        }
+      }
+      if (command === 'clear-cache' && n.id === 'hel-02') { n.diskUsed = n.diskTotal * 0.71; n.status = 'online'; n.errors = n.errors.filter((e) => e.code !== 'DISK_PRESSURE'); out.push('freed 18.4 GB of restic cache'); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'DISK_OK', message: 'Свободное место восстановлено до 29%' }); }
+      this.pushEvent({ severity: 'info', source: { type: 'console', id: 'console' }, code: 'NODE_COMMAND', message: `${spec.label} → ${n.name}` });
+      this.persist();
+      this.emit({ type: 'node.update', nodeId: n.id, patch: {} });
+      return { ok: true, durationMs: dur, output: out, exitCode: 0 };
+    });
+  }
+  updateNodeConnection(nodeId: string, cfg: ConnectionConfig): Promise<NodeInfo> {
+    return this.net(() => {
+      const n = this.db.nodes.find((x) => x.id === nodeId);
+      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
+      if (!/^(wss|mqtts?|grpc|https?):\/\/|^[\w.-]+:\d+$/.test(cfg.endpoint)) throw new CoreApiError('VALIDATION', 'Некорректный endpoint', 422, false, 'Пример: wss://core.delta.lan:7341/agent или host:7342');
+      n.connection = cfg; this.audit('node.connection.update', n.name); this.persist();
+      this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'CONN_RECONFIGURED', message: `Параметры соединения обновлены (${cfg.transport}, heartbeat ${cfg.heartbeatSec}s)` });
+      return n;
+    });
+  }
+  createPairingTicket(kind: string, name: string): Promise<PairingTicket> {
+    return this.net(() => {
+      const code = Math.random().toString(36).slice(2, 6).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+      this.audit('node.pairing.create', `${name} (${kind})`);
+      const cmd = kind === 'android' ? `Откройте Delta Agent → «Подключить» → введите код ${code}` : `curl -fsSL https://core.delta.lan/install.sh | sh -s -- --pair ${code} --name ${name}`;
+      return { code, expiresAt: Date.now() + 10 * 60e3, command: cmd };
+    });
+  }
+  removeNode(nodeId: string): Promise<void> {
+    return this.net(() => { this.db.nodes = this.db.nodes.filter((n) => n.id !== nodeId); this.audit('node.remove', nodeId); this.persist(); });
+  }
+
+  listEvents(q: EventQuery): Promise<CoreEvent[]> {
+    return this.net(() => {
+      let ev = this.db.events;
+      if (q.severities?.length) ev = ev.filter((e) => q.severities!.includes(e.severity));
+      if (q.sourceTypes?.length) ev = ev.filter((e) => q.sourceTypes!.includes(e.source.type));
+      if (q.sourceId) ev = ev.filter((e) => e.source.id === q.sourceId);
+      if (q.text) { const t = q.text.toLowerCase(); ev = ev.filter((e) => (e.message + e.code + e.source.id).toLowerCase().includes(t)); }
+      if (q.before) ev = ev.filter((e) => e.ts < q.before!);
+      return ev.slice(0, q.limit ?? 100);
+    });
+  }
+  listNotifications(): Promise<Notification[]> { return this.net(() => this.db.notifications.slice(0, 60), { noFail: true }); }
+  markNotifications(ids: string[] | 'all', read: boolean): Promise<void> {
+    return this.net(() => { this.db.notifications.forEach((n) => { if (ids === 'all' || ids.includes(n.id)) n.read = read; }); this.persist(); }, { noFail: true });
+  }
+
+  listDashboards(): Promise<DashboardConfig[]> { return this.net(() => this.db.dashboards, { noFail: true }); }
+  saveDashboard(d: DashboardConfig): Promise<DashboardConfig> {
+    return this.net(() => {
+      const saved = { ...d, updatedAt: Date.now() };
+      const idx = this.db.dashboards.findIndex((x) => x.id === d.id);
+      if (idx >= 0) this.db.dashboards[idx] = saved; else this.db.dashboards.push(saved);
+      this.audit('dashboard.save', d.name); this.persist();
+      return saved;
+    });
+  }
+  deleteDashboard(id: string): Promise<void> {
+    return this.net(() => { this.db.dashboards = this.db.dashboards.filter((d) => d.id !== id); this.audit('dashboard.delete', id); this.persist(); });
+  }
+
+  listPrincipals(): Promise<Principal[]> { return this.net(() => this.db.principals); }
+  createToken(input: { name: string; role: Role; scopes: string[]; ttlDays: number | null }) {
+    return this.net(() => {
+      const secret = 'delta_pat_' + Array.from(crypto.getRandomValues(new Uint8Array(18))).map((b) => b.toString(16).padStart(2, '0')).join('');
+      const p: Principal = { id: uid('t'), name: input.name, kind: 'token', role: input.role, scopes: input.scopes, createdAt: Date.now(), tokenPreview: 'delta_pat_…' + secret.slice(-4), expiresAt: input.ttlDays ? Date.now() + input.ttlDays * 86400e3 : undefined };
+      this.db.principals.push(p); this.audit('token.create', p.name); this.persist();
+      return { principal: p, secret };
+    });
+  }
+  revokePrincipal(id: string): Promise<void> {
+    return this.net(() => {
+      const p = this.db.principals.find((x) => x.id === id);
+      if (p?.role === 'owner') throw new CoreApiError('FORBIDDEN', 'Нельзя отозвать доступ владельца', 403, false);
+      this.db.principals = this.db.principals.filter((x) => x.id !== id); this.audit('principal.revoke', p?.name ?? id); this.persist();
+    });
+  }
+  updatePrincipalRole(id: string, role: Role): Promise<Principal> {
+    return this.net(() => {
+      const p = this.db.principals.find((x) => x.id === id);
+      if (!p) throw new CoreApiError('NOT_FOUND', 'Не найдено', 404, false);
+      if (p.role === 'owner') throw new CoreApiError('FORBIDDEN', 'Роль владельца меняется только через передачу владения', 403, false);
+      p.role = role; this.audit('principal.role', `${p.name} → ${role}`); this.persist(); return p;
+    });
+  }
+  listAudit(limit = 50): Promise<AuditEntry[]> { return this.net(() => this.db.audit.slice(0, limit)); }
+
+  subscribe(handler: (msg: RealtimeMessage) => void): () => void {
+    this.listeners.add(handler);
+    if (this.listeners.size === 1) this.startLive();
+    queueMicrotask(() => handler({ type: 'connection', state: this.control.offline ? 'closed' : 'open', latencyMs: this.control.latencyMin }));
+    return () => { this.listeners.delete(handler); if (!this.listeners.size) this.stopLive(); };
+  }
+
+  private startLive() {
+    // node telemetry tick
+    this.timers.push(window.setInterval(() => {
+      if (this.control.offline) return;
+      const t = Date.now();
+      this.db.nodes.forEach((n) => {
+        if (n.status === 'offline' || n.status === 'connecting') return;
+        n.cpu = Math.max(1, Math.min(99, n.cpu + (Math.random() - 0.5) * 6));
+        n.memUsed = Math.max(n.memTotal * 0.1, Math.min(n.memTotal * 0.97, n.memUsed * (1 + (Math.random() - 0.5) * 0.01)));
+        if (n.id !== 'pixel-8' || Math.random() > 0.7) n.lastSeen = t;
+        n.uptimeSec += 3;
+        n.processes.forEach((p) => { if (p.status === 'running') p.cpu = Math.max(0, +(p.cpu + (Math.random() - 0.5) * 0.6).toFixed(1)); });
+        this.emit({ type: 'node.update', nodeId: n.id, patch: { cpu: n.cpu, memUsed: n.memUsed, lastSeen: n.lastSeen, uptimeSec: n.uptimeSec, processes: n.processes } });
+      });
+      this.emit({ type: 'connection', state: 'open', latencyMs: Math.round(this.control.latencyMin * (0.8 + Math.random() * 0.4)) });
+    }, 3000));
+    // event stream
+    const scheduleEvent = () => {
+      this.timers.push(window.setTimeout(() => {
+        if (this.control.liveEvents && !this.control.offline) {
+          const ev = makeEvent();
+          if (ev.source.id === 'dev.delta.browser' && this.db.instances['dev.delta.browser']?.status !== 'error') ev.severity = 'info', ev.message = 'Синхронизировано 34 записи истории';
+          if (ev.source.id === 'hel-02' && this.db.nodes.find((n) => n.id === 'hel-02')?.status === 'online') ev.severity = 'info', ev.message = 'restic: инкрементальный снимок завершён';
+          this.db.events.unshift(ev);
+          this.emit({ type: 'event', event: ev });
+        }
+        scheduleEvent();
+      }, 4000 + Math.random() * 7000));
+    };
+    scheduleEvent();
+  }
+  private stopLive() { this.timers.forEach((t) => { clearInterval(t); clearTimeout(t); }); this.timers = []; }
+}
