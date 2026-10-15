@@ -156,7 +156,7 @@ function Overview({ n }: { n: NodeInfo }) {
         </Panel>
         <Panel title={tr("pages.nodes.NodeDetail.s_c6e47aac4b")}>
           <div className="col gap-3">
-            {[['CPU', n.cpu / 100], [tr("pages.nodes.NodeDetail.s_f63c10e017"), n.memUsed / n.memTotal], [tr("pages.nodes.NodeDetail.s_ca040760a3"), n.diskUsed / n.diskTotal]].map(([l, v]) => (
+            {[[tr('runtime.cpuLabel'), n.cpu / 100], [tr("pages.nodes.NodeDetail.s_f63c10e017"), n.memUsed / n.memTotal], [tr("pages.nodes.NodeDetail.s_ca040760a3"), n.diskUsed / n.diskTotal]].map(([l, v]) => (
               <div key={l as string} className="col" style={{ gap: 4 }}><div className="row" style={{ fontSize: 12 }}><span className="muted">{l}</span><span className="spacer" /><span className="num">{Math.round((v as number) * 100)}{tr("pages.nodes.NodeDetail.s_4345cb1fa2")}</span></div><Meter value={v as number} tone={tone(v as number)} /></div>
             ))}
           </div>
@@ -189,7 +189,7 @@ function Processes({ n }: { n: NodeInfo }) {
         <tbody>{list.map((p) => (
           <tr key={p.pid}><td className="num">{p.pid}</td><td className="mono">{p.name}</td><td className="muted">{p.component}</td>
             <td><StatusBadge tone={tone[p.status]} label={p.status} /></td>
-            <td className="num">{p.cpu.toFixed(1)}{tr("pages.nodes.NodeDetail.s_4345cb1fa2")}</td><td className="num">{p.memMb.toFixed(0)} {tr("pages.nodes.NodeDetail.s_cbb86104b4")}</td>
+            <td className="num">{n.telemetryUnavailable?.includes('processCpu') ? '—' : p.cpu.toFixed(1)}{tr("pages.nodes.NodeDetail.s_4345cb1fa2")}</td><td className="num">{n.telemetryUnavailable?.includes('processMemory') ? '—' : p.memMb.toFixed(0)} {tr("pages.nodes.NodeDetail.s_cbb86104b4")}</td>
             <td className="num" style={{ color: p.restarts > 3 ? 'var(--warn)' : undefined }}>{p.restarts}</td><td className="muted">{ago(p.startedAt)}</td></tr>
         ))}</tbody>
       </table>
