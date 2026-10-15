@@ -52,7 +52,7 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
 
   return (
     <Drawer open={open} onClose={onClose} wide title={initial ? tr("dashboards.WidgetEditor.s_809b6edf27") : tr("dashboards.WidgetEditor.s_fba03061ed")} sub={def ? `${def.label} · v${def.version}` : tr("dashboards.WidgetEditor.s_cc6a1a1bdf")}
-      footer={<><span className="muted grow" style={{ fontSize: 12 }}>{metric ? `${plugin?.manifest.id} / ${metric.id}` : ''}</span><Button variant="ghost" onClick={onClose}>{tr("dashboards.WidgetEditor.s_0ec753be8d")}</Button><Button variant="primary" disabled={!cfg} onClick={() => cfg && onSave(cfg)}>{initial ? tr("dashboards.WidgetEditor.s_768af67762") : tr("dashboards.WidgetEditor.s_559a87f7cc")}</Button></>}>
+      footer={<><span className="muted grow" style={{ fontSize: 12, minWidth: 0, overflowWrap: 'anywhere' }}>{metric ? `${plugin?.manifest.id} / ${metric.id}` : ''}</span><Button variant="ghost" onClick={onClose}>{tr("dashboards.WidgetEditor.s_0ec753be8d")}</Button><Button variant="primary" disabled={!cfg} onClick={() => cfg && onSave(cfg)}>{initial ? tr("dashboards.WidgetEditor.s_768af67762") : tr("dashboards.WidgetEditor.s_559a87f7cc")}</Button></>}>
       <Tabs value={tab} onChange={setTab} tabs={[{ id: 'source', label: tr("dashboards.WidgetEditor.s_dac966853e") }, { id: 'viz', label: tr("dashboards.WidgetEditor.s_fa562472a3") }, { id: 'style', label: tr("dashboards.WidgetEditor.s_ce6b4ba5bf") }]} />
 
       {tab === 'source' && (
@@ -62,14 +62,14 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
           {installed.map((p) => (
             <div key={p.manifest.id} className="panel">
               <div className="panel-head" style={{ minHeight: 36, padding: '6px 12px' }}><Icon name={p.manifest.icon} size={14} /><span className="panel-title">{p.manifest.name}</span><span className="widget-meta">{p.manifest.id}{tr("dashboards.WidgetEditor.s_9a78211436")}{p.manifest.version}</span></div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 6, padding: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 6, padding: 8 }}>
                 {p.manifest.metrics.map((m) => {
                   const sel = src?.kind === 'metric' && src.pluginId === p.manifest.id && src.metricId === m.id;
                   return (
                     <button key={m.id} className="viz-option" aria-pressed={sel} onClick={() => pickMetric(p, m)}>
                       <span className="col" style={{ gap: 0, minWidth: 0 }}>
                         <span className="truncate" style={{ fontWeight: 500 }}>{m.label}</span>
-                        <span className="muted mono" style={{ fontSize: 10.5 }}>{KIND_LABEL[m.kind]}{m.unit ? ` · ${m.unit}` : ''}{m.dimensions.length ? ` · ${m.dimensions.map((d) => d.id).join(',')}` : ''}</span>
+                        <span className="muted mono widget-source-meta" style={{ fontSize: 10.5 }}>{KIND_LABEL[m.kind]}{m.unit ? ` · ${m.unit}` : ''}{m.dimensions.length ? ` · ${m.dimensions.map((d) => d.label).join(' · ')}` : ''}</span>
                       </span>
                     </button>
                   );
@@ -78,7 +78,7 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
             </div>
           ))}
           <div className="label" style={{ marginTop: 6 }}>{tr("dashboards.WidgetEditor.s_fb4d324eca")}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 6 }}>
             {widgetRegistry.all('system').map((d) => (
               <button key={d.type} className="viz-option" aria-pressed={cfg?.type === d.type} onClick={() => pickSystem(d.type)}>
                 <Icon name={d.icon} size={15} className="muted" />
@@ -121,7 +121,7 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
           {metric && (
             <>
               <div className="muted" style={{ fontSize: 12 }}>{tr("dashboards.WidgetEditor.s_d0aed14458")}<code>{metric.kind}</code>{tr("dashboards.WidgetEditor.s_94c67da09e")}<span className="badge accent">{tr("dashboards.WidgetEditor.s_734c3c67db")}</span> {tr("dashboards.WidgetEditor.s_dd00ccd707")}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(230px, 100%), 1fr))', gap: 6 }}>
                 {ranked.map(({ def: d, score, reason, hinted }) => (
                   <button key={d.type} className="viz-option" disabled={score === 0} aria-pressed={cfg?.type === d.type} onClick={() => setType(d.type)} title={reason}>
                     <Icon name={d.icon} size={16} className="muted" />
@@ -183,7 +183,7 @@ export function WidgetEditor({ open, initial, plugins, range, onClose, onSave }:
         <div style={{ marginTop: 20 }}>
           <div className="label" style={{ marginBottom: 6 }}>{tr("dashboards.WidgetEditor.s_5d092ca855")}</div>
           <div style={{ height: 260 }}>
-            <WidgetFrame config={cfg} plugins={plugins} range={range} refreshSec={0} editing={false} onEdit={() => setTab('source')} onRemove={() => {}} onDuplicate={() => {}} onDisplay={setDisplay} onReplaceType={setType} />
+            <WidgetFrame config={cfg} plugins={plugins} range={range} refreshSec={5} editing={false} onEdit={() => setTab('source')} onRemove={() => {}} onDuplicate={() => {}} onDisplay={setDisplay} onReplaceType={setType} />
           </div>
         </div>
       )}

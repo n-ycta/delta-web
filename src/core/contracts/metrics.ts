@@ -19,6 +19,7 @@ export interface Series { key: string; label: string; color?: string; points: Se
 export interface CategoryValue { key: string; label: string; value: number; color?: string; flagged?: boolean }
 
 export interface MetricResult {
+  emptyState?: {title: string; description: string};
   query: MetricQuery;
   from: number;
   to: number;

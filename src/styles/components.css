@@ -386,3 +386,10 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .bubble-widget summary { cursor:pointer; color:var(--ink-2); }
 .bubble-widget g:focus { outline:none; }
 .bubble-widget g:focus circle { stroke-width:3; }
+
+/* Editor cards keep icon geometry independent from long translated descriptions. */
+.viz-option { min-width: 0; }
+.viz-option > svg { flex: 0 0 20px; width: 20px; height: 20px; min-width: 20px; }
+.viz-option > .col { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+.viz-option > .score { flex: 0 0 auto; }
+.widget-source-meta { white-space: normal; overflow-wrap: anywhere; word-break: normal; }
