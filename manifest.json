@@ -89,7 +89,13 @@
     {
       "name": "plugins_list",
       "params": {},
-      "admin": false
+      "admin": false,
+      "description": "List plugins and their status",
+      "localizations": {
+        "ru": {
+          "description": "Список плагинов и их состояние"
+        }
+      }
     },
     {
       "name": "plugins_logs",
@@ -164,12 +170,24 @@
           "required": true
         }
       },
-      "admin": false
+      "admin": false,
+      "description": "Query metric series",
+      "localizations": {
+        "ru": {
+          "description": "Запросить временные ряды метрик"
+        }
+      }
     },
     {
       "name": "nodes_list",
       "params": {},
-      "admin": false
+      "admin": false,
+      "description": "List connected nodes",
+      "localizations": {
+        "ru": {
+          "description": "Список подключённых узлов"
+        }
+      }
     },
     {
       "name": "nodes_history",

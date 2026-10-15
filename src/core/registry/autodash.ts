@@ -41,7 +41,7 @@ export function widgetForMetric(reg: WidgetRegistry, pluginId: string, m: Metric
   const groupBy = m.dimensions[0] && (def.type === 'timeseries' || def.type === 'comparison' || def.type === 'bar') && m.dimensions[0].values?.length ? m.dimensions[0].id : undefined;
   return {
     id: uid('w'), type: def.type, typeVersion: def.version,
-    source: { kind: 'metric', pluginId, metricId: m.id, aggregation: m.defaultAggregation ?? m.aggregations[0], groupBy },
+    source: { kind: 'metric', pluginId, metricId: m.id, aggregation: m.defaultAggregation ?? m.aggregations[0], groupBy, filters: m.defaultFilters },
     display: def.defaultDisplay?.(m) ?? {},
     size: def.defaultSize,
   };

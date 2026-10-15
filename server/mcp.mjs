@@ -34,7 +34,7 @@ export async function createMcp(service,file=resolve(process.env.DATA_DIR||'data
  const publicProfile=p=>{const {secretHash,token,tokenId,...rest}=p;return rest};
  const handlers={
  'web.mcp_list':async()=>profiles.map(publicProfile),
- 'web.mcp_catalog':async()=>{const caps=await service.request('GET','/capabilities');return (Array.isArray(caps)?caps:caps.capabilities||[]).filter(c=>safeCapabilities.includes(c.name));},
+ 'web.mcp_catalog':async({_locale='en'}={})=>{const caps=await service.request('GET','/capabilities');return (Array.isArray(caps)?caps:caps.capabilities||[]).filter(c=>safeCapabilities.includes(c.name)).map(c=>({...c,description:c.localizations?.[_locale]?.description||c.description}));},
  'web.mcp_create':async({profile:p})=>{
   if(!p||typeof p.name!=='string'||!p.name.trim()||p.name.length>80||!Array.isArray(p.capabilities)||!p.capabilities.length||p.capabilities.some(c=>!safeCapabilities.includes(c)))throw new DeltaError('bad_request','Choose a name and supported explicit capabilities');
   const strings=v=>Array.isArray(v)&&v.length<=64&&v.every(s=>typeof s==='string'&&s.length<128)?v:[];

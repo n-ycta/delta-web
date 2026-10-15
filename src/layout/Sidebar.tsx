@@ -1,6 +1,6 @@
 import { tr } from '@/i18n';
 import { NavLink, useLocation } from 'react-router-dom';
-import { FileCheck2, Gauge, KeyRound, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Puzzle, ScrollText, Server, Settings } from 'lucide-react';
+import { FileCheck2, Gauge, KeyRound, LayoutDashboard, PanelLeftClose, PanelLeftOpen, UserRound, Puzzle, ScrollText, Server, Settings } from 'lucide-react';
 import { useDashboards, useNodes, usePlugins } from '@/app/data';
 import { usePrefs, useRole, useUi, useRuntimeAccess } from '@/app/stores';
 import { ROLE_LABEL } from '@/core/contracts';
@@ -55,7 +55,7 @@ export function Sidebar() {
         <Item to="/settings" icon={<Settings size={16} />} label={tr("layout.Sidebar.s_7f17c7c62a")} />
       </nav>
       <div className="sidebar-foot">
-        <span className="plug-icon" style={{ width: 26, height: 26, borderRadius: 13, fontSize: 11, fontWeight: 600 }}>{tr("layout.Sidebar.s_7e201b31a4")}</span>
+        <span className="profile-avatar" aria-hidden="true"><UserRound size={15} /></span>
         <span className="sidebar-foot-text col grow" style={{ gap: 0, minWidth: 0 }}>
           <span className="truncate" style={{ fontWeight: 500 }}>{userName || tr("runtime.noUser")}</span>
           <span className="muted" style={{ fontSize: 11 }}>{ROLE_LABEL[role]}{role !== 'owner' && tr("layout.Sidebar.s_64fc2b8469")}</span>
