@@ -1,3 +1,4 @@
+import {SSHOnboarding,sshHandlers} from './ssh-onboarding.mjs';
 import {createEventJournal,withEventAudit} from './events.mjs';
 import {createUpdateService,updateHandlers} from './update-service.mjs';
 import {createTelemetry} from './telemetry.mjs';
@@ -8,6 +9,7 @@ const manifest=JSON.parse(await readFile(new URL('../manifest.json',import.meta.
 const monitor=createTelemetry(client,process.env.STORAGE_COMPONENT||'storage'),stopMonitor=monitor.start();
 const updater=await createUpdateService(),stopUpdates=updater.start();
 const events=await createEventJournal(client),stopEvents=events.start();
+const sshSetup=await new SSHOnboarding(updater.home,client).init();
 const mcp=await createMcp(client),sessions=await createSessions(client);
 const server=createServer(async(req,res)=>{
  try{
@@ -19,6 +21,17 @@ const server=createServer(async(req,res)=>{
    if(req.headers.origin&&req.headers.origin!==`${process.env.PUBLIC_ORIGIN||'http://'+req.headers.host}`){res.writeHead(403);res.end();return}
    const path=pathname.slice('/api/v1'.length);if(!['/call','/health','/capabilities'].includes(path)||!['GET','POST'].includes(req.method)){res.writeHead(404);res.end();return}
    let body='',bytes=0;for await(const c of req){bytes+=c.length;if(bytes>4*1024*1024){res.writeHead(413);res.end();return}body+=c}
+   // Never accept SSH login secrets over a publicly served plaintext Web origin.
+   if(req.method==='POST'&&path==='/call'){
+    let payload;try{payload=JSON.parse(body)}catch{}
+    if(payload?.capability==='web.nodes_ssh_install'){
+     const origin=new URL(process.env.PUBLIC_ORIGIN||'http://'+req.headers.host);
+     if(origin.protocol!=='https:'&&!['localhost','127.0.0.1','[::1]'].includes(origin.hostname)){
+      res.writeHead(403,{'content-type':'application/json','cache-control':'no-store'});
+      res.end(JSON.stringify({ok:false,error:{code:'forbidden',message:payload.args?._locale==='ru'?'Для передачи SSH-данных откройте Web через HTTPS или локальный туннель.':'Use HTTPS or a localhost tunnel before submitting SSH credentials.'}}));return;
+     }
+    }
+   }
    // Forward the user's credential, NOT the service's admin token.
    const upstream=await fetch(client.url+'/v1'+path,{method:req.method,headers:{authorization:req.headers.authorization||(sessions.credential(req)?'Bearer '+sessions.credential(req):''),'content-type':'application/json'},body:req.method==='POST'?body:undefined,signal:AbortSignal.timeout(35000)});
    res.writeHead(upstream.status,{'content-type':'application/json','cache-control':'no-store'});res.end(await upstream.text());return
@@ -31,4 +44,4 @@ const server=createServer(async(req,res)=>{
 });
 server.listen(Number(process.env.PORT||7710),process.env.HOST||'127.0.0.1');for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>controller.abort());
 const updates=updateHandlers(updater);for(const name of ['web.updates_settings','web.updates_install'])updates[name]=withEventAudit(events,name,updates[name]);
-await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor,updater,events),...mcp.handlers,...updates},{signal:controller.signal});stopMonitor();stopUpdates();stopEvents();server.close();
+await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor,updater,events,sshSetup),...mcp.handlers,...updates,...sshHandlers(sshSetup)},{signal:controller.signal});stopMonitor();stopUpdates();stopEvents();server.close();

@@ -36,6 +36,11 @@ export interface NodeHistory { cpu: Series; mem: Series; latency: Series }
 
 export interface PairingTicket { code: string; expiresAt: number; command: string }
 
+export interface SSHTarget { host:string; port:number; username:string }
+export interface SSHProbe { ticket:string; fingerprint:string; algorithm:string; expiresAt:number }
+export interface SSHInstall extends SSHTarget { ticket:string; fingerprint:string; auth:'password'|'key'; password?:string; privateKey?:string; passphrase?:string; trust:'calls'|'manage'|'mutual'; acknowledgeAdmin:boolean }
+export interface SSHJob { id:string; host:string; username:string; status:'running'|'complete'|'failed'; phase:string; trust:string; peerId?:string; error?:string }
+
 export interface CoreApi {
   readonly mode: 'mock' | 'http';
   readonly endpoint: string;
@@ -61,6 +66,10 @@ export interface CoreApi {
   // data
   queryMetric(q: MetricQuery): Promise<MetricResult>;
 
+  probeSSH(target:SSHTarget):Promise<SSHProbe>;
+  installSSH(input:SSHInstall):Promise<{jobId:string}>;
+  sshJob(id:string):Promise<SSHJob>;
+  setNodeTrust(id:string,admin:boolean):Promise<unknown>;
   // nodes
   listNodes(): Promise<NodeInfo[]>;
   getNodeHistory(nodeId: string, rangeMs: number): Promise<NodeHistory>;

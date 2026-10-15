@@ -49,6 +49,10 @@ export class MockCoreAdapter implements CoreApi {
   async checkUpdates(){return this.updateStatus()}
   async configureUpdates(_values:import('../updates').UpdateSettings):Promise<import('../updates').UpdateSettings>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
   async installUpdates(_target:string):Promise<{accepted:boolean;jobId:string}>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async probeSSH(_target:import('../types').SSHTarget):Promise<import('../types').SSHProbe>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async installSSH(_input:import('../types').SSHInstall):Promise<{jobId:string}>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async sshJob(_id:string):Promise<import('../types').SSHJob>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async setNodeTrust(_id:string,_admin:boolean):Promise<unknown>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
   readonly mode = 'mock' as const;
   readonly endpoint = 'mock://in-browser';
   private db: Db;

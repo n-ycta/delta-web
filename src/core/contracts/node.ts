@@ -31,7 +31,7 @@ export const NodeComponent = z.object({
 export type NodeComponent = z.infer<typeof NodeComponent>;
 
 export const ConnectionConfig = z.object({
-  transport: z.enum(['http', 'wss', 'grpc', 'mqtt', 'adb-relay']),
+  transport: z.enum(['ssh', 'http', 'wss', 'grpc', 'mqtt', 'adb-relay']),
   endpoint: z.string(),
   heartbeatSec: z.number().int().min(5).max(600),
   reconnect: z.enum(['exponential', 'linear', 'manual']),
@@ -71,6 +71,8 @@ export const NodeInfo = z.object({
   pluginIds: z.array(z.string()),
   components: z.array(NodeComponent),
   processes: z.array(NodeProcess),
+  trustedAdmin:z.boolean().optional(),
+  sshConnection:z.object({host:z.string(),port:z.number(),fingerprint:z.string(),component:z.string()}).optional(),
   connection: ConnectionConfig,
   allowedCommands: z.array(NodeCommandId),
   errors: z.array(z.object({ ts: z.number(), code: z.string(), message: z.string(), component: z.string(), count: z.number() })),

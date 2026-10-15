@@ -343,6 +343,8 @@ function Console({ n }: { n: NodeInfo }) {
 function Connection({ n }: { n: NodeInfo }) {
   const [cfg, setCfg] = useState(n.connection);
   const [remove, setRemove] = useState(false);
+  const [trustConfirm,setTrustConfirm]=useState(false);
+  const changeTrust=useMutation(api=>api.setNodeTrust(n.id,!n.trustedAdmin),{invalidate:['nodes'],onSuccess:()=>setTrustConfirm(false)});
   const canAdmin = useCan('nodes.admin');
   const nav = useNavigate();
   const parsed = useMemo(() => ConnectionConfig.safeParse(cfg), [cfg]);
@@ -356,6 +358,8 @@ function Connection({ n }: { n: NodeInfo }) {
   const num = (k: 'heartbeatSec' | 'maxBackoffSec') => <input className={`input mono ${errs[k] ? 'invalid' : ''}`} style={{ width: 120 }} type="number" value={cfg[k]} disabled={!canAdmin} onChange={(e) => set(k, Number(e.target.value))} />;
   return (
     <div className="col gap-4" style={{ maxWidth: 900 }}>
+      {n.trustedAdmin!==undefined&&<Panel title={tr('ssh.trust')}><label className="check"><input type="checkbox" checked={n.trustedAdmin} disabled={!canAdmin||changeTrust.pending} onChange={()=>n.trustedAdmin?changeTrust.run():setTrustConfirm(true)} />{tr('ssh.trustIncoming')}</label>{changeTrust.error&&<div className="field-error">{changeTrust.error.message}</div>}<Confirm open={trustConfirm} onClose={()=>setTrustConfirm(false)} danger title={tr('ssh.trustIncoming')} body={tr('ssh.adminWarning')} confirmLabel={tr('ssh.saveTrust')} loading={changeTrust.pending} onConfirm={()=>changeTrust.run()} /></Panel>}
+      {n.sshConnection?<Panel title={tr('ssh.transport')}><p className="mono" style={{overflowWrap:'anywhere'}}>{n.sshConnection.host}{':'}{n.sshConnection.port}</p><Field label={tr('ssh.fingerprint')}><code style={{overflowWrap:'anywhere'}}>{n.sshConnection.fingerprint}</code></Field><p className="muted">{tr('ssh.background')}</p></Panel>:
       <Panel title={tr("pages.nodes.NodeDetail.s_47a23743fc")} actions={<><Wifi size={14} className="muted" /><span className="muted" style={{ fontSize: 12 }}>{tr("pages.nodes.NodeDetail.s_e724c1cb96")}{n.latencyMs ?? '—'} {tr("pages.nodes.NodeDetail.s_5160aea6bb")}</span></>}>
         <div className="form-row"><div><div className="field-label">{tr("pages.nodes.NodeDetail.s_e25d2d0eed")}</div><div className="field-help">{tr("pages.nodes.NodeDetail.s_b664474aa5")}</div></div>
           <Segmented value={cfg.transport} onChange={(v) => set('transport', v)} options={(['wss', 'grpc', 'mqtt', 'adb-relay'] as const).map((v) => ({ value: v, label: v }))} /></div>
@@ -376,7 +380,7 @@ function Connection({ n }: { n: NodeInfo }) {
           <Button disabled={!dirty} onClick={() => setCfg(n.connection)}>{tr("pages.nodes.NodeDetail.s_058f162d29")}</Button>
           <Button variant="primary" perm="nodes.admin" disabled={!dirty || Object.keys(errs).length > 0} loading={save.pending} onClick={() => save.run()}>{tr("pages.nodes.NodeDetail.s_4864057d62")}</Button>
         </div>
-      </Panel>
+      </Panel>}
       <div className="panel" style={{ borderColor: 'color-mix(in srgb, var(--err) 35%, var(--rule))' }}>
         <div className="panel-body row">
           <div className="grow"><div style={{ fontWeight: 600 }}>{tr("pages.nodes.NodeDetail.s_cd579ec9b5")}</div><div className="muted" style={{ fontSize: 12.5 }}>{tr("pages.nodes.NodeDetail.s_6f6b815715")}</div></div>

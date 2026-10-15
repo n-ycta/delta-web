@@ -11,6 +11,40 @@
 
 - Improve release documentation and changelog-backed release publishing; no new runtime release is created for this maintenance change.
 
+## [v0.5.0]
+
+### Features
+- Nodes → Add device now includes a Linux VPS installation wizard over SSH with IP/hostname, port and username.
+- Authenticate with a password or private key, including encrypted-key passphrases.
+- Verify the server fingerprint before authentication and choose capability-only, computer-to-server or mutual administrative trust.
+- Provision a bare, unprivileged server node without installing Web or Storage.
+- Keep a bidirectional encrypted SSH tunnel under core supervision, independent of the browser and completed Web setup.
+- View connection progress and manage incoming administrative trust from the node connection page.
+
+### Security
+- Owner-only SSH operations; peer administrators and narrowly delegated tokens cannot submit setup credentials.
+- Target-bound, expiring, single-use fingerprint approvals and explicit administrative consent.
+- Never persist setup passwords, uploaded private keys or passphrases in jobs or browser storage.
+- Create a separate private forwarding key with strict host-key pinning, disabled shell/agent/X11 access and loopback-only forwards.
+- Reject public plaintext Web credential submission; use HTTPS or a localhost tunnel.
+- Remove the local tunnel and its private key when disconnecting the peer.
+
+### Improvements
+- Localized Russian/English setup phases, errors and trust controls.
+- Responsive desktop/mobile wizard and safe interruption handling.
+- Preserve invitation-based installation over an existing protected network.
+
+### Requirements and Limits
+- Delta Core 0.4.0 or newer on both nodes; the wizard installs/updates the remote core from verified official releases.
+- OpenSSH client on the controlling computer; Linux server with systemd user services and SSH forwarding allowed.
+- Root bootstrap configures an unprivileged service account; non-root bootstrap requires user lingering.
+- Windows SSH-server provisioning is not included. Controller Windows checks cover build/unit tests, not a real Windows-to-VPS session.
+- An inert restricted public-key entry can remain on the server after disconnection; its private key is removed locally.
+
+### Validation
+- Real two-core tests through OpenSSH cover password/encrypted-key setup, both routing directions, trust downgrade, core restart without Web and removal.
+- Browser tests cover consent gating, desktop/mobile layout and absence of persisted login credentials.
+
 ## [v0.4.1]
 
 Includes changes from v0.4.0 through v0.4.1.

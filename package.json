@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -25,7 +25,9 @@
     "test:sidebar-browser": "node scripts/sidebar-browser.cjs",
     "test:input-access-browser": "node scripts/input-access-browser.cjs",
     "test:editor-browser": "node scripts/editor-layout-browser.cjs",
-    "test:plugin-notice-browser": "node scripts/plugin-notice-browser.cjs"
+    "test:plugin-notice-browser": "node scripts/plugin-notice-browser.cjs",
+    "test:ssh": "node tests/ssh-onboarding-live.mjs",
+    "test:ssh-browser": "node scripts/ssh-wizard-browser.cjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.0.14",
@@ -41,6 +43,7 @@
     "react-grid-layout": "1.4.4",
     "react-router-dom": "^7.18.4",
     "recharts": "^2.12.7",
+    "ssh2": "^1.17.0",
     "zod": "^3.23.8",
     "zustand": "^4.5.5"
   },

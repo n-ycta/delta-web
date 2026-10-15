@@ -1,3 +1,4 @@
+import {SSHConnectDialog} from './SSHConnectDialog';
 import { tr } from '@/i18n';
 import { useEffect, useState } from 'react';
 import { Copy } from 'lucide-react';
@@ -8,22 +9,24 @@ import { NODE_KIND_LABEL } from '@/core/contracts';
 import type { PairingTicket } from '@/api';
 
 export function PairDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [method,setMethod]=useState<'ssh'|'direct'>('ssh');
   const [hub,setHub]=useState(''),[device,setDevice]=useState(''),[trust,setTrust]=useState(false),[os,setOs]=useState('linux');
   const [kind, setKind] = useState('vps');
   const [name, setName] = useState('');
   const [ticket, setTicket] = useState<PairingTicket | null>(null);
   const [now, setNow] = useState(Date.now());
   const create = useMutation((api) => api.createPairingTicket(kind, name || `${kind}-new`), { onSuccess: (t) => setTicket(t) });
-  useEffect(() => { if (open) { setTicket(null); setName(''); } }, [open]);
+  useEffect(() => { if (open) { setTicket(null); setName(''); setMethod('ssh'); } }, [open]);
   useEffect(() => { if (!ticket) return; const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, [ticket]);
   const left = ticket ? Math.max(0, Math.round((ticket.expiresAt - now) / 1000)) : 0;
   const quote=(s:string)=>"'"+s.replaceAll("'",os==='linux'?"'\"'\"'":"''")+"'";
   const command=ticket?(os==='linux'?`curl -fsSL https://raw.githubusercontent.com/n-ycta/delta/main/install.sh -o /tmp/delta-install.sh && sh /tmp/delta-install.sh --plugins none --listen 0.0.0.0 --public-url ${quote(device)} --join-url ${quote(hub)} --join-code ${quote(ticket.code)} ${trust?'--trust-hub':''}`:`$p=Join-Path $env:TEMP 'delta-install.ps1'; Invoke-WebRequest https://raw.githubusercontent.com/n-ycta/delta/main/install.ps1 -OutFile $p; & $p -Plugins 'none' -Listen '0.0.0.0' -PublicUrl ${quote(device)} -JoinUrl ${quote(hub)} -JoinCode ${quote(ticket.code)} ${trust?'-TrustHub':''}`):'';
+  if(method==='ssh')return <SSHConnectDialog open={open} onClose={onClose} onDirect={()=>setMethod('direct')} />;
   return (
     <Modal open={open} onClose={onClose} title={tr("pages.nodes.PairDialog.s_3f9a7c101f")} footer={ticket ? <Button variant="primary" onClick={onClose}>{tr("pages.nodes.PairDialog.s_398c7d4f7b")}</Button> : <><Button variant="ghost" onClick={onClose}>{tr("pages.nodes.PairDialog.s_0ec753be8d")}</Button><Button variant="primary" loading={create.pending} disabled={!/^https?:\/\//.test(hub)||!/^https?:\/\//.test(device)} onClick={() => create.run()}>{tr("pages.nodes.PairDialog.s_7c5f96cd82")}</Button></>}>
       {!ticket ? (
         <div className="col gap-4">
-          <p className="muted">{tr('polish.remoteHint')}</p>
+          <Button variant="ghost" onClick={()=>setMethod('ssh')}>{tr('ssh.useSSH')}</Button><p className="muted">{tr('polish.remoteHint')}</p>
           <Field label={tr('polish.hubUrl')}><input className="input" value={hub} onChange={e=>setHub(e.target.value)} /></Field>
           <Field label={tr('polish.deviceUrl')}><input className="input" value={device} onChange={e=>setDevice(e.target.value)} /></Field>
           <select className="select" value={os} onChange={e=>setOs(e.target.value)}><option value="linux">{'Linux'}</option><option value="windows">{'Windows'}</option></select>

@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -342,7 +342,27 @@
       "name": "updates_install",
       "params": {},
       "admin": true
+    },
+    {
+      "name": "nodes_ssh_probe",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "nodes_ssh_install",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "nodes_ssh_status",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "nodes_trust",
+      "params": {},
+      "admin": true
     }
   ],
-  "version": "0.4.1"
+  "version": "0.5.0"
 }
