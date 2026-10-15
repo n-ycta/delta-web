@@ -18,6 +18,7 @@ function Strip() {
   const { alerts } = useAlerts();
   const n = nodes.data ?? [];
   const p = plugins.data?.filter(isInstalled) ?? [];
+  const rateKnown = p.filter(isLive).every(p => p.instance.eventsPerMin !== undefined);
   const rate = p.filter(isLive).reduce((s, x) => s + (x.instance.eventsPerMin ?? 0), 0);
   const crit = alerts.filter((a) => a.tone === 'err' || a.tone === 'crit').length;
   return (
@@ -25,7 +26,7 @@ function Strip() {
       <Link to="/settings?tab=connection"><div className="label">{tr("pages.Home.s_3609281642")}</div><div className="v">{info.data ? info.data.coreVersion : '—'}<small>{info.data ? `up ${fmtDuration((Date.now() - info.data.startedAt) / 1000)}` : ''}</small></div></Link>
       <Link to="/nodes"><div className="label">{tr("pages.Home.s_4b54d244be")}</div><div className="v">{n.filter((x) => x.status !== 'offline').length}<small>{tr("pages.Home.s_fcbe5033ba")}{n.length}</small></div></Link>
       <Link to="/plugins"><div className="label">{tr("pages.Home.s_c94c451fb7")}</div><div className="v">{p.filter(isLive).length}<small>{tr("pages.Home.s_fcbe5033ba")}{p.length}</small></div></Link>
-      <Link to="/events"><div className="label">{tr("pages.Home.s_6574bcdcf4")}</div><div className="v">{fmtNumber(rate, 0)}<small>{tr("pages.Home.s_1771630f60")}</small></div></Link>
+      <Link to="/events"><div className="label">{tr("pages.Home.s_6574bcdcf4")}</div><div className="v">{fmtNumber(rateKnown ? rate : undefined, 0)}<small>{tr("pages.Home.s_1771630f60")}</small></div></Link>
       <Link to="/events?sev=error"><div className="label">{tr("pages.Home.s_7c80872ccf")}</div><div className="v" style={{ color: crit ? 'var(--err)' : undefined }}>{crit}<small>{alerts.length - crit ? tr("pages.Home.s_0ac56e640c", { p0: (alerts.length - crit) }) : ''}</small></div></Link>
     </div>
   );

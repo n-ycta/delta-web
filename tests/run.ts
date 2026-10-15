@@ -1,3 +1,4 @@
+import { isCoreEndpoint } from '../src/api/endpoints';
 /* Minimal dependency-free test runner: `npm test` */
 declare const process: { exit(code: number): never };
 import { compare, diffKind, isValid, satisfies } from '../src/core/lib/semver';
@@ -64,5 +65,9 @@ test('generateMetric is deterministic and grouped', () => {
   ok(a.series.length >= 2, `series=${a.series.length}`); eq(a.series[0].points.length, b.series[0].points.length);
 });
 
+test('local and HTTP core endpoints validated without blocking initial login', () => {
+  ok(isCoreEndpoint('/api')); ok(isCoreEndpoint('http://127.0.0.1:7700')); ok(isCoreEndpoint('https://delta.example/api'));
+  ok(!isCoreEndpoint('//evil.example')); ok(!isCoreEndpoint('javascript:alert(1)')); ok(!isCoreEndpoint('https://user:secret@delta.example')); ok(!isCoreEndpoint('/api?token=secret'));
+});
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

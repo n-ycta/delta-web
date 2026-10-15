@@ -1,3 +1,4 @@
+import { isCoreEndpoint } from '@/api/endpoints';
 import { tr } from '@/i18n';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { AlertTriangle, CheckCircle2, Download, FlaskConical, PlugZap, RotateCcw
 import { useApi } from '@/app/ApiContext';
 import { useDashboards, usePlugins } from '@/app/data';
 import { queryClient, useQuery } from '@/app/query';
-import { toast, useCan, usePrefs, type Density, type Theme } from '@/app/stores';
+import { toast, usePrefs, type Density, type Theme } from '@/app/stores';
 import { PALETTES, useResolvedTheme } from '@/app/theme';
 import { createCoreApi, readConnectionSettings, toApiError, writeConnectionSettings, type ConnectionSettings, type CoreInfo } from '@/api';
 import { MockCoreAdapter, resetMockDatabase, type MockControl } from '@/api/mock/MockCoreAdapter';
@@ -75,12 +76,11 @@ function General() {
 
 function Connection() {
   const api = useApi();
-  const canConfig = useCan('system.config');
   const current = readConnectionSettings();
   const [draft, setDraft] = useState<ConnectionSettings>(current);
   const [test, setTest] = useState<{ state: 'idle' | 'running' | 'ok' | 'fail'; info?: CoreInfo; msg?: string; ms?: number }>({ state: 'idle' });
   const info = useQuery('core/info', (a) => a.info());
-  const urlErr = draft.mode === 'http' && !/^https?:\/\/[^\s/]+/.test(draft.baseUrl) ? tr("pages.SettingsPage.s_a830b4c344") : undefined;
+  const urlErr = draft.mode === 'http' && !isCoreEndpoint(draft.baseUrl) ? tr("pages.SettingsPage.s_a830b4c344") : undefined;
   const dirty = JSON.stringify(draft) !== JSON.stringify(current);
   const runTest = async () => {
     setTest({ state: 'running' });
@@ -117,7 +117,7 @@ function Connection() {
           {test.state === 'fail' && <span className="row" style={{ color: 'var(--err)', fontSize: 12.5 }}><AlertTriangle size={14} />{test.msg}</span>}
           <span className="spacer" />
           <Button icon={<PlugZap size={14} />} loading={test.state === 'running'} disabled={!!urlErr} onClick={runTest}>{tr("pages.SettingsPage.s_52dec92eda")}</Button>
-          <Button variant="primary" perm="system.config" disabled={!dirty || !!urlErr || !canConfig} onClick={apply} title={dirty ? tr("pages.SettingsPage.s_4fc3be6905") : undefined}>{tr("pages.SettingsPage.s_4f52ca05be")}</Button>
+          <Button variant="primary" disabled={!dirty || !!urlErr} onClick={apply} title={dirty ? tr("pages.SettingsPage.s_4fc3be6905") : undefined}>{tr("pages.SettingsPage.s_4f52ca05be")}</Button>
         </div>
       </Panel>
     </div>
