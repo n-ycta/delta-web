@@ -7,7 +7,7 @@ import { useResolvedTheme } from '@/app/theme';
 import { useApi } from '@/app/ApiContext';
 import { Button, Dot, Kbd } from '@/ui/primitives';
 
-const LABELS: Record<string, string> = { dashboards: 'dashboards', plugins: 'plugins', nodes: 'nodes', events: 'events', contracts: 'contracts', access: 'access', settings: 'settings' };
+const LABELS: Record<string, string> = { dashboards: tr('runtime.crumb_dashboards'), plugins: tr('runtime.crumb_plugins'), nodes: tr('runtime.crumb_nodes'), events: tr('runtime.crumb_events'), contracts: tr('runtime.crumb_contracts'), access: tr('runtime.crumb_access'), settings: tr('runtime.crumb_settings') };
 
 export function Topbar() {
   const loc = useLocation();

@@ -23,7 +23,7 @@ function Strip() {
   const crit = alerts.filter((a) => a.tone === 'err' || a.tone === 'crit').length;
   return (
     <div className="strip">
-      <Link to="/settings?tab=connection"><div className="label">{tr("pages.Home.s_3609281642")}</div><div className="v">{info.data ? info.data.coreVersion : '—'}<small>{info.data ? `up ${fmtDuration((Date.now() - info.data.startedAt) / 1000)}` : ''}</small></div></Link>
+      <Link to="/settings?tab=connection"><div className="label">{tr("pages.Home.s_3609281642")}</div><div className="v">{info.data ? info.data.coreVersion : '—'}<small>{info.data ? tr('runtime.uptime', { duration: fmtDuration((Date.now() - info.data.startedAt) / 1000) }) : ''}</small></div></Link>
       <Link to="/nodes"><div className="label">{tr("pages.Home.s_4b54d244be")}</div><div className="v">{n.filter((x) => x.status !== 'offline').length}<small>{tr("pages.Home.s_fcbe5033ba")}{n.length}</small></div></Link>
       <Link to="/plugins"><div className="label">{tr("pages.Home.s_c94c451fb7")}</div><div className="v">{p.filter(isLive).length}<small>{tr("pages.Home.s_fcbe5033ba")}{p.length}</small></div></Link>
       <Link to="/events"><div className="label">{tr("pages.Home.s_6574bcdcf4")}</div><div className="v">{fmtNumber(rateKnown ? rate : undefined, 0)}<small>{tr("pages.Home.s_1771630f60")}</small></div></Link>
