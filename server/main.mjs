@@ -1,9 +1,11 @@
+import {createUpdateService,updateHandlers} from './update-service.mjs';
 import {createTelemetry} from './telemetry.mjs';
 import {createMcp} from './mcp.mjs';import {createSessions} from './sessions.mjs';
 import {createServer} from 'node:http';import {readFile} from 'node:fs/promises';import {resolve,extname,sep} from 'node:path';import {DeltaClient,servePlugin} from './delta-sdk.mjs';import {createBridge} from './bridge.mjs';
 const client=new DeltaClient(),root=resolve('dist'),controller=new AbortController();
 const manifest=JSON.parse(await readFile(new URL('../manifest.json',import.meta.url),'utf8'));
 const monitor=createTelemetry(client,process.env.STORAGE_COMPONENT||'storage'),stopMonitor=monitor.start();
+const updater=await createUpdateService(),stopUpdates=updater.start();
 const mcp=await createMcp(client),sessions=await createSessions(client);
 const server=createServer(async(req,res)=>{
  try{
@@ -26,4 +28,4 @@ const server=createServer(async(req,res)=>{
  }catch(e){res.writeHead(e.code==='ENOENT'?404:503);res.end('Delta service unavailable')}
 });
 server.listen(Number(process.env.PORT||7710),process.env.HOST||'127.0.0.1');for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>controller.abort());
-await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor),...mcp.handlers},{signal:controller.signal});stopMonitor();server.close();
+await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',monitor,updater),...mcp.handlers,...updateHandlers(updater)},{signal:controller.signal});stopMonitor();stopUpdates();server.close();

@@ -45,6 +45,10 @@ const rawId = (m: unknown) => (m && typeof m === 'object' && 'id' in m ? String(
  * state to localStorage and pushes realtime messages, so every UI scenario works offline.
  */
 export class MockCoreAdapter implements CoreApi {
+  async updateStatus():Promise<import('../updates').UpdateStatus>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async checkUpdates(){return this.updateStatus()}
+  async configureUpdates(_values:import('../updates').UpdateSettings):Promise<import('../updates').UpdateSettings>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
+  async installUpdates(_target:string):Promise<{accepted:boolean;jobId:string}>{throw new CoreApiError('UNSUPPORTED',tr('updates.liveOnly'))}
   readonly mode = 'mock' as const;
   readonly endpoint = 'mock://in-browser';
   private db: Db;

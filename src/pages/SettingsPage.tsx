@@ -1,3 +1,4 @@
+import {Updates} from './Updates';
 import { isCoreEndpoint } from '@/api/endpoints';
 import { tr } from '@/i18n';
 import { useMemo, useState } from 'react';
@@ -18,7 +19,7 @@ import { ErrorState, Skeleton } from '@/ui/states';
 import { downloadJson } from '@/dashboards/useDashboardActions';
 import { widgetRegistry } from '@/widgets/registry';
 
-type Tab = 'general' | 'connection' | 'backup' | 'developer';
+type Tab = 'general' | 'connection' | 'backup' | 'developer' | 'updates';
 const PREF_KEYS = ['theme', 'density', 'palette', 'hour12', 'homeStrip', 'realNoticeHidden', 'sidebarCollapsed'] as const;
 
 export function SettingsPage() {
@@ -29,10 +30,11 @@ export function SettingsPage() {
     <div className="page">
       <PageHead title={tr("pages.SettingsPage.s_7f17c7c62a")} sub={tr("pages.SettingsPage.s_4bafd289f1")} />
       <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
-        { id: 'general', label: tr("pages.SettingsPage.s_8d7038f840") }, { id: 'connection', label: tr("pages.SettingsPage.s_47a23743fc") }, { id: 'backup', label: tr("pages.SettingsPage.s_45a67513f4") },
+        {id:'updates',label:tr('updates.title')}, { id: 'general', label: tr("pages.SettingsPage.s_8d7038f840") }, { id: 'connection', label: tr("pages.SettingsPage.s_47a23743fc") }, { id: 'backup', label: tr("pages.SettingsPage.s_45a67513f4") },
         ...(api instanceof MockCoreAdapter ? [{ id: 'developer' as const, label: tr("pages.SettingsPage.s_c69d7e0c09") }] : []),
       ]} />
       <div style={{ maxWidth: 1040 }}>
+      {tab === 'updates' && <Updates />}
       {tab === 'general' && <General />}
       {tab === 'connection' && <Connection />}
       {tab === 'backup' && <Backup />}

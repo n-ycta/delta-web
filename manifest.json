@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.3.4",
+      "version": "0.4.0",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -322,7 +322,27 @@
       "name": "status",
       "params": {},
       "description": "Web telemetry persistence status and observed record activity"
+    },
+    {
+      "name": "updates_status",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "updates_check",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "updates_settings",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "updates_install",
+      "params": {},
+      "admin": true
     }
   ],
-  "version": "0.3.4"
+  "version": "0.4.0"
 }
