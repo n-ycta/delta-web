@@ -30,4 +30,4 @@ try{
  await assert.rejects(u.installCore(item,async()=>{}),e=>e.code==='rolled_back');assert.equal((await u.call('core.info')).version,oldVersion);assert.equal((await u.call('core.info')).node_id,before.node_id);
  u.waitCore=wait;await u.installCore(item,async()=>{});assert.equal((await u.call('core.info')).version,latest);assert.equal((await u.call('core.info')).node_id,before.node_id);assert.equal(await readFile(join(home,'sentinel'),'utf8'),'preserve identity and data');
  console.log('PASS '+platform()+': published core checksum, actual replacement, forced-health rollback, same identity and data');
-}finally{const identity=await u.findCore(binary).catch(()=>null);if(identity)await u.stopCore(binary,identity,false);await rm(home,{recursive:true,force:true})}
+}catch(e){console.error('Core live test failure:',e.code||e.name,e.message);throw e}finally{const identity=await u.findCore(binary).catch(()=>null);if(identity)await u.stopCore(binary,identity,false);await rm(home,{recursive:true,force:true,maxRetries:10,retryDelay:300}).catch(e=>console.error('Test cleanup:',e.code))}
