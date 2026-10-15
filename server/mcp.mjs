@@ -16,6 +16,17 @@ export function constrain(profile,cap,args){
  if(profile.plugins.length&&cap==='typing.status'&&!profile.plugins.includes('dev.delta.type'))throw new DeltaError('forbidden','Typing data is outside this profile');
  return {args:a,node:target};
 }
+const filtersSchema={type:'object',additionalProperties:{type:'array',items:{type:'string'},minItems:1}};
+const metricQuerySchema={type:'object',additionalProperties:false,required:['pluginId','metricId','range'],properties:{pluginId:{type:'string',description:'Stable reverse-DNS plugin ID, for example dev.delta.type'},metricId:{type:'string',description:'Published metric ID, for example wpm or accuracy'},range:{oneOf:[{type:'object',required:['preset'],additionalProperties:false,properties:{preset:{enum:Object.keys(presets)}}},{type:'object',required:['from','to'],additionalProperties:false,properties:{from:{type:'integer',minimum:0,description:'Inclusive epoch milliseconds'},to:{type:'integer',minimum:1,description:'Exclusive epoch milliseconds'}}}]},aggregation:{enum:['avg','sum','min','max','last','p95','count']},stepMs:{type:'integer',minimum:1000},groupBy:{type:'string'},filters:filtersSchema,compare:{enum:['none','previous']}}};
+export function toolSchema(name,cap={},profile={nodes:[]}){
+ const properties={},required=[];
+ for(const [k,v] of Object.entries(cap.params||{})){properties[k]={...v};delete properties[k].required;if(v.required===true)required.push(k);}
+ if(name==='web.metrics_query'){properties.query=metricQuerySchema;required.push('query');}
+ if(name==='storage.query'){Object.assign(properties,{source:{type:'string',description:'Producer plugin ID'},metric:{type:'string'},from:{type:'integer',minimum:0},to:{type:'integer',minimum:1},limit:{type:'integer',minimum:1,maximum:10000},filters:filtersSchema});required.push('source','metric','from','to');}
+ properties._targetNode={type:'string',description:'Execute on this paired node; omit for the local node',...(profile.nodes.length?{enum:profile.nodes}:{})};
+ if(profile.nodes.length&&!['web.nodes_list','web.plugins_list'].includes(name))required.push('_targetNode');
+ return {type:'object',properties,required:[...new Set(required)],additionalProperties:false};
+}
 function redact(v,fields){if(Array.isArray(v))return v.map(x=>redact(x,fields));if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).filter(([k])=>!fields.includes(k)).map(([k,x])=>[k,redact(x,fields)]));return v;}
 export async function createMcp(service,file=resolve(process.env.DATA_DIR||'data','mcp.json')){
  let profiles=[];try{profiles=JSON.parse(await readFile(file,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
@@ -48,7 +59,7 @@ export async function createMcp(service,file=resolve(process.env.DATA_DIR||'data
   try{
    if(message.method==='initialize'){rpc({result:{protocolVersion:'2025-06-18',capabilities:{tools:{listChanged:false}},serverInfo:{name:'Delta · '+p.name,version:'0.2.0'}}});return;}
    if(message.method==='ping'){rpc({result:{}});return;}
-   if(message.method==='tools/list'){const catalog=await service.request('GET','/capabilities');const caps=Array.isArray(catalog)?catalog:catalog.capabilities||[];rpc({result:{tools:p.capabilities.map(name=>{const c=caps.find(c=>c.name===name)||{},properties={_targetNode:{type:'string',description:'Optional target node; required when this profile limits nodes'}},required=[];for(const [k,v] of Object.entries(c.params||{})){properties[k]={...v};delete properties[k].required;if(v.required)required.push(k);}return {name:name.replaceAll('.','__'),description:c.description||name,inputSchema:{type:'object',properties,required,additionalProperties:false}};})}});return;}
+   if(message.method==='tools/list'){const catalog=await service.request('GET','/capabilities');const caps=Array.isArray(catalog)?catalog:catalog.capabilities||[];rpc({result:{tools:p.capabilities.map(name=>{const c=caps.find(c=>c.name===name)||{};return {name:name.replaceAll('.','__'),description:c.description||name,inputSchema:toolSchema(name,c,p)};})}});return;}
    if(message.method==='tools/call'){const name=String(message.params?.name||'').replaceAll('__','.');if(!p.capabilities.includes(name))throw new DeltaError('forbidden','Tool is not allowed');const a=constrain(p,name,message.params?.arguments);const client=new DeltaClient(service.url,p.token);let result=await client.call(name,a.args,a.node);if(name==='web.nodes_list'&&p.nodes.length)result=result.filter(n=>p.nodes.includes(n.id));if(name==='supervisor.list'&&p.plugins.length)result=result.filter(n=>p.plugins.includes(pluginForComponent(n.id)));if(name==='web.plugins_list'&&p.plugins.length)result=result.filter(n=>p.plugins.includes(n.manifest.id));result=redact(result,p.redactedFields);if(Buffer.byteLength(JSON.stringify(result))>2_000_000)throw new DeltaError('bad_request','Result too large; narrow the query');rpc({result:{content:[{type:'text',text:JSON.stringify(result)}],isError:false}});return;}
    rpc({error:{code:-32601,message:'Method not found'}});
   }catch(e){rpc({result:{content:[{type:'text',text:JSON.stringify({code:e.code||'unavailable',message:e.code?e.message:'Tool execution failed'})}],isError:true}});}

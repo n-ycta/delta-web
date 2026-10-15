@@ -1,12 +1,12 @@
 {
   "id": "web",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Delta web console bridge",
   "metadata": {
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -103,7 +103,15 @@
     },
     {
       "name": "plugins_install",
-      "params": {},
+      "params": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "request": {
+          "type": "object"
+        }
+      },
       "admin": true
     },
     {
@@ -118,7 +126,19 @@
     },
     {
       "name": "plugins_settings",
-      "params": {},
+      "params": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "values": {
+          "type": "object",
+          "required": true
+        },
+        "nodeId": {
+          "type": "string"
+        }
+      },
       "admin": true
     },
     {
@@ -138,7 +158,12 @@
     },
     {
       "name": "metrics_query",
-      "params": {},
+      "params": {
+        "query": {
+          "type": "object",
+          "required": true
+        }
+      },
       "admin": false
     },
     {
@@ -158,7 +183,19 @@
     },
     {
       "name": "nodes_command",
-      "params": {},
+      "params": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "command": {
+          "type": "string",
+          "required": true
+        },
+        "args": {
+          "type": "object"
+        }
+      },
       "admin": false
     },
     {
