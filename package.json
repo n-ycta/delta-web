@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.9.0",
   "type": "module",
-  "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
+  "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
     "dev": "vite",
     "dev:http": "vite --mode http",
@@ -39,5 +39,6 @@
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
     "vite": "^8.3.4"
-  }
+  },
+  "license": "Apache-2.0"
 }
