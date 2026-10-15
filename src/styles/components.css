@@ -376,9 +376,16 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
   .shell[data-collapsed='true'] .profile-avatar { flex-basis: 28px; width: 28px; height: 28px; }
 }
 
-.plugin-notice { flex-wrap: wrap; align-items: flex-start; }
-.plugin-notice > .grow { min-width: 0; flex-basis: 320px; overflow-wrap: anywhere; }
-.plugin-notice > .btn { max-width: 100%; white-space: normal; flex-shrink: 0; }
+.plugin-notice { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; }
+.plugin-notice-content { min-width:0; overflow-wrap:anywhere; }
+.plugin-notice-action { max-width:100%; white-space:normal; }
+.plugin-notice-close.btn { grid-column:3; grid-row:1; width:44px; min-width:44px; height:44px; padding:0; color:inherit; align-self:start; }
+.plugin-notice-close:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+@media (max-width:600px) {
+ .plugin-notice { grid-template-columns:minmax(0,1fr) 44px; }
+ .plugin-notice-close.btn { grid-column:2; }
+ .plugin-notice-action { grid-column:1 / -1; grid-row:2; justify-self:start; }
+}
 
 .bubble-widget { display:flex;flex-direction:column;gap:6px;height:100%;min-height:0; }
 .bubble-plot { flex:1;min-height:100px;overflow:hidden; }
