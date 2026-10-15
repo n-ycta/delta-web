@@ -329,3 +329,10 @@ mark { background: var(--accent-weak); color: inherit; border-radius: 2px; }
 }
 
 .delta-logo { width: 30px; height: 30px; flex-shrink: 0; }
+
+/* Keep palette choices inside their settings row, including narrow phones. */
+.form-row > * { min-width: 0; }
+.palette-options { width: 100%; max-width: 360px; min-width: 0; }
+.palette-option { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+.palette-name { flex: 0 1 80px; min-width: 0; overflow-wrap: anywhere; }
+.palette-swatches { min-width: 0; max-width: 100%; }

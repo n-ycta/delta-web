@@ -58,11 +58,11 @@ function General() {
         <Segmented sans value={p.density} onChange={(v: Density) => p.set({ density: v })} options={[{ value: 'comfortable', label: tr("pages.SettingsPage.s_4cc6290561") }, { value: 'compact', label: tr("pages.SettingsPage.s_f6a45a2683") }]} />
       </Row>
       <Row label={tr("pages.SettingsPage.s_7b0f5e3496")} help={tr("pages.SettingsPage.s_23542ce3ca")}>
-        <div className="col gap-2">
+        <div className="col gap-2 palette-options">
           {Object.entries(PALETTES).map(([k, pal]) => (
-            <button key={k} className="viz-option" style={{ width: 360 }} aria-pressed={p.palette === k} onClick={() => p.set({ palette: k })}>
-              <span style={{ width: 80 }}>{pal.label}</span>
-              <span className="row gap-1">{(resolved === 'dark' ? pal.dark : pal.light).map((c) => <span key={c} style={{ width: 16, height: 16, borderRadius: 3, background: c }} />)}</span>
+            <button key={k} className="viz-option palette-option" aria-pressed={p.palette === k} onClick={() => p.set({ palette: k })}>
+              <span className="palette-name">{pal.label}</span>
+              <span className="row wrap gap-1 palette-swatches">{(resolved === 'dark' ? pal.dark : pal.light).map((c) => <span key={c} style={{ width: 16, height: 16, flexShrink: 0, borderRadius: 3, background: c }} />)}</span>
             </button>
           ))}
         </div>
