@@ -50,6 +50,8 @@ export function Sidebar() {
         <Item to="/contracts" icon={<FileCheck2 size={16} />} label={tr("layout.Sidebar.s_ae73060f94")} />
         <div className="nav-section label">{tr("layout.Sidebar.s_3ac98f278c")}</div>
         <Item to="/access" icon={<KeyRound size={16} />} label={tr("layout.Sidebar.s_fefc535f60")} />
+        <Item to="/identity" icon={<KeyRound size={16} />} label={tr("polish.keys")} />
+        <Item to="/mcp" icon={<Puzzle size={16} />} label={tr("polish.mcp")} />
         <Item to="/settings" icon={<Settings size={16} />} label={tr("layout.Sidebar.s_7f17c7c62a")} />
       </nav>
       <div className="sidebar-foot">

@@ -65,7 +65,7 @@ export const SettingField = z.discriminatedUnion('type', [
 ]);
 export type SettingField = z.infer<typeof SettingField>;
 
-export const PermissionScope = z.string().regex(/^[a-z]+(\.[a-z_*]+)+$/, tr("core.contracts.plugin.s_944430b656"));
+export const PermissionScope = z.string().regex(/^(admin|(?:call|admin|register):[a-zA-Z0-9_.*-]+|[a-z]+(?:\.[a-z_*]+)+)$/, tr("core.contracts.plugin.s_944430b656"));
 export const PermissionRequest = z.object({
   scope: PermissionScope,
   reason: z.string(),

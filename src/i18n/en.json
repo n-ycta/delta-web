@@ -1602,7 +1602,7 @@
   "runtime": {
     "demoUser": "Demo owner",
     "noUser": "Not signed in",
-    "realNotice": "Delta v1 · Update data every 15 seconds. Load history and system event flow are not yet connected. Packet installation and binary auto-update are performed on the node; inaccessible operations return a clear error.",
+    "realNotice": "Delta · Live data refreshes every 15 seconds. System load history and system event streaming are not yet connected.",
     "appTitle": "Delta · Control Panel",
     "cpuLabel": "CPU",
     "crumb_dashboards": "Dashboards",
@@ -1664,6 +1664,10 @@
     "fileStorage": "Local files (quick start)",
     "postgresStorage": "PostgreSQL + TimescaleDB",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "maxRows": "Maximum rows",
+    "redactFields": "Redacted field names (comma-separated)",
+    "copy": "Copy configuration",
+    "revoke": "Revoke"
   }
 }

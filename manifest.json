@@ -33,7 +33,14 @@
           "publisher": "Delta",
           "icon": "layout-dashboard",
           "category": "system",
-          "metrics": []
+          "metrics": [],
+          "permissions": [
+            {
+              "scope": "admin",
+              "reason": "Required runtime authority. This is executable plugin code, not a sandbox.",
+              "optional": false
+            }
+          ]
         },
         "ru": {
           "name": "Delta Web",
@@ -41,9 +48,23 @@
           "publisher": "Delta",
           "icon": "layout-dashboard",
           "category": "system",
-          "metrics": []
+          "metrics": [],
+          "permissions": [
+            {
+              "scope": "admin",
+              "reason": "Необходимые права процесса. Плагин исполняет код на узле без песочницы.",
+              "optional": false
+            }
+          ]
         }
-      }
+      },
+      "permissions": [
+        {
+          "scope": "admin",
+          "reason": "Required runtime authority. This is executable plugin code, not a sandbox.",
+          "optional": false
+        }
+      ]
     }
   },
   "capabilities": [
@@ -195,6 +216,36 @@
     {
       "name": "audit_list",
       "params": {},
+      "admin": true
+    },
+    {
+      "name": "mcp_list",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "mcp_catalog",
+      "params": {},
+      "admin": true
+    },
+    {
+      "name": "mcp_create",
+      "params": {
+        "profile": {
+          "type": "object",
+          "required": true
+        }
+      },
+      "admin": true
+    },
+    {
+      "name": "mcp_revoke",
+      "params": {
+        "id": {
+          "type": "string",
+          "required": true
+        }
+      },
       "admin": true
     }
   ]

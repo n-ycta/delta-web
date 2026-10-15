@@ -18,6 +18,8 @@ import { AccessPage } from '@/pages/AccessPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotFound } from '@/pages/NotFound';
 
+import {McpPage} from '@/pages/McpPage';
+import {IdentityPage} from '@/pages/IdentityPage';
 export function App() {
   return (
     <HashRouter>
@@ -33,6 +35,8 @@ export function App() {
             <Route path="/nodes/:id" element={<NodeDetail />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/contracts" element={<ContractsPage />} />
+            <Route path="/mcp" element={<McpPage />} />
+            <Route path="/identity" element={<IdentityPage />} />
             <Route path="/access" element={<AccessPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />

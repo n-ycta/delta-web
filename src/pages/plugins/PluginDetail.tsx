@@ -288,9 +288,9 @@ function Screenshots({ screenshots, name }: { screenshots: {url:string;alt?:stri
   return <section className="panel" aria-label={tr('polish.screenshots')}>
     <img src={current.url} alt={current.alt || name} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:420,objectFit:'contain',borderRadius:4}} />
     <div className="row" style={{justifyContent:'space-between',marginTop:12}}>
-      <Button onClick={() => setIndex((index+images.length-1)%images.length)} aria-label={tr('polish.previous')}>←</Button>
-      <span className="muted">{index%images.length+1} / {images.length}</span>
-      <Button onClick={() => setIndex((index+1)%images.length)} aria-label={tr('polish.next')}>→</Button>
+      <Button onClick={() => setIndex((index+images.length-1)%images.length)} aria-label={tr('polish.previous')}>{'←'}</Button>
+      <span className="muted">{index%images.length+1}{' / '}{images.length}</span>
+      <Button onClick={() => setIndex((index+1)%images.length)} aria-label={tr('polish.next')}>{'→'}</Button>
     </div>
   </section>;
 }
