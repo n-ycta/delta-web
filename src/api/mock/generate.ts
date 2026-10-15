@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { Aggregation, CategoryValue, MetricDescriptor, MetricQuery, MetricResult, Series } from '@/core/contracts';
 import { autoStep, resolveRange } from '@/core/contracts';
 import { hashString, mulberry32 } from '@/core/lib/random';
@@ -16,7 +17,7 @@ const P: Record<string, Profile> = {
   'dev.delta.typing/wpm': { base: 62, amp: 6, noise: 9, trendPerDay: 0.05, activity: 'day', gaps: true, dims: { ru: 1.12, en: 0.86 }, min: 15 },
   'dev.delta.typing/accuracy': { base: 0.935, amp: 0.012, noise: 0.03, activity: 'day', gaps: true, dims: { ru: 1.01, en: 0.975 }, max: 0.995, min: 0.75 },
   'dev.delta.typing/keystrokes': { base: 2400, noise: 0.5, activity: 'work', dims: { ru: 0.58, en: 0.42 } },
-  'dev.delta.typing/error_keys': { base: 1, categories: [['backspace', 'Backspace', 30], ['ы', 'ы', 9], ['щ', 'щ', 8], ['ж', 'ж', 7], ['th', 'th', 6], ['ъ', 'ъ', 5], ['q', 'q', 4], ['[', '[', 3], ['ё', 'ё', 3]] },
+  'dev.delta.typing/error_keys': { base: 1, categories: [['backspace', 'Backspace', 30], [tr("api.mock.generate.s_5e6c96299a"), tr("api.mock.generate.s_5e6c96299a"), 9], [tr("api.mock.generate.s_ffec67789f"), tr("api.mock.generate.s_ffec67789f"), 8], [tr("api.mock.generate.s_6c190c2324"), tr("api.mock.generate.s_6c190c2324"), 7], ['th', 'th', 6], [tr("api.mock.generate.s_e4cedbc81a"), tr("api.mock.generate.s_e4cedbc81a"), 5], ['q', 'q', 4], ['[', '[', 3], [tr("api.mock.generate.s_6baaabf049"), tr("api.mock.generate.s_6baaabf049"), 3]] },
   'dev.delta.typing/key_latency': { base: 1, dist: { mu: Math.log(165), sigma: 0.42, lo: 40, hi: 640, bins: 24 } },
   'dev.delta.typing/session_time': { base: 1500, noise: 0.5, activity: 'work', dims: { code: 0.45, tg: 0.2, browser: 0.22, obsidian: 0.13 } },
   'dev.delta.typing/layout_switches': { base: 48, noise: 0.6, activity: 'work' },
@@ -32,7 +33,7 @@ const P: Record<string, Profile> = {
   'dev.delta.home/co2': { base: 720, amp: 260, noise: 120, activity: 'evening', dims: { bedroom: 1.25, office: 0.95 }, min: 410 },
   'dev.delta.home/energy': { base: 0.42, noise: 0.4, activity: 'evening' },
   'dev.delta.screen/screen_time': { base: 1100, noise: 0.6, activity: 'day', dims: { pixel: 0.42, ws: 0.4, mac: 0.18 } },
-  'dev.delta.screen/top_apps': { base: 1, categories: [['code', 'VS Code', 34], ['firefox', 'Firefox', 22], ['tg', 'Telegram', 15], ['yt', 'YouTube', 9], ['obsidian', 'Obsidian', 8], ['term', 'Terminal', 7], ['maps', 'Карты', 3]] },
+  'dev.delta.screen/top_apps': { base: 1, categories: [['code', 'VS Code', 34], ['firefox', 'Firefox', 22], ['tg', 'Telegram', 15], ['yt', 'YouTube', 9], ['obsidian', 'Obsidian', 8], ['term', 'Terminal', 7], ['maps', tr("api.mock.generate.s_f5585974e7"), 3]] },
   'dev.delta.screen/pickups': { base: 7, noise: 0.7, activity: 'day' },
   'dev.delta.browser/visits': { base: 40, noise: 0.8, activity: 'day' },
   'dev.delta.browser/domains': { base: 1, categories: [['gh', 'github.com', 30], ['hn', 'news.ycombinator.com', 14], ['habr', 'habr.com', 12], ['docs', 'docs.rs', 10], ['wiki', 'ru.wikipedia.org', 8]] },
@@ -42,7 +43,7 @@ const P: Record<string, Profile> = {
   'org.community.scrobbler/plays': { base: 9, noise: 0.9, activity: 'evening' },
   'org.community.scrobbler/genres': { base: 1, categories: [['pr', 'Post-rock', 30], ['ambient', 'Ambient', 22], ['jazz', 'Jazz', 15], ['idm', 'IDM', 12]] },
   'dev.delta.location/distance': { base: 0.8, noise: 1, activity: 'day', dims: { walk: 0.4, transit: 0.45, car: 0.15 } },
-  'dev.delta.location/places': { base: 1, categories: [['home', 'Дом', 60], ['office', 'Офис', 25], ['gym', 'Зал', 5], ['cafe', 'Кофейня', 4]] },
+  'dev.delta.location/places': { base: 1, categories: [['home', tr("api.mock.generate.s_92f3f459ec"), 60], ['office', tr("api.mock.generate.s_5f826de7db"), 25], ['gym', tr("api.mock.generate.s_e98a0fd5f1"), 5], ['cafe', tr("api.mock.generate.s_b516a75817"), 4]] },
 };
 
 function weight(hour: number, a: Activity = 'flat'): number {
@@ -193,7 +194,7 @@ export function generateMetric(q: MetricQuery, m: MetricDescriptor): MetricResul
   const prevSeries = buildSeries(q, m, from - span, to - span, step, '');
   result.summary.previous = aggregate(flat(prevSeries), agg, m.kind);
   if (q.compare === 'previous') {
-    result.compare = prevSeries.map((s) => ({ ...s, key: `${s.key}__prev`, label: `${s.label} (пред.)`, points: s.points.map((pt) => ({ t: pt.t + span, v: pt.v })) }));
+    result.compare = prevSeries.map((s) => ({ ...s, key: `${s.key}__prev`, label: tr("api.mock.generate.s_28bc0aa9c4", { p0: (s.label) }), points: s.points.map((pt) => ({ t: pt.t + span, v: pt.v })) }));
   }
   return result;
 }

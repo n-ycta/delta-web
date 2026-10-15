@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { NavLink, useLocation } from 'react-router-dom';
 import { FileCheck2, Gauge, KeyRound, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Puzzle, ScrollText, Server, Settings } from 'lucide-react';
 import { useDashboards, useNodes, usePlugins } from '@/app/data';
@@ -30,33 +31,33 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <img className="delta-logo" src="./delta-logo.svg" alt="Delta" />
-        <span className="brand-text col" style={{ gap: 0 }}><span className="brand-name">Delta</span><span className="brand-sub">console 0.9</span></span>
+        <img className="delta-logo" src="./delta-logo.svg" alt={tr("layout.Sidebar.s_a4cbd21f4a")} />
+        <span className="brand-text col" style={{ gap: 0 }}><span className="brand-name">{tr("layout.Sidebar.s_a4cbd21f4a")}</span><span className="brand-sub">{tr("layout.Sidebar.s_12062dd4e9")}</span></span>
       </div>
       <nav className="nav">
-        <Item to="/" end icon={<Gauge size={16} />} label="Обзор" />
-        <Item to="/dashboards" icon={<LayoutDashboard size={16} />} label="Дашборды" count={(dashboards.data ?? []).filter((d) => d.origin !== 'home').length || undefined} />
+        <Item to="/" end icon={<Gauge size={16} />} label={tr("layout.Sidebar.s_39c6387206")} />
+        <Item to="/dashboards" icon={<LayoutDashboard size={16} />} label={tr("layout.Sidebar.s_292999fc23")} count={(dashboards.data ?? []).filter((d) => d.origin !== 'home').length || undefined} />
         {pinned.length > 0 && (loc.pathname.startsWith('/dashboards') || true) && (
           <div className="nav-sub">
             {pinned.map((d) => <Item key={d.id} to={`/dashboards/${d.id}`} icon={<Icon name={d.icon ?? 'layout-dashboard'} size={13} />} label={d.name} />)}
           </div>
         )}
-        <div className="nav-section label">Экосистема</div>
-        <Item to="/plugins" icon={<Puzzle size={16} />} label="Плагины" count={pluginIssues || updates || undefined} alert={pluginIssues > 0} />
-        <Item to="/nodes" icon={<Server size={16} />} label="Узлы" count={nodes.data ? `${online}/${nodes.data.length}` : undefined} alert={nodeIssues > 0} />
-        <Item to="/events" icon={<ScrollText size={16} />} label="События" />
-        <Item to="/contracts" icon={<FileCheck2 size={16} />} label="Контракты" />
-        <div className="nav-section label">Система</div>
-        <Item to="/access" icon={<KeyRound size={16} />} label="Доступ" />
-        <Item to="/settings" icon={<Settings size={16} />} label="Настройки" />
+        <div className="nav-section label">{tr("layout.Sidebar.s_1991e69ece")}</div>
+        <Item to="/plugins" icon={<Puzzle size={16} />} label={tr("layout.Sidebar.s_ff13ef845f")} count={pluginIssues || updates || undefined} alert={pluginIssues > 0} />
+        <Item to="/nodes" icon={<Server size={16} />} label={tr("layout.Sidebar.s_3293ac18db")} count={nodes.data ? `${online}/${nodes.data.length}` : undefined} alert={nodeIssues > 0} />
+        <Item to="/events" icon={<ScrollText size={16} />} label={tr("layout.Sidebar.s_bb9ac87531")} />
+        <Item to="/contracts" icon={<FileCheck2 size={16} />} label={tr("layout.Sidebar.s_ae73060f94")} />
+        <div className="nav-section label">{tr("layout.Sidebar.s_3ac98f278c")}</div>
+        <Item to="/access" icon={<KeyRound size={16} />} label={tr("layout.Sidebar.s_fefc535f60")} />
+        <Item to="/settings" icon={<Settings size={16} />} label={tr("layout.Sidebar.s_7f17c7c62a")} />
       </nav>
       <div className="sidebar-foot">
-        <span className="plug-icon" style={{ width: 26, height: 26, borderRadius: 13, fontSize: 11, fontWeight: 600 }}>ВЫ</span>
+        <span className="plug-icon" style={{ width: 26, height: 26, borderRadius: 13, fontSize: 11, fontWeight: 600 }}>{tr("layout.Sidebar.s_7e201b31a4")}</span>
         <span className="sidebar-foot-text col grow" style={{ gap: 0, minWidth: 0 }}>
-          <span className="truncate" style={{ fontWeight: 500 }}>owner@delta.lan</span>
-          <span className="muted" style={{ fontSize: 11 }}>{ROLE_LABEL[role]}{role !== 'owner' && ' (просмотр)'}</span>
+          <span className="truncate" style={{ fontWeight: 500 }}>{tr("layout.Sidebar.s_898c5a5b19")}</span>
+          <span className="muted" style={{ fontSize: 11 }}>{ROLE_LABEL[role]}{role !== 'owner' && tr("layout.Sidebar.s_64fc2b8469")}</span>
         </span>
-        <button className="btn ghost icon sm desktop-only" onClick={() => set({ sidebarCollapsed: !sidebarCollapsed })} title={sidebarCollapsed ? 'Развернуть' : 'Свернуть'}>
+        <button className="btn ghost icon sm desktop-only" onClick={() => set({ sidebarCollapsed: !sidebarCollapsed })} title={sidebarCollapsed ? tr("layout.Sidebar.s_fd3ae0eaeb") : tr("layout.Sidebar.s_4faa82f560")}>
           {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
       </div>

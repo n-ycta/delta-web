@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type {
   AuditEntry, ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricDescriptor, MetricQuery, MetricResult,
   NodeCommandId, NodeInfo, Notification, PluginInstance, Principal, RealtimeMessage, Role, UptimeCell,
@@ -81,8 +82,8 @@ export class MockCoreAdapter implements CoreApi {
   private async net<T>(fn: () => T | Promise<T>, opts: { noFail?: boolean } = {}): Promise<T> {
     const { latencyMin, latencyMax, errorRate, offline } = this.control;
     await new Promise((r) => setTimeout(r, latencyMin + Math.random() * Math.max(0, latencyMax - latencyMin)));
-    if (offline) throw new CoreApiError('NETWORK', 'Нет соединения с ядром', 0, true, 'Ядро не отвечает. Проверьте сеть или адрес подключения.');
-    if (!opts.noFail && errorRate > 0 && Math.random() < errorRate) throw new CoreApiError('CORE_503', 'Ядро временно перегружено (503)', 503, true, 'Повторите запрос через несколько секунд');
+    if (offline) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_6845c6d905"), tr("api.mock.MockCoreAdapter.s_f7d74d6f18"), 0, true, tr("api.mock.MockCoreAdapter.s_4f8f6402d8"));
+    if (!opts.noFail && errorRate > 0 && Math.random() < errorRate) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_895e9c001a"), tr("api.mock.MockCoreAdapter.s_c168b45b2e"), 503, true, tr("api.mock.MockCoreAdapter.s_3241673724"));
     return structuredClone(await fn());
   }
 
@@ -100,17 +101,17 @@ export class MockCoreAdapter implements CoreApi {
     return ev;
   }
   private audit(action: string, target: string) {
-    this.db.audit.unshift({ id: uid('a'), ts: Date.now(), actor: 'Вы', action, target, ip: '10.0.0.31' });
+    this.db.audit.unshift({ id: uid('a'), ts: Date.now(), actor: tr("api.mock.MockCoreAdapter.s_adb4032a9d"), action, target, ip: '10.0.0.31' });
   }
 
   private manifestFor(id: string) {
     const r = REGISTRY.find((x) => rawId(x.manifest) === id);
-    if (!r) throw new CoreApiError('NOT_FOUND', `Плагин ${id} не найден`, 404, false);
+    if (!r) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_7c48ad3565", { p0: (id) }), 404, false);
     return r;
   }
   private inst(id: string) {
     const i = this.db.instances[id];
-    if (!i) throw new CoreApiError('NOT_FOUND', `Плагин ${id} не найден`, 404, false);
+    if (!i) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_7c48ad3565", { p0: (id) }), 404, false);
     return i;
   }
 
@@ -140,8 +141,8 @@ export class MockCoreAdapter implements CoreApi {
       const r = this.manifestFor(pluginId);
       const m = r.latest as { name: string; version: string };
       const i = this.inst(pluginId);
-      if (i.installedVersion) throw new CoreApiError('CONFLICT', 'Плагин уже установлен', 409, false);
-      if (!req.nodeIds.length) throw new CoreApiError('VALIDATION', 'Выберите хотя бы один узел', 422, false);
+      if (i.installedVersion) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_716a4859cb"), tr("api.mock.MockCoreAdapter.s_d9a59344c1"), 409, false);
+      if (!req.nodeIds.length) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_3b3e9155f6"), tr("api.mock.MockCoreAdapter.s_5809ce4998"), 422, false);
       Object.assign(i, { status: 'installing', nodeIds: req.nodeIds, grantedPermissions: req.permissions, settings: req.settings ?? {} });
       this.db.installedFromLatest[pluginId] = true;
       this.audit('plugin.install', `${pluginId}@${m.version}`);
@@ -149,7 +150,7 @@ export class MockCoreAdapter implements CoreApi {
       this.later(2600, () => {
         Object.assign(i, { status: 'active', installedVersion: m.version, installedAt: Date.now(), lastSyncAt: Date.now(), eventsPerMin: 3 });
         this.db.nodes.forEach((n) => { if (req.nodeIds.includes(n.id) && !n.pluginIds.includes(pluginId)) n.pluginIds.push(pluginId); });
-        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: m.name }, code: 'INSTALLED', message: `${m.name} ${m.version} установлен на ${req.nodeIds.length} узл.` });
+        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: m.name }, code: 'INSTALLED', message: tr("api.mock.MockCoreAdapter.s_428d96144a", { p0: (m.name), p1: (m.version), p2: (req.nodeIds.length) }) });
         this.emit({ type: 'plugin.update', pluginId });
       });
       return i;
@@ -168,7 +169,7 @@ export class MockCoreAdapter implements CoreApi {
         i.installedVersion = latest.version;
         this.db.installedFromLatest[pluginId] = true;
         this.audit('plugin.update', `${pluginId} ${from} → ${latest.version}`);
-        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: latest.name }, code: 'UPDATED', message: `${latest.name} обновлён: ${from} → ${latest.version}` });
+        this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: latest.name }, code: 'UPDATED', message: tr("api.mock.MockCoreAdapter.s_5c05dec272", { p0: (latest.name), p1: (from), p2: (latest.version) }) });
         this.emit({ type: 'plugin.update', pluginId });
       });
       return i;
@@ -179,7 +180,7 @@ export class MockCoreAdapter implements CoreApi {
       const i = this.inst(pluginId);
       i.status = enabled ? (i.error ? 'error' : 'active') : 'disabled';
       this.audit(enabled ? 'plugin.enable' : 'plugin.disable', pluginId);
-      this.pushEvent({ severity: 'info', source: { type: 'console', id: 'console' }, code: enabled ? 'PLUGIN_ENABLED' : 'PLUGIN_DISABLED', message: `${pluginId} ${enabled ? 'включён' : 'отключён'}` });
+      this.pushEvent({ severity: 'info', source: { type: 'console', id: 'console' }, code: enabled ? 'PLUGIN_ENABLED' : 'PLUGIN_DISABLED', message: tr("api.mock.MockCoreAdapter.s_b993dfceca", { p0: (pluginId), p1: (enabled ? tr("api.mock.MockCoreAdapter.s_bbbf38509d") : tr("api.mock.MockCoreAdapter.s_b15760925d")) }) });
       return i;
     });
   }
@@ -189,8 +190,8 @@ export class MockCoreAdapter implements CoreApi {
       Object.assign(i, { status: 'available', installedVersion: undefined, nodeIds: [], grantedPermissions: [], settings: {}, error: undefined, lastSyncAt: undefined, eventsPerMin: undefined });
       delete this.db.installedFromLatest[pluginId];
       this.db.nodes.forEach((n) => { n.pluginIds = n.pluginIds.filter((p) => p !== pluginId); n.processes = n.processes.filter((p) => p.component !== pluginId); });
-      this.audit('plugin.uninstall', `${pluginId}${opts.purgeData ? ' (+данные)' : ''}`);
-      this.pushEvent({ severity: 'warn', source: { type: 'console', id: 'console' }, code: 'PLUGIN_REMOVED', message: `${pluginId} удалён${opts.purgeData ? ' вместе с данными' : ', данные сохранены'}` });
+      this.audit('plugin.uninstall', tr("api.mock.MockCoreAdapter.s_7c8702c04b", { p0: (pluginId), p1: (opts.purgeData ? tr("api.mock.MockCoreAdapter.s_ea390311f7") : '') }));
+      this.pushEvent({ severity: 'warn', source: { type: 'console', id: 'console' }, code: 'PLUGIN_REMOVED', message: tr("api.mock.MockCoreAdapter.s_b527972312", { p0: (pluginId), p1: (opts.purgeData ? tr("api.mock.MockCoreAdapter.s_57e535d098") : tr("api.mock.MockCoreAdapter.s_60598a48ca")) }) });
     });
   }
   updatePluginSettings(pluginId: string, values: Record<string, unknown>): Promise<PluginInstance> {
@@ -202,7 +203,7 @@ export class MockCoreAdapter implements CoreApi {
         i.error = undefined; i.status = 'active'; i.lastSyncAt = Date.now(); i.eventsPerMin = 2;
         this.db.nodes.forEach((n) => n.processes.forEach((p) => { if (p.component === pluginId) { p.status = 'running'; p.cpu = 0.3; p.memMb = 61; } }));
         this.db.nodes.forEach((n) => { n.errors = n.errors.filter((e) => e.component !== pluginId); });
-        this.later(800, () => this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: 'История браузера' }, code: 'AUTH_OK', message: 'Синхронизация восстановлена, загружено 1 204 записи' }));
+        this.later(800, () => this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: tr("api.mock.MockCoreAdapter.s_98bb6af6fe") }, code: 'AUTH_OK', message: tr("api.mock.MockCoreAdapter.s_3b46e99939") }));
       }
       this.audit('plugin.settings.update', pluginId);
       this.persist();
@@ -222,9 +223,9 @@ export class MockCoreAdapter implements CoreApi {
   runPluginAction(pluginId: string, actionId: string): Promise<CommandResult> {
     return this.net(() => {
       const i = this.inst(pluginId);
-      if (i.status === 'disabled') throw new CoreApiError('PLUGIN_DISABLED', 'Плагин отключён', 409, false, 'Включите плагин, чтобы выполнять действия');
+      if (i.status === 'disabled') throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_4be40b090a"), tr("api.mock.MockCoreAdapter.s_01abca4746"), 409, false, tr("api.mock.MockCoreAdapter.s_d97e974862"));
       if (pluginId === 'dev.delta.home' && actionId === 'reconnect') {
-        this.later(1500, () => { i.error = undefined; i.status = 'active'; this.persist(); this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: 'Дом' }, code: 'SENSOR_BACK', message: 'Датчик «Кабинет / CO₂» снова в сети' }); this.emit({ type: 'plugin.update', pluginId }); });
+        this.later(1500, () => { i.error = undefined; i.status = 'active'; this.persist(); this.pushEvent({ severity: 'info', source: { type: 'plugin', id: pluginId, label: tr("api.mock.MockCoreAdapter.s_92f3f459ec") }, code: 'SENSOR_BACK', message: tr("api.mock.MockCoreAdapter.s_2850448f04") }); this.emit({ type: 'plugin.update', pluginId }); });
       }
       this.audit(`plugin.action.${actionId}`, pluginId);
       return { ok: true, durationMs: 300 + Math.round(Math.random() * 900), output: [`→ ${actionId}`, 'accepted by core', 'dispatched to ' + i.nodeIds.join(', '), 'done'] };
@@ -235,9 +236,9 @@ export class MockCoreAdapter implements CoreApi {
     return this.net(() => {
       const r = REGISTRY.find((x) => rawId(x.manifest) === q.pluginId);
       const i = this.db.instances[q.pluginId];
-      if (!r || !i?.installedVersion) throw new CoreApiError('PLUGIN_NOT_INSTALLED', `Плагин ${q.pluginId} не установлен`, 404, false);
+      if (!r || !i?.installedVersion) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_f3699e1c6f"), tr("api.mock.MockCoreAdapter.s_d786e2478a", { p0: (q.pluginId) }), 404, false);
       const m = ((this.db.installedFromLatest[q.pluginId] ? r.latest : r.manifest) as { metrics: MetricDescriptor[] }).metrics.find((x) => x.id === q.metricId);
-      if (!m) throw new CoreApiError('METRIC_NOT_FOUND', `Метрика ${q.metricId} не объявлена плагином`, 404, false);
+      if (!m) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_c57887a726"), tr("api.mock.MockCoreAdapter.s_02e26dd76c", { p0: (q.metricId) }), 404, false);
       const full = { unit: '', precision: 1, better: 'neutral', dimensions: [], aggregations: ['avg'], visualizations: [], tags: [], ...(m as Partial<MetricDescriptor>) } as MetricDescriptor;
       const res = generateMetric(q, full);
       if (i.status === 'error' && q.pluginId === 'dev.delta.browser') {
@@ -253,7 +254,7 @@ export class MockCoreAdapter implements CoreApi {
   getNodeHistory(nodeId: string, rangeMs: number): Promise<NodeHistory> {
     return this.net(() => {
       const n = this.db.nodes.find((x) => x.id === nodeId);
-      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
+      if (!n) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_43ec565be2"), 404, false);
       const memPct = n.memTotal ? (n.memUsed / n.memTotal) * 100 : 40;
       const h = { cpu: nodeSeries(nodeId, 'cpu', rangeMs, Math.max(n.cpu, 8)), mem: nodeSeries(nodeId, 'mem', rangeMs, Math.max(memPct, 20)), latency: nodeSeries(nodeId, 'latency', rangeMs, n.latencyMs ?? 30) };
       if (n.status === 'offline') {
@@ -281,10 +282,10 @@ export class MockCoreAdapter implements CoreApi {
   runNodeCommand(nodeId: string, command: NodeCommandId, args: Record<string, string> = {}): Promise<CommandResult> {
     return this.net(async () => {
       const n = this.db.nodes.find((x) => x.id === nodeId);
-      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
+      if (!n) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_43ec565be2"), 404, false);
       const spec = NODE_COMMANDS.find((c) => c.id === command)!;
-      if (!n.allowedCommands.includes(command)) throw new CoreApiError('FORBIDDEN', `Агент ${n.name} не разрешает «${spec.label}»`, 403, false, 'Разрешённые команды задаются в политике агента (agent.toml → [commands])');
-      if (n.status === 'offline') throw new CoreApiError('NODE_UNREACHABLE', `${n.name} не в сети — команда поставлена в очередь не будет`, 504, true, 'Дождитесь подключения узла или проверьте его питание');
+      if (!n.allowedCommands.includes(command)) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a4cfd65190"), tr("api.mock.MockCoreAdapter.s_ffd8f89cfb", { p0: (n.name), p1: (spec.label) }), 403, false, tr("api.mock.MockCoreAdapter.s_91401bd74a"));
+      if (n.status === 'offline') throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_d6a9c64e8b"), tr("api.mock.MockCoreAdapter.s_4497a910ca", { p0: (n.name) }), 504, true, tr("api.mock.MockCoreAdapter.s_1c3bd5b712"));
       this.audit(`node.command.${command}`, `${n.name}${args.component ? ' / ' + args.component : ''}`);
       const out: string[] = [`$ delta-agent ${command}${Object.values(args).length ? ' ' + Object.values(args).join(' ') : ''}`];
       const dur = 200 + Math.round(Math.random() * 1200);
@@ -303,8 +304,8 @@ export class MockCoreAdapter implements CoreApi {
         }
         case 'restart-component': {
           const c = n.components.find((x) => x.id === args.component);
-          if (!c) throw new CoreApiError('VALIDATION', 'Укажите компонент', 422, false);
-          if (!c.restartable) throw new CoreApiError('FORBIDDEN', `${c.name} нельзя перезапустить удалённо`, 403, false);
+          if (!c) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_3b3e9155f6"), tr("api.mock.MockCoreAdapter.s_90f7c53b2e"), 422, false);
+          if (!c.restartable) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a4cfd65190"), tr("api.mock.MockCoreAdapter.s_6b33b04790", { p0: (c.name) }), 403, false);
           n.processes.forEach((p) => { if (p.component === c.id) { p.status = 'restarting'; } });
           out.push(`stopping ${c.name}… ok`, `starting ${c.name}…`);
           this.later(2200, () => {
@@ -312,10 +313,10 @@ export class MockCoreAdapter implements CoreApi {
             if (c.status === 'error' || c.status === 'stopped') {
               if (c.id === 'replica' && n.diskUsed / n.diskTotal > 0.9) {
                 n.processes.forEach((p) => { if (p.component === 'replica') p.status = 'crashed'; });
-                this.pushEvent({ severity: 'error', source: { type: 'node', id: n.id, label: n.name }, code: 'REPL_START_FAILED', message: 'pg-replica: не удалось запустить — нет места на диске. Выполните «Очистить кэш».' });
+                this.pushEvent({ severity: 'error', source: { type: 'node', id: n.id, label: n.name }, code: 'REPL_START_FAILED', message: tr("api.mock.MockCoreAdapter.s_e0d0bc97e9") });
               } else { c.status = 'ok'; }
             }
-            this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'COMPONENT_RESTARTED', message: `${c.name} перезапущен` });
+            this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'COMPONENT_RESTARTED', message: tr("api.mock.MockCoreAdapter.s_bc25e0e572", { p0: (c.name) }) });
             this.emit({ type: 'node.update', nodeId: n.id, patch: { processes: n.processes, components: n.components } });
           });
           break;
@@ -323,7 +324,7 @@ export class MockCoreAdapter implements CoreApi {
         case 'reboot':
           out.push('scheduling reboot in 3s…', 'connection will drop');
           this.later(1500, () => { n.status = 'connecting'; this.emit({ type: 'node.update', nodeId: n.id, patch: { status: 'connecting' } }); this.persist(); });
-          this.later(9000, () => { n.status = 'online'; n.uptimeSec = 9; n.lastSeen = Date.now(); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'NODE_BACK', message: `${n.name} снова в сети после перезагрузки` }); this.emit({ type: 'node.update', nodeId: n.id, patch: { status: 'online' } }); });
+          this.later(9000, () => { n.status = 'online'; n.uptimeSec = 9; n.lastSeen = Date.now(); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'NODE_BACK', message: tr("api.mock.MockCoreAdapter.s_94b510b47e", { p0: (n.name) }) }); this.emit({ type: 'node.update', nodeId: n.id, patch: { status: 'online' } }); });
           break;
         case 'exec': {
           const cmd = (args.cmd ?? '').trim();
@@ -333,12 +334,12 @@ export class MockCoreAdapter implements CoreApi {
             'systemctl status delta-agent': ['● delta-agent.service - Delta node agent', '   Active: active (running)', `   Version: ${n.agentVersion}`],
             'journalctl -u delta-agent -n 5': ['… heartbeat ok', '… flush 128 records', '… rollup 5m', '… heartbeat ok', '… settings reloaded'],
           };
-          if (!allow[cmd]) throw new CoreApiError('FORBIDDEN', `«${cmd || '(пусто)'}» нет в allowlist агента`, 403, false, `Разрешено: ${Object.keys(allow).join(' · ')}`);
+          if (!allow[cmd]) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a4cfd65190"), tr("api.mock.MockCoreAdapter.s_d11db8a9be", { p0: (cmd || tr("api.mock.MockCoreAdapter.s_9a3a4f5516")) }), 403, false, tr("api.mock.MockCoreAdapter.s_bd42564049", { p0: (Object.keys(allow).join(' · ')) }));
           out.push(...allow[cmd]);
           break;
         }
       }
-      if (command === 'clear-cache' && n.id === 'hel-02') { n.diskUsed = n.diskTotal * 0.71; n.status = 'online'; n.errors = n.errors.filter((e) => e.code !== 'DISK_PRESSURE'); out.push('freed 18.4 GB of restic cache'); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'DISK_OK', message: 'Свободное место восстановлено до 29%' }); }
+      if (command === 'clear-cache' && n.id === 'hel-02') { n.diskUsed = n.diskTotal * 0.71; n.status = 'online'; n.errors = n.errors.filter((e) => e.code !== 'DISK_PRESSURE'); out.push('freed 18.4 GB of restic cache'); this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'DISK_OK', message: tr("api.mock.MockCoreAdapter.s_46a2bc07d7") }); }
       this.pushEvent({ severity: 'info', source: { type: 'console', id: 'console' }, code: 'NODE_COMMAND', message: `${spec.label} → ${n.name}` });
       this.persist();
       this.emit({ type: 'node.update', nodeId: n.id, patch: {} });
@@ -348,10 +349,10 @@ export class MockCoreAdapter implements CoreApi {
   updateNodeConnection(nodeId: string, cfg: ConnectionConfig): Promise<NodeInfo> {
     return this.net(() => {
       const n = this.db.nodes.find((x) => x.id === nodeId);
-      if (!n) throw new CoreApiError('NOT_FOUND', 'Узел не найден', 404, false);
-      if (!/^(wss|mqtts?|grpc|https?):\/\/|^[\w.-]+:\d+$/.test(cfg.endpoint)) throw new CoreApiError('VALIDATION', 'Некорректный endpoint', 422, false, 'Пример: wss://core.delta.lan:7341/agent или host:7342');
+      if (!n) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_43ec565be2"), 404, false);
+      if (!/^(wss|mqtts?|grpc|https?):\/\/|^[\w.-]+:\d+$/.test(cfg.endpoint)) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_3b3e9155f6"), tr("api.mock.MockCoreAdapter.s_d991daafc9"), 422, false, tr("api.mock.MockCoreAdapter.s_1ed4208773"));
       n.connection = cfg; this.audit('node.connection.update', n.name); this.persist();
-      this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'CONN_RECONFIGURED', message: `Параметры соединения обновлены (${cfg.transport}, heartbeat ${cfg.heartbeatSec}s)` });
+      this.pushEvent({ severity: 'info', source: { type: 'node', id: n.id, label: n.name }, code: 'CONN_RECONFIGURED', message: tr("api.mock.MockCoreAdapter.s_af6582f6e4", { p0: (cfg.transport), p1: (cfg.heartbeatSec) }) });
       return n;
     });
   }
@@ -359,7 +360,7 @@ export class MockCoreAdapter implements CoreApi {
     return this.net(() => {
       const code = Math.random().toString(36).slice(2, 6).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
       this.audit('node.pairing.create', `${name} (${kind})`);
-      const cmd = kind === 'android' ? `Откройте Delta Agent → «Подключить» → введите код ${code}` : `curl -fsSL https://core.delta.lan/install.sh | sh -s -- --pair ${code} --name ${name}`;
+      const cmd = kind === 'android' ? tr("api.mock.MockCoreAdapter.s_33fc0c2317", { p0: (code) }) : `curl -fsSL https://core.delta.lan/install.sh | sh -s -- --pair ${code} --name ${name}`;
       return { code, expiresAt: Date.now() + 10 * 60e3, command: cmd };
     });
   }
@@ -409,15 +410,15 @@ export class MockCoreAdapter implements CoreApi {
   revokePrincipal(id: string): Promise<void> {
     return this.net(() => {
       const p = this.db.principals.find((x) => x.id === id);
-      if (p?.role === 'owner') throw new CoreApiError('FORBIDDEN', 'Нельзя отозвать доступ владельца', 403, false);
+      if (p?.role === 'owner') throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a4cfd65190"), tr("api.mock.MockCoreAdapter.s_9f8ec7fd57"), 403, false);
       this.db.principals = this.db.principals.filter((x) => x.id !== id); this.audit('principal.revoke', p?.name ?? id); this.persist();
     });
   }
   updatePrincipalRole(id: string, role: Role): Promise<Principal> {
     return this.net(() => {
       const p = this.db.principals.find((x) => x.id === id);
-      if (!p) throw new CoreApiError('NOT_FOUND', 'Не найдено', 404, false);
-      if (p.role === 'owner') throw new CoreApiError('FORBIDDEN', 'Роль владельца меняется только через передачу владения', 403, false);
+      if (!p) throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a9e9f6901a"), tr("api.mock.MockCoreAdapter.s_def2045842"), 404, false);
+      if (p.role === 'owner') throw new CoreApiError(tr("api.mock.MockCoreAdapter.s_a4cfd65190"), tr("api.mock.MockCoreAdapter.s_3bb62a5600"), 403, false);
       p.role = role; this.audit('principal.role', `${p.name} → ${role}`); this.persist(); return p;
     });
   }
@@ -451,8 +452,8 @@ export class MockCoreAdapter implements CoreApi {
       this.timers.push(window.setTimeout(() => {
         if (this.control.liveEvents && !this.control.offline) {
           const ev = makeEvent();
-          if (ev.source.id === 'dev.delta.browser' && this.db.instances['dev.delta.browser']?.status !== 'error') ev.severity = 'info', ev.message = 'Синхронизировано 34 записи истории';
-          if (ev.source.id === 'hel-02' && this.db.nodes.find((n) => n.id === 'hel-02')?.status === 'online') ev.severity = 'info', ev.message = 'restic: инкрементальный снимок завершён';
+          if (ev.source.id === 'dev.delta.browser' && this.db.instances['dev.delta.browser']?.status !== 'error') ev.severity = 'info', ev.message = tr("api.mock.MockCoreAdapter.s_f6e99b9c23");
+          if (ev.source.id === 'hel-02' && this.db.nodes.find((n) => n.id === 'hel-02')?.status === 'online') ev.severity = 'info', ev.message = tr("api.mock.MockCoreAdapter.s_22589660b7");
           this.db.events.unshift(ev);
           this.emit({ type: 'event', event: ev });
         }

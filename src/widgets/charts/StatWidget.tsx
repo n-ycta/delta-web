@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { WidgetProps } from '../types';
 import { Delta, MetricData } from '../shared';
 import { fmtValue } from '@/core/lib/format';
@@ -27,7 +28,7 @@ export function StatWidget({ config, ctx }: WidgetProps) {
               <div className="stat-v" style={breach ? { color: breach.severity === 'error' ? c.err : c.warn } : undefined}>{num}{unit.length > 0 && <span className="u">{unit.join(' ')}</span>}</div>
               <div className="row" style={{ marginTop: 4 }}>
                 <Delta cur={r.summary.current} prev={r.summary.previous} better={m.better} />
-                <span className="widget-meta">vs пред. · {r.query.aggregation ?? m.defaultAggregation ?? m.aggregations[0]}</span>
+                <span className="widget-meta">{tr("widgets.charts.StatWidget.s_40716b730e")}{r.query.aggregation ?? m.defaultAggregation ?? m.aggregations[0]}</span>
               </div>
             </div>
             <div style={{ height: 26, marginTop: 'auto' }}>

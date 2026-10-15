@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -84,31 +85,30 @@ export function DashboardView({ dashboard, onSave, headerExtra, editable = true 
     <div className={editing ? 'editing' : ''}>
       <div className="row wrap" style={{ marginBottom: 12, gap: 8 }}>
         <Segmented value={draft.range} onChange={(r) => update((d) => ({ ...d, range: r }))} options={RANGES.map((r) => ({ value: r, label: r }))} />
-        <select className="select" style={{ width: 120 }} value={draft.refreshSec} onChange={(e) => update((d) => ({ ...d, refreshSec: Number(e.target.value) }))} title="Автообновление">
-          <option value={0}>авто: выкл</option><option value={15}>каждые 15с</option><option value={30}>каждые 30с</option><option value={60}>каждую мин</option><option value={300}>каждые 5 мин</option>
+        <select className="select" style={{ width: 120 }} value={draft.refreshSec} onChange={(e) => update((d) => ({ ...d, refreshSec: Number(e.target.value) }))} title={tr("dashboards.DashboardView.s_6fcdbbe8f7")}>
+          <option value={0}>{tr("dashboards.DashboardView.s_4311c78bc2")}</option><option value={15}>{tr("dashboards.DashboardView.s_389a059cde")}</option><option value={30}>{tr("dashboards.DashboardView.s_566a88d6b7")}</option><option value={60}>{tr("dashboards.DashboardView.s_d677974a70")}</option><option value={300}>{tr("dashboards.DashboardView.s_6c85158f53")}</option>
         </select>
-        <Button iconOnly variant="ghost" onClick={refreshAll} title="Обновить сейчас"><RefreshCw size={14} /></Button>
+        <Button iconOnly variant="ghost" onClick={refreshAll} title={tr("dashboards.DashboardView.s_2b2dff43bf")}><RefreshCw size={14} /></Button>
         {headerExtra}
         <span className="spacer" />
         {editing ? (
           <>
-            {dirty && <span className="muted" style={{ fontSize: 12 }}>● есть несохранённые изменения</span>}
-            <Button icon={<Plus size={14} />} onClick={() => setEditor({ open: true, widget: null })}>Виджет</Button>
-            <Button variant="ghost" icon={<X size={14} />} onClick={cancel}>Отмена</Button>
-            <Button variant="primary" icon={<Check size={14} />} loading={saving} onClick={save}>Сохранить</Button>
+            {dirty && <span className="muted" style={{ fontSize: 12 }}>{tr("dashboards.DashboardView.s_30583d6c81")}</span>}
+            <Button icon={<Plus size={14} />} onClick={() => setEditor({ open: true, widget: null })}>{tr("dashboards.DashboardView.s_92a5d7dc45")}</Button>
+            <Button variant="ghost" icon={<X size={14} />} onClick={cancel}>{tr("dashboards.DashboardView.s_0ec753be8d")}</Button>
+            <Button variant="primary" icon={<Check size={14} />} loading={saving} onClick={save}>{tr("dashboards.DashboardView.s_4864057d62")}</Button>
           </>
         ) : (
           <>
-            <Button icon={<Plus size={14} />} perm="dashboards.write" disabled={!editable} onClick={() => { setEditing(true); setEditor({ open: true, widget: null }); }}>Виджет</Button>
-            <Button icon={<Pencil size={14} />} perm="dashboards.write" disabled={!editable} onClick={() => setEditing(true)}>Изменить раскладку</Button>
+            <Button icon={<Plus size={14} />} perm="dashboards.write" disabled={!editable} onClick={() => { setEditing(true); setEditor({ open: true, widget: null }); }}>{tr("dashboards.DashboardView.s_92a5d7dc45")}</Button>
+            <Button icon={<Pencil size={14} />} perm="dashboards.write" disabled={!editable} onClick={() => setEditing(true)}>{tr("dashboards.DashboardView.s_b1aa6fccbe")}</Button>
           </>
         )}
       </div>
 
       {draft.widgets.length === 0 ? (
-        <div className="panel"><Empty icon={<LayoutGrid size={18} />} title="Дашборд пуст" action={canWrite && <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(true); setEditor({ open: true, widget: null }); }}>Добавить первый виджет</Button>}>
-          Добавьте метрики любых установленных плагинов — подходящие визуализации подберутся по их контрактам.
-        </Empty></div>
+        <div className="panel"><Empty icon={<LayoutGrid size={18} />} title={tr("dashboards.DashboardView.s_a9565abd8b")} action={canWrite && <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(true); setEditor({ open: true, widget: null }); }}>{tr("dashboards.DashboardView.s_f574ac76be")}</Button>}>
+          {tr("dashboards.DashboardView.s_2f714fc777")}</Empty></div>
       ) : (
         <Grid
           className="layout"
@@ -142,7 +142,7 @@ export function DashboardView({ dashboard, onSave, headerExtra, editable = true 
           ))}
         </Grid>
       )}
-      {editing && bp !== 'lg' && <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Перетаскивание доступно на широком экране; на узких экранах виджеты выстраиваются автоматически.</div>}
+      {editing && bp !== 'lg' && <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>{tr("dashboards.DashboardView.s_148510f5a2")}</div>}
 
       <WidgetEditor open={editor.open} initial={editor.widget} plugins={plugins.data} range={draft.range} onClose={() => setEditor({ open: false, widget: null })} onSave={upsertWidget} />
     </div>

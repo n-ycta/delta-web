@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Download, MoreHorizontal, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
@@ -31,28 +32,28 @@ export function DashboardPage() {
 
   if (dashboards.error && !dashboards.data) return <div className="page"><ErrorState error={dashboards.error} onRetry={dashboards.refetch} /></div>;
   if (!dashboards.data || (genFor && plugin.loading)) return <div className="page"><Skeleton h={28} w={260} /><div style={{ height: 16 }} /><div className="grid-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} h={180} />)}</div></div>;
-  if (!d) return <div className="page"><div className="panel"><Empty title="Дашборд не найден" action={<Link className="btn" to="/dashboards">Ко всем дашбордам</Link>}>Возможно, он удалён или ссылка устарела. {genFor && 'Плагин не установлен или не прошёл валидацию.'}</Empty></div></div>;
+  if (!d) return <div className="page"><div className="panel"><Empty title={tr("pages.DashboardPage.s_201cf81628")} action={<Link className="btn" to="/dashboards">{tr("pages.DashboardPage.s_f7bcb06361")}</Link>}>{tr("pages.DashboardPage.s_d5547a1a16")}{genFor && tr("pages.DashboardPage.s_c816ac6440")}</Empty></div></div>;
 
   const isGen = d.origin === 'generated';
   return (
     <div className="page">
       <PageHead
-        eyebrow={isGen ? <span className="row" style={{ gap: 6 }}><Wand2 size={12} />построен из контракта {d.generatedFrom}</span> : 'дашборд'}
+        eyebrow={isGen ? <span className="row" style={{ gap: 6 }}><Wand2 size={12} />{tr("pages.DashboardPage.s_a33e55a5bf")}{d.generatedFrom}</span> : tr("pages.DashboardPage.s_c957a35c33")}
         title={<span className="row" style={{ gap: 10 }}><Icon name={d.icon ?? 'layout-dashboard'} size={20} className="muted" />{d.name}</span>}
-        sub={generated ? 'Это автоматически собранный вид. Любое изменение сохранит его как ваш дашборд.' : d.description}
+        sub={generated ? tr("pages.DashboardPage.s_8f15e6b9a0") : d.description}
         actions={<Menu trigger={(t) => <Button {...t} iconOnly variant="ghost"><MoreHorizontal size={15} /></Button>} items={[
-          { label: 'Переименовать', icon: <Pencil size={14} />, onSelect: () => setRename(d.name), disabled: !canWrite },
-          { label: 'Экспорт JSON', icon: <Download size={14} />, onSelect: () => downloadJson(`${d.name}.delta-dashboard.json`, d) },
-          ...(isGen && stored ? [{ label: 'Пересобрать из контракта', icon: <RotateCcw size={14} />, onSelect: () => setResetGen(true), disabled: !canWrite }] : []),
-          ...(stored ? [{ separator: true }, { label: 'Удалить', icon: <Trash2 size={14} />, danger: true, onSelect: () => setDel(true), disabled: !canWrite }] : []),
+          { label: tr("pages.DashboardPage.s_715e8f0c32"), icon: <Pencil size={14} />, onSelect: () => setRename(d.name), disabled: !canWrite },
+          { label: tr("pages.DashboardPage.s_4910a3a93b"), icon: <Download size={14} />, onSelect: () => downloadJson(`${d.name}.delta-dashboard.json`, d) },
+          ...(isGen && stored ? [{ label: tr("pages.DashboardPage.s_ba47c18401"), icon: <RotateCcw size={14} />, onSelect: () => setResetGen(true), disabled: !canWrite }] : []),
+          ...(stored ? [{ separator: true }, { label: tr("pages.DashboardPage.s_86ea33aef5"), icon: <Trash2 size={14} />, danger: true, onSelect: () => setDel(true), disabled: !canWrite }] : []),
         ]} />}
       />
       <DashboardView key={d.id} dashboard={d} onSave={(x) => save({ ...x, updatedAt: Date.now() }, { silent: !!stored })} />
-      <Modal open={rename !== null} onClose={() => setRename(null)} title="Переименовать" footer={<><Button variant="ghost" onClick={() => setRename(null)}>Отмена</Button><Button variant="primary" onClick={async () => { await save({ ...d, name: rename || d.name }); setRename(null); }}>Сохранить</Button></>}>
-        <Field label="Название"><input className="input" autoFocus value={rename ?? ''} onChange={(e) => setRename(e.target.value)} /></Field>
+      <Modal open={rename !== null} onClose={() => setRename(null)} title={tr("pages.DashboardPage.s_715e8f0c32")} footer={<><Button variant="ghost" onClick={() => setRename(null)}>{tr("pages.DashboardPage.s_0ec753be8d")}</Button><Button variant="primary" onClick={async () => { await save({ ...d, name: rename || d.name }); setRename(null); }}>{tr("pages.DashboardPage.s_4864057d62")}</Button></>}>
+        <Field label={tr("pages.DashboardPage.s_3de49828e8")}><input className="input" autoFocus value={rename ?? ''} onChange={(e) => setRename(e.target.value)} /></Field>
       </Modal>
-      <Confirm open={del} onClose={() => setDel(false)} danger title="Удалить дашборд?" confirmLabel="Удалить" body={`«${d.name}» будет удалён.`} onConfirm={async () => { await remove(d); nav('/dashboards'); }} />
-      <Confirm open={resetGen} onClose={() => setResetGen(false)} title="Пересобрать из контракта?" confirmLabel="Пересобрать" body="Текущая раскладка будет заменена набором виджетов, подобранных по актуальному контракту плагина." onConfirm={async () => {
+      <Confirm open={del} onClose={() => setDel(false)} danger title={tr("pages.DashboardPage.s_2b6531cd72")} confirmLabel={tr("pages.DashboardPage.s_86ea33aef5")} body={tr("pages.DashboardPage.s_6e572fde68", { p0: (d.name) })} onConfirm={async () => { await remove(d); nav('/dashboards'); }} />
+      <Confirm open={resetGen} onClose={() => setResetGen(false)} title={tr("pages.DashboardPage.s_0b04a8cb71")} confirmLabel={tr("pages.DashboardPage.s_600363a73d")} body={tr("pages.DashboardPage.s_37c44a307c")} onConfirm={async () => {
         if (plugin.data) await save({ ...generatePluginDashboard(plugin.data, widgetRegistry), id: d.id, name: d.name });
         setResetGen(false);
       }} />

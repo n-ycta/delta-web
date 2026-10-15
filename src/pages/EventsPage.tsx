@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pause, Play, Search } from 'lucide-react';
@@ -14,8 +15,8 @@ import { SEVERITY_LABEL, SEVERITY_TONE } from '@/ui/status';
 import { downloadJson } from '@/dashboards/useDashboardActions';
 
 const SEVS: Severity[] = ['critical', 'error', 'warn', 'info', 'debug'];
-const SOURCES = [['node', 'Узлы'], ['plugin', 'Плагины'], ['core', 'Ядро'], ['auth', 'Доступ'], ['console', 'Консоль']] as const;
-const SEV_RU: Record<Severity, string> = { critical: 'Критично', error: 'Ошибки', warn: 'Предупр.', info: 'Инфо', debug: 'Отладка' };
+const SOURCES = [['node', tr("pages.EventsPage.s_3293ac18db")], ['plugin', tr("pages.EventsPage.s_ff13ef845f")], ['core', tr("pages.EventsPage.s_3609281642")], ['auth', tr("pages.EventsPage.s_fefc535f60")], ['console', tr("pages.EventsPage.s_5a214bdfe9")]] as const;
+const SEV_RU: Record<Severity, string> = { critical: tr("pages.EventsPage.s_238b17a375"), error: tr("pages.EventsPage.s_681b5ae3d2"), warn: tr("pages.EventsPage.s_633792d5d3"), info: tr("pages.EventsPage.s_778b602bbd"), debug: tr("pages.EventsPage.s_8669d1109d") };
 
 function sourceLink(e: CoreEvent) {
   if (e.source.type === 'node') return `/nodes/${e.source.id}`;
@@ -80,29 +81,29 @@ export function EventsPage() {
 
   return (
     <div className="page">
-      <PageHead title="События" sub="Единый журнал ядра: узлы, плагины, доступ и действия в консоли. Новые события приходят в реальном времени."
+      <PageHead title={tr("pages.EventsPage.s_bb9ac87531")} sub={tr("pages.EventsPage.s_f4bad1225b")}
         actions={<>
-          <Button icon={tail ? <Pause size={14} /> : <Play size={14} />} onClick={() => { if (tail) setPausedAt(Date.now()); setTail(!tail); }}>{tail ? 'Пауза' : `Продолжить${pending ? ` (+${pending})` : ''}`}</Button>
-          <Button onClick={() => downloadJson(`delta-events-${new Date().toISOString().slice(0, 10)}`, all)} disabled={!all.length}>Экспорт JSON</Button>
+          <Button icon={tail ? <Pause size={14} /> : <Play size={14} />} onClick={() => { if (tail) setPausedAt(Date.now()); setTail(!tail); }}>{tail ? tr("pages.EventsPage.s_03498e395a") : tr("pages.EventsPage.s_0d49d12b38", { p0: (pending ? ` (+${pending})` : '') })}</Button>
+          <Button onClick={() => downloadJson(`delta-events-${new Date().toISOString().slice(0, 10)}`, all)} disabled={!all.length}>{tr("pages.EventsPage.s_4910a3a93b")}</Button>
         </>} />
       <div className="row wrap" style={{ marginBottom: 12 }}>
-        <div className="input-group" style={{ width: 300 }}><span className="addon" style={{ borderRadius: '5px 0 0 5px', borderLeft: '1px solid var(--rule-strong)', borderRight: 0 }}><Search size={13} /></span><input className="input" style={{ borderRadius: '0 5px 5px 0' }} placeholder="Код, сообщение, источник…" value={text} onChange={(e) => setText(e.target.value)} /></div>
+        <div className="input-group" style={{ width: 300 }}><span className="addon" style={{ borderRadius: '5px 0 0 5px', borderLeft: '1px solid var(--rule-strong)', borderRight: 0 }}><Search size={13} /></span><input className="input" style={{ borderRadius: '0 5px 5px 0' }} placeholder={tr("pages.EventsPage.s_4675bd77ca")} value={text} onChange={(e) => setText(e.target.value)} /></div>
         <div className="row wrap gap-1">{SEVS.map((s) => <button key={s} className="chip" aria-pressed={sevs.includes(s)} onClick={() => toggle('sev', s)}><span className={`dot ${SEVERITY_TONE[s]}`} />{SEV_RU[s]}</button>)}</div>
         <span style={{ width: 1, height: 18, background: 'var(--rule-strong)' }} />
         <div className="row wrap gap-1">{SOURCES.map(([k, l]) => <button key={k} className="chip" aria-pressed={srcs.includes(k)} onClick={() => toggle('src', k)}>{l}</button>)}</div>
         <span className="spacer" />
-        <span className="row muted" style={{ fontSize: 12 }}>{tail ? <><span className="dot ok pulse" />поток</> : <><span className="dot off" />пауза</>}</span>
+        <span className="row muted" style={{ fontSize: 12 }}>{tail ? <><span className="dot ok pulse" />{tr("pages.EventsPage.s_49e10be260")}</> : <><span className="dot off" />{tr("pages.EventsPage.s_9627af1c25")}</>}</span>
       </div>
       <div className="row gap-3 muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
         {counts.filter(([, c]) => c).map(([s, c]) => <span key={s}><span className={`sev ${s}`}>{SEVERITY_LABEL[s]}</span> <span className="num">{c}</span></span>)}
-        <span className="spacer" />{all.length > 0 && <span>показано {all.length}</span>}
+        <span className="spacer" />{all.length > 0 && <span>{tr("pages.EventsPage.s_8b0b0e0b57")}{all.length}</span>}
       </div>
       {base.loading && <SkeletonRows rows={12} h={22} />}
       {base.error && !base.data && <ErrorState error={base.error} onRetry={base.refetch} />}
-      {base.data && all.length === 0 && <div className="panel"><Empty title="Событий не найдено" action={(sevs.length || srcs.length || text) ? <Button onClick={() => { setText(''); setParams({}, { replace: true }); }}>Сбросить фильтры</Button> : undefined}>Попробуйте расширить фильтры или подождать новых событий.</Empty></div>}
+      {base.data && all.length === 0 && <div className="panel"><Empty title={tr("pages.EventsPage.s_8a6d7ca74c")} action={(sevs.length || srcs.length || text) ? <Button onClick={() => { setText(''); setParams({}, { replace: true }); }}>{tr("pages.EventsPage.s_03ead01c5b")}</Button> : undefined}>{tr("pages.EventsPage.s_ca1208de8e")}</Empty></div>}
       {all.length > 0 && (
         <div className="panel">
-          <div className="logline" style={{ gridTemplateColumns: '128px 52px 150px 190px minmax(0,1fr)', background: 'var(--surface-2)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--muted)' }}><span>Время</span><span>Ур.</span><span>Источник</span><span>Код</span><span>Сообщение</span></div>
+          <div className="logline" style={{ gridTemplateColumns: '128px 52px 150px 190px minmax(0,1fr)', background: 'var(--surface-2)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--muted)' }}><span>{tr("pages.EventsPage.s_c80d7e8172")}</span><span>{tr("pages.EventsPage.s_e2ad1df462")}</span><span>{tr("pages.EventsPage.s_8290a3dbc0")}</span><span>{tr("pages.EventsPage.s_6708837459")}</span><span>{tr("pages.EventsPage.s_dc72346ac4")}</span></div>
           {all.map((e) => (
             <div key={e.id} className="logline" role="button" tabIndex={0} onClick={() => setSelected(e)} onKeyDown={(k) => k.key === 'Enter' && setSelected(e)}
               style={{ gridTemplateColumns: '128px 52px 150px 190px minmax(0,1fr)', cursor: 'pointer', background: e.id === focusId ? 'var(--selected)' : e.ts > startedAt ? 'color-mix(in srgb, var(--accent-weak) 45%, transparent)' : undefined }}>
@@ -113,21 +114,21 @@ export function EventsPage() {
           ))}
           <div className="row" style={{ padding: 10, justifyContent: 'center' }}>
             {moreErr && <span className="field-error">{moreErr}</span>}
-            {exhausted ? <span className="faint" style={{ fontSize: 12 }}>Начало журнала</span> : <Button size="sm" loading={loadingMore} onClick={loadMore}>{moreErr ? 'Повторить' : 'Загрузить ещё'}</Button>}
+            {exhausted ? <span className="faint" style={{ fontSize: 12 }}>{tr("pages.EventsPage.s_6a9530874f")}</span> : <Button size="sm" loading={loadingMore} onClick={loadMore}>{moreErr ? tr("pages.EventsPage.s_9e506acb19") : tr("pages.EventsPage.s_010963d6b7")}</Button>}
           </div>
         </div>
       )}
-      <Drawer open={!!selected} onClose={close} title={selected?.code ?? ''} sub={selected && <span className="row"><Badge tone={SEVERITY_TONE[selected.severity]}>{selected.severity}</Badge><span className="muted">{fmtDateTime(selected.ts)} · {fmtTime(selected.ts, true)}</span></span>}>
+      <Drawer open={!!selected} onClose={close} title={selected?.code ?? ''} sub={selected && <span className="row"><Badge tone={SEVERITY_TONE[selected.severity]}>{selected.severity}</Badge><span className="muted">{fmtDateTime(selected.ts)} {tr("pages.EventsPage.s_d3dacf895c")}{fmtTime(selected.ts, true)}</span></span>}>
         {selected && (
           <div className="col gap-4">
             <p style={{ fontSize: 14 }}>{selected.message}</p>
             <dl className="kv">
-              <dt>ID</dt><dd className="mono">{selected.id}</dd>
-              <dt>Источник</dt><dd>{(() => { const l = sourceLink(selected); const t = `${selected.source.type}: ${selected.source.label ?? selected.source.id}`; return l ? <Link className="link" to={l}>{t}</Link> : t; })()}</dd>
-              <dt>Время</dt><dd className="mono">{new Date(selected.ts).toISOString()}</dd>
+              <dt>{tr("pages.EventsPage.s_89f89c02cf")}</dt><dd className="mono">{selected.id}</dd>
+              <dt>{tr("pages.EventsPage.s_8290a3dbc0")}</dt><dd>{(() => { const l = sourceLink(selected); const t = `${selected.source.type}: ${selected.source.label ?? selected.source.id}`; return l ? <Link className="link" to={l}>{t}</Link> : t; })()}</dd>
+              <dt>{tr("pages.EventsPage.s_c80d7e8172")}</dt><dd className="mono">{new Date(selected.ts).toISOString()}</dd>
             </dl>
-            {selected.details && <div><div className="label" style={{ marginBottom: 6 }}>Детали</div><pre className="code" style={{ margin: 0 }}>{JSON.stringify(selected.details, null, 2)}</pre></div>}
-            <div className="row"><Button size="sm" onClick={() => { setText(selected.code); close(); }}>Похожие события</Button>{selected.source.id && <Button size="sm" variant="ghost" onClick={() => { setText(selected.source.id); close(); }}>Все от источника</Button>}</div>
+            {selected.details && <div><div className="label" style={{ marginBottom: 6 }}>{tr("pages.EventsPage.s_85a76a73dd")}</div><pre className="code" style={{ margin: 0 }}>{JSON.stringify(selected.details, null, 2)}</pre></div>}
+            <div className="row"><Button size="sm" onClick={() => { setText(selected.code); close(); }}>{tr("pages.EventsPage.s_2e9b629b88")}</Button>{selected.source.id && <Button size="sm" variant="ghost" onClick={() => { setText(selected.source.id); close(); }}>{tr("pages.EventsPage.s_24a4926515")}</Button>}</div>
           </div>
         )}
       </Drawer>

@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Link } from 'react-router-dom';
 import type { WidgetProps } from '../types';
 import { usePlugins } from '@/app/data';
@@ -24,10 +25,10 @@ export function PluginActivityWidget(_: WidgetProps) {
             <Icon name={p.manifest.icon} size={14} className="muted" />
             <span className="col" style={{ gap: 0, minWidth: 0 }}>
               <span className="row" style={{ gap: 6 }}><span className="truncate">{p.manifest.name}</span><Dot tone={st.tone} /></span>
-              <span className="muted" style={{ fontSize: 10.5 }}>{p.instance.lastSyncAt ? `синхр. ${ago(p.instance.lastSyncAt)}` : st.label}</span>
+              <span className="muted" style={{ fontSize: 10.5 }}>{p.instance.lastSyncAt ? tr("widgets.system.PluginActivityWidget.s_3cf538dc55", { p0: (ago(p.instance.lastSyncAt)) }) : st.label}</span>
             </span>
             <div className="meter"><span style={{ width: `${(rate / max) * 100}%` }} /></div>
-            <span className="num muted" style={{ fontSize: 11, textAlign: 'right' }}>{fmtNumber(rate, 1)}/м</span>
+            <span className="num muted" style={{ fontSize: 11, textAlign: 'right' }}>{fmtNumber(rate, 1)}{tr("widgets.system.PluginActivityWidget.s_4398873b3b")}</span>
           </Link>
         );
       })}

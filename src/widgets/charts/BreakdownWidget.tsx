@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import type { WidgetProps } from '../types';
 import { MetricData } from '../shared';
@@ -35,9 +36,9 @@ export function BreakdownWidget({ config, ctx }: WidgetProps) {
               {cats.map((d, i) => (
                 <div key={d.key} style={{ display: 'grid', gridTemplateColumns: '10px minmax(0,1fr) auto 44px', gap: 8, alignItems: 'center', fontSize: 12 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: color(d.key, i) }} />
-                  <span className="truncate">{d.label.trim() || <span className="faint">(пусто)</span>}</span>
+                  <span className="truncate">{d.label.trim() || <span className="faint">{tr("widgets.charts.BreakdownWidget.s_9a3a4f5516")}</span>}</span>
                   <span className="num muted" style={{ fontSize: 11 }}>{fmtValue(d.value, m.unit, 0)}</span>
-                  <span className="num" style={{ textAlign: 'right', fontSize: 11.5 }}>{((d.value / total) * 100).toFixed(1)}%</span>
+                  <span className="num" style={{ textAlign: 'right', fontSize: 11.5 }}>{((d.value / total) * 100).toFixed(1)}{tr("widgets.charts.BreakdownWidget.s_4345cb1fa2")}</span>
                 </div>
               ))}
             </div>

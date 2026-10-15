@@ -1,0 +1,4 @@
+const fs=require('fs'),path=require('path'),ts=require('typescript');const root=path.resolve(__dirname,'../src');
+const walk=p=>fs.readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(p,e.name)):[path.join(p,e.name)]);let issues=[];
+for(const f of walk(root).filter(f=>/\.tsx?$/.test(f)&&!f.includes('/i18n/'))){const s=fs.readFileSync(f,'utf8'),sf=ts.createSourceFile(f,s,ts.ScriptTarget.Latest,true);function visit(n){if((ts.isStringLiteral(n)||ts.isNoSubstitutionTemplateLiteral(n)||ts.isJsxText(n)||ts.isTemplateHead(n)||ts.isTemplateMiddle(n)||ts.isTemplateTail(n))&&/[А-Яа-яЁё]/.test(n.text))issues.push(path.relative(root,f)+':'+sf.getLineAndCharacterOfPosition(n.pos).line);if(ts.isJsxText(n)&&n.text.trim())issues.push('JSX text: '+path.relative(root,f));ts.forEachChild(n,visit)}visit(sf)}
+if(issues.length){console.error(issues.join('\n'));process.exit(1)}console.log('i18n OK: no hardcoded Russian literals or JSX text');

@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Link } from 'react-router-dom';
 import type { WidgetProps } from '../types';
 import { useQuery } from '@/app/query';
@@ -16,7 +17,7 @@ export function EventFeedWidget({ config }: WidgetProps) {
   if (q.error && !q.data) return <ErrorState compact error={q.error} onRetry={q.refetch} />;
   const seen = new Set<string>();
   const items = [...live, ...(q.data ?? [])].filter((e) => !seen.has(e.id) && seen.add(e.id) && ORDER.indexOf(e.severity) >= ORDER.indexOf(minSev)).slice(0, config.display.limit ?? 40);
-  if (!items.length) return <Empty compact title="Событий нет" />;
+  if (!items.length) return <Empty compact title={tr("widgets.system.EventFeedWidget.s_b5ac581559")} />;
   return (
     <div style={{ overflow: 'auto', flex: 1, margin: '0 -12px' }}>
       {items.map((e) => (

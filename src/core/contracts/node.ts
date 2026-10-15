@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { z } from 'zod';
 import { NodeKind } from './plugin';
 
@@ -30,7 +31,7 @@ export const NodeComponent = z.object({
 export type NodeComponent = z.infer<typeof NodeComponent>;
 
 export const ConnectionConfig = z.object({
-  transport: z.enum(['wss', 'grpc', 'mqtt', 'adb-relay']),
+  transport: z.enum(['http', 'wss', 'grpc', 'mqtt', 'adb-relay']),
   endpoint: z.string(),
   heartbeatSec: z.number().int().min(5).max(600),
   reconnect: z.enum(['exponential', 'linear', 'manual']),
@@ -87,16 +88,16 @@ export interface NodeCommandSpec {
 }
 
 export const NODE_COMMANDS: NodeCommandSpec[] = [
-  { id: 'ping', label: 'Ping', description: 'Проверить задержку до агента', permission: 'nodes.read' },
-  { id: 'sync-now', label: 'Синхронизировать', description: 'Принудительно выгрузить буферы плагинов в ядро', permission: 'nodes.command' },
-  { id: 'collect-logs', label: 'Собрать журналы', description: 'Архив логов агента за 24 ч', permission: 'nodes.command' },
-  { id: 'restart-component', label: 'Перезапустить компонент', description: 'Мягкий перезапуск процесса', permission: 'nodes.command', args: [{ key: 'component', label: 'Компонент', kind: 'component' }] },
-  { id: 'clear-cache', label: 'Очистить кэш', description: 'Удалить локальный кэш агента', permission: 'nodes.command' },
-  { id: 'update-agent', label: 'Обновить агент', description: 'Скачать и применить последнюю версию', permission: 'nodes.admin' },
-  { id: 'reboot', label: 'Перезагрузить узел', description: 'Полная перезагрузка устройства', permission: 'nodes.admin', dangerous: true },
-  { id: 'exec', label: 'Выполнить', description: 'Команда из allowlist агента', permission: 'nodes.admin', dangerous: true, args: [{ key: 'cmd', label: 'Команда', kind: 'text' }] },
+  { id: 'ping', label: tr("core.contracts.node.s_6b68e97973"), description: tr("core.contracts.node.s_774c6a8a7b"), permission: 'nodes.read' },
+  { id: 'sync-now', label: tr("core.contracts.node.s_289c55ebed"), description: tr("core.contracts.node.s_4df9b00610"), permission: 'nodes.command' },
+  { id: 'collect-logs', label: tr("core.contracts.node.s_ef2b215031"), description: tr("core.contracts.node.s_d58e4d4983"), permission: 'nodes.command' },
+  { id: 'restart-component', label: tr("core.contracts.node.s_80630f7131"), description: tr("core.contracts.node.s_082be902ee"), permission: 'nodes.command', args: [{ key: 'component', label: tr("core.contracts.node.s_8879f45a65"), kind: 'component' }] },
+  { id: 'clear-cache', label: tr("core.contracts.node.s_e98d5f8913"), description: tr("core.contracts.node.s_a233bae3c7"), permission: 'nodes.command' },
+  { id: 'update-agent', label: tr("core.contracts.node.s_d6b3a32a3d"), description: tr("core.contracts.node.s_2a9e1579bd"), permission: 'nodes.admin' },
+  { id: 'reboot', label: tr("core.contracts.node.s_b8c3fdd42f"), description: tr("core.contracts.node.s_5d7898f96e"), permission: 'nodes.admin', dangerous: true },
+  { id: 'exec', label: tr("core.contracts.node.s_224c8e93c8"), description: tr("core.contracts.node.s_5bef52c804"), permission: 'nodes.admin', dangerous: true, args: [{ key: 'cmd', label: tr("core.contracts.node.s_0fe2342c2e"), kind: 'text' }] },
 ];
 
 export const NODE_KIND_LABEL: Record<string, string> = {
-  vps: 'VPS', android: 'Android', desktop: 'Компьютер', sbc: 'Одноплатник', container: 'Контейнер',
+  vps: 'VPS', android: 'Android', desktop: tr("core.contracts.node.s_1db1b7e7a7"), sbc: tr("core.contracts.node.s_181d62d2ec"), container: tr("core.contracts.node.s_575ce6aee1"),
 };

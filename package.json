@@ -3,14 +3,17 @@
   "private": true,
   "version": "0.9.0",
   "type": "module",
-  "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
+  "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
     "dev": "vite",
     "dev:http": "vite --mode http",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "tsx tests/run.ts"
+    "test": "tsx tests/run.ts",
+    "start": "node --env-file-if-exists=.env server/main.mjs",
+    "test:server": "node --test tests/*.test.mjs",
+    "test:i18n": "node scripts/check-i18n.cjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.0.14",

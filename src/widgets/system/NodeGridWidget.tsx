@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Link } from 'react-router-dom';
 import type { WidgetProps } from '../types';
 import { useNodes } from '@/app/data';
@@ -25,11 +26,11 @@ export function NodeGridWidget(_: WidgetProps) {
               <span className="spacer" /><Dot tone={st.tone} pulse={n.status === 'online'} />
             </div>
             {n.status === 'offline' ? (
-              <div className="muted" style={{ fontSize: 11.5 }}>нет связи · {ago(n.lastSeen)}</div>
+              <div className="muted" style={{ fontSize: 11.5 }}>{tr("widgets.system.NodeGridWidget.s_1fd2d7a11c")}{ago(n.lastSeen)}</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 34px', gap: '3px 6px', alignItems: 'center', fontSize: 10.5, fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
-                <span>CPU</span><Meter value={n.cpu / 100} /><span style={{ textAlign: 'right' }}>{Math.round(n.cpu)}%</span>
-                <span>MEM</span><Meter value={n.memUsed / n.memTotal} /><span style={{ textAlign: 'right' }}>{Math.round((n.memUsed / n.memTotal) * 100)}%</span>
+                <span>{tr("widgets.system.NodeGridWidget.s_ff221d4752")}</span><Meter value={n.cpu / 100} /><span style={{ textAlign: 'right' }}>{Math.round(n.cpu)}{tr("widgets.system.NodeGridWidget.s_4345cb1fa2")}</span>
+                <span>{tr("widgets.system.NodeGridWidget.s_0063393cf0")}</span><Meter value={n.memUsed / n.memTotal} /><span style={{ textAlign: 'right' }}>{Math.round((n.memUsed / n.memTotal) * 100)}{tr("widgets.system.NodeGridWidget.s_4345cb1fa2")}</span>
               </div>
             )}
           </Link>

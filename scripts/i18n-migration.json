@@ -1,0 +1,246 @@
+[
+  {
+    "file": "App.tsx",
+    "count": 1
+  },
+  {
+    "file": "api/http/HttpCoreAdapter.ts",
+    "count": 3
+  },
+  {
+    "file": "api/mock/MockCoreAdapter.ts",
+    "count": 67
+  },
+  {
+    "file": "api/mock/generate.ts",
+    "count": 16
+  },
+  {
+    "file": "api/mock/manifests.ts",
+    "count": 197
+  },
+  {
+    "file": "api/mock/seed.ts",
+    "count": 56
+  },
+  {
+    "file": "api/types.ts",
+    "count": 4
+  },
+  {
+    "file": "app/ApiContext.tsx",
+    "count": 1
+  },
+  {
+    "file": "app/theme.ts",
+    "count": 4
+  },
+  {
+    "file": "core/contracts/access.ts",
+    "count": 14
+  },
+  {
+    "file": "core/contracts/common.ts",
+    "count": 10
+  },
+  {
+    "file": "core/contracts/node.ts",
+    "count": 21
+  },
+  {
+    "file": "core/contracts/plugin.ts",
+    "count": 8
+  },
+  {
+    "file": "core/contracts/validate.ts",
+    "count": 17
+  },
+  {
+    "file": "core/lib/format.ts",
+    "count": 8
+  },
+  {
+    "file": "core/registry/WidgetRegistry.ts",
+    "count": 2
+  },
+  {
+    "file": "core/registry/autodash.ts",
+    "count": 7
+  },
+  {
+    "file": "core/registry/plugins.ts",
+    "count": 3
+  },
+  {
+    "file": "dashboards/DashboardView.tsx",
+    "count": 17
+  },
+  {
+    "file": "dashboards/WidgetEditor.tsx",
+    "count": 61
+  },
+  {
+    "file": "dashboards/WidgetFrame.tsx",
+    "count": 37
+  },
+  {
+    "file": "dashboards/useDashboardActions.ts",
+    "count": 6
+  },
+  {
+    "file": "layout/CommandPalette.tsx",
+    "count": 55
+  },
+  {
+    "file": "layout/Notifications.tsx",
+    "count": 10
+  },
+  {
+    "file": "layout/Shell.tsx",
+    "count": 7
+  },
+  {
+    "file": "layout/Sidebar.tsx",
+    "count": 18
+  },
+  {
+    "file": "layout/Topbar.tsx",
+    "count": 14
+  },
+  {
+    "file": "pages/AccessPage.tsx",
+    "count": 69
+  },
+  {
+    "file": "pages/DashboardPage.tsx",
+    "count": 21
+  },
+  {
+    "file": "pages/Dashboards.tsx",
+    "count": 44
+  },
+  {
+    "file": "pages/EventsPage.tsx",
+    "count": 37
+  },
+  {
+    "file": "pages/Home.tsx",
+    "count": 14
+  },
+  {
+    "file": "pages/NotFound.tsx",
+    "count": 4
+  },
+  {
+    "file": "pages/SettingsPage.tsx",
+    "count": 109
+  },
+  {
+    "file": "pages/contracts/ContractsPage.tsx",
+    "count": 98
+  },
+  {
+    "file": "pages/contracts/ValidationIssues.tsx",
+    "count": 1
+  },
+  {
+    "file": "pages/nodes/NodeDetail.tsx",
+    "count": 169
+  },
+  {
+    "file": "pages/nodes/NodesPage.tsx",
+    "count": 33
+  },
+  {
+    "file": "pages/nodes/PairDialog.tsx",
+    "count": 14
+  },
+  {
+    "file": "pages/plugins/InstallDialog.tsx",
+    "count": 35
+  },
+  {
+    "file": "pages/plugins/PluginDetail.tsx",
+    "count": 107
+  },
+  {
+    "file": "pages/plugins/PluginsPage.tsx",
+    "count": 44
+  },
+  {
+    "file": "pages/plugins/SettingsForm.tsx",
+    "count": 15
+  },
+  {
+    "file": "ui/Toasts.tsx",
+    "count": 1
+  },
+  {
+    "file": "ui/overlays.tsx",
+    "count": 6
+  },
+  {
+    "file": "ui/primitives.tsx",
+    "count": 1
+  },
+  {
+    "file": "ui/states.tsx",
+    "count": 3
+  },
+  {
+    "file": "ui/status.ts",
+    "count": 12
+  },
+  {
+    "file": "widgets/charts/BreakdownWidget.tsx",
+    "count": 2
+  },
+  {
+    "file": "widgets/charts/ComparisonWidget.tsx",
+    "count": 4
+  },
+  {
+    "file": "widgets/charts/DistributionWidget.tsx",
+    "count": 4
+  },
+  {
+    "file": "widgets/charts/HeatmapWidget.tsx",
+    "count": 10
+  },
+  {
+    "file": "widgets/charts/StatWidget.tsx",
+    "count": 1
+  },
+  {
+    "file": "widgets/charts/TableWidget.tsx",
+    "count": 3
+  },
+  {
+    "file": "widgets/registry.ts",
+    "count": 39
+  },
+  {
+    "file": "widgets/shared.tsx",
+    "count": 6
+  },
+  {
+    "file": "widgets/system/AlertsWidget.tsx",
+    "count": 13
+  },
+  {
+    "file": "widgets/system/EventFeedWidget.tsx",
+    "count": 1
+  },
+  {
+    "file": "widgets/system/NodeGridWidget.tsx",
+    "count": 5
+  },
+  {
+    "file": "widgets/system/NoteWidget.tsx",
+    "count": 2
+  },
+  {
+    "file": "widgets/system/PluginActivityWidget.tsx",
+    "count": 2
+  }
+]

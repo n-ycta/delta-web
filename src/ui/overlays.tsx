@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -19,7 +20,7 @@ export function Modal({ open, onClose, title, children, footer, wide, icon }: { 
     <>
       <div className="overlay" onClick={onClose} />
       <div className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true">
-        <div className="modal-head">{icon}<div className="modal-title grow">{title}</div><Button variant="ghost" size="sm" iconOnly onClick={onClose} aria-label="Закрыть"><X size={15} /></Button></div>
+        <div className="modal-head">{icon}<div className="modal-title grow">{title}</div><Button variant="ghost" size="sm" iconOnly onClick={onClose} aria-label={tr("ui.overlays.s_4ae50d3073")}><X size={15} /></Button></div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
@@ -33,7 +34,7 @@ export function Drawer({ open, onClose, title, children, footer, wide, sub }: { 
     <>
       <div className="overlay" onClick={onClose} />
       <aside className={`drawer ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true">
-        <div className="modal-head"><div className="grow" style={{ minWidth: 0 }}><div className="modal-title truncate">{title}</div>{sub && <div className="muted" style={{ fontSize: 12 }}>{sub}</div>}</div><Button variant="ghost" size="sm" iconOnly onClick={onClose} aria-label="Закрыть"><X size={15} /></Button></div>
+        <div className="modal-head"><div className="grow" style={{ minWidth: 0 }}><div className="modal-title truncate">{title}</div>{sub && <div className="muted" style={{ fontSize: 12 }}>{sub}</div>}</div><Button variant="ghost" size="sm" iconOnly onClick={onClose} aria-label={tr("ui.overlays.s_4ae50d3073")}><X size={15} /></Button></div>
         <div className="modal-body" style={{ flex: 1 }}>{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </aside>
@@ -81,7 +82,7 @@ export function Menu({ trigger, items, align = 'end' }: { trigger: (p: { onClick
 }
 
 /** Confirmation dialog; for destructive actions can require typing the resource name. */
-export function Confirm({ open, onClose, onConfirm, title, body, confirmLabel = 'Подтвердить', danger, requireText, loading, children }: {
+export function Confirm({ open, onClose, onConfirm, title, body, confirmLabel = tr("ui.overlays.s_0467ae4bb8"), danger, requireText, loading, children }: {
   open: boolean; onClose: () => void; onConfirm: () => void; title: string; body?: ReactNode; confirmLabel?: string; danger?: boolean; requireText?: string; loading?: boolean; children?: ReactNode;
 }) {
   const [text, setText] = useState('');
@@ -89,7 +90,7 @@ export function Confirm({ open, onClose, onConfirm, title, body, confirmLabel = 
   const ok = !requireText || text.trim() === requireText;
   return (
     <Modal open={open} onClose={onClose} title={title} footer={<>
-      <Button variant="ghost" onClick={onClose}>Отмена</Button>
+      <Button variant="ghost" onClick={onClose}>{tr("ui.overlays.s_0ec753be8d")}</Button>
       <Button variant={danger ? 'danger-solid' : 'primary'} disabled={!ok} loading={loading} onClick={onConfirm}>{confirmLabel}</Button>
     </>}>
       <div className="col gap-3">
@@ -97,7 +98,7 @@ export function Confirm({ open, onClose, onConfirm, title, body, confirmLabel = 
         {children}
         {requireText && (
           <label className="field">
-            <span className="field-help">Введите <code>{requireText}</code> для подтверждения</span>
+            <span className="field-help">{tr("ui.overlays.s_bc71e3f0c7")}<code>{requireText}</code> {tr("ui.overlays.s_7ce4928550")}</span>
             <input className="input mono" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
           </label>
         )}

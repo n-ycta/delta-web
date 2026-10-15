@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { ComponentType } from 'react';
 import type { MetricDescriptor, WidgetConfig, WidgetDisplay } from '../contracts';
 import { parse } from '../lib/semver';
@@ -83,8 +84,8 @@ export class WidgetRegistry {
     if (!have || have.major === want.major) return { status: 'ok', def, config: cfg };
     if (have.major < want.major && def.migrate) {
       try { return { status: 'migrated', def, config: { ...def.migrate(cfg, cfg.typeVersion), typeVersion: def.version }, from: cfg.typeVersion }; }
-      catch (e) { return { status: 'incompatible', def, config: cfg, reason: `Ошибка миграции: ${(e as Error).message}` }; }
+      catch (e) { return { status: 'incompatible', def, config: cfg, reason: tr("core.registry.WidgetRegistry.s_9589dd4f82", { p0: ((e as Error).message) }) }; }
     }
-    return { status: 'incompatible', def, config: cfg, reason: `Конфигурация v${cfg.typeVersion} несовместима с виджетом v${def.version}` };
+    return { status: 'incompatible', def, config: cfg, reason: tr("core.registry.WidgetRegistry.s_8ba9f8e934", { p0: (cfg.typeVersion), p1: (def.version) }) };
   }
 }

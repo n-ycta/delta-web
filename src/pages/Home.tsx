@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Link } from 'react-router-dom';
 import { useDashboards, useNodes, usePlugins } from '@/app/data';
 import { useQuery } from '@/app/query';
@@ -21,11 +22,11 @@ function Strip() {
   const crit = alerts.filter((a) => a.tone === 'err' || a.tone === 'crit').length;
   return (
     <div className="strip">
-      <Link to="/settings?tab=connection"><div className="label">Ядро</div><div className="v">{info.data ? info.data.coreVersion : '—'}<small>{info.data ? `up ${fmtDuration((Date.now() - info.data.startedAt) / 1000)}` : ''}</small></div></Link>
-      <Link to="/nodes"><div className="label">Узлы в сети</div><div className="v">{n.filter((x) => x.status !== 'offline').length}<small>/ {n.length}</small></div></Link>
-      <Link to="/plugins"><div className="label">Плагины активны</div><div className="v">{p.filter(isLive).length}<small>/ {p.length}</small></div></Link>
-      <Link to="/events"><div className="label">Поток данных</div><div className="v">{fmtNumber(rate, 0)}<small>соб/мин</small></div></Link>
-      <Link to="/events?sev=error"><div className="label">Проблемы</div><div className="v" style={{ color: crit ? 'var(--err)' : undefined }}>{crit}<small>{alerts.length - crit ? `+${alerts.length - crit} предупр.` : ''}</small></div></Link>
+      <Link to="/settings?tab=connection"><div className="label">{tr("pages.Home.s_3609281642")}</div><div className="v">{info.data ? info.data.coreVersion : '—'}<small>{info.data ? `up ${fmtDuration((Date.now() - info.data.startedAt) / 1000)}` : ''}</small></div></Link>
+      <Link to="/nodes"><div className="label">{tr("pages.Home.s_4b54d244be")}</div><div className="v">{n.filter((x) => x.status !== 'offline').length}<small>{tr("pages.Home.s_fcbe5033ba")}{n.length}</small></div></Link>
+      <Link to="/plugins"><div className="label">{tr("pages.Home.s_c94c451fb7")}</div><div className="v">{p.filter(isLive).length}<small>{tr("pages.Home.s_fcbe5033ba")}{p.length}</small></div></Link>
+      <Link to="/events"><div className="label">{tr("pages.Home.s_6574bcdcf4")}</div><div className="v">{fmtNumber(rate, 0)}<small>{tr("pages.Home.s_1771630f60")}</small></div></Link>
+      <Link to="/events?sev=error"><div className="label">{tr("pages.Home.s_7c80872ccf")}</div><div className="v" style={{ color: crit ? 'var(--err)' : undefined }}>{crit}<small>{alerts.length - crit ? tr("pages.Home.s_0ac56e640c", { p0: (alerts.length - crit) }) : ''}</small></div></Link>
     </div>
   );
 }
@@ -36,10 +37,10 @@ export function HomePage() {
   const showStrip = usePrefs((s) => s.homeStrip);
   const home = dashboards.data?.find((d) => d.origin === 'home');
   const hour = new Date().getHours();
-  const greet = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
+  const greet = hour < 6 ? tr("pages.Home.s_03f0b82037") : hour < 12 ? tr("pages.Home.s_d73c91bbc4") : hour < 18 ? tr("pages.Home.s_51d822d031") : tr("pages.Home.s_37f9f18bdc");
   return (
     <div className="page">
-      <PageHead eyebrow={new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })} title={greet} sub="Сводка экосистемы. Состав и раскладка этой страницы настраиваются — это ваш личный дашборд." />
+      <PageHead eyebrow={new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })} title={greet} sub={tr("pages.Home.s_0a2cf963b9")} />
       {showStrip && <Strip />}
       {dashboards.error && !dashboards.data && <ErrorState error={dashboards.error} onRetry={dashboards.refetch} />}
       {!home && !dashboards.error && <div className="grid-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} h={180} />)}</div>}

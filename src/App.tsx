@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { ReactNode } from 'react';
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ErrorState } from '@/ui/states';
@@ -47,7 +48,7 @@ function RouteBoundary({ children }: { children: ReactNode }) {
   const loc = useLocation();
   return (
     <ErrorBoundary resetKey={loc.pathname} fallback={(e, reset) => (
-      <div className="page"><div className="panel"><ErrorState error={e} onRetry={reset} extra={<Button variant="ghost" onClick={() => { location.hash = '#/'; reset(); }}>На главную</Button>} /></div></div>
+      <div className="page"><div className="panel"><ErrorState error={e} onRetry={reset} extra={<Button variant="ghost" onClick={() => { location.hash = '#/'; reset(); }}>{tr("App.s_ef1ad90b17")}</Button>} /></div></div>
     )}>{children}</ErrorBoundary>
   );
 }

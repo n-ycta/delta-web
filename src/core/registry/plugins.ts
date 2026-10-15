@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { PluginEntry, PluginInstance, PluginManifest, ValidationReport } from '../contracts';
 import { validateManifest } from '../contracts';
 
@@ -6,7 +7,7 @@ export interface RawRecord { manifest: unknown; latest: unknown; instance: Plugi
 function placeholder(raw: unknown, inst: PluginInstance): PluginManifest {
   const r = (raw ?? {}) as Record<string, unknown>;
   return {
-    id: String(r.id ?? inst.pluginId), name: String(r.name ?? r.id ?? 'Неизвестный плагин'), version: String(r.version ?? '0.0.0'),
+    id: String(r.id ?? inst.pluginId), name: String(r.name ?? r.id ?? tr("core.registry.plugins.s_18ace30e43")), version: String(r.version ?? '0.0.0'),
     contract: String(r.contract ?? '?'), publisher: String(r.publisher ?? '—'), description: String(r.description ?? ''), icon: 'file-warning',
     category: 'other', permissions: [], settings: [], metrics: [], actions: [], capabilities: [], runtime: { targets: ['vps'] },
   };
@@ -23,7 +24,7 @@ export function normalizePlugins(records: RawRecord[], knownVisualizations: stri
     if (!validation.compatible && !instance.installedVersion) instance.status = 'incompatible';
     if (!validation.compatible && instance.installedVersion) {
       instance.status = 'error';
-      instance.error = { code: 'CONTRACT_INVALID', message: 'Манифест не прошёл проверку — плагин изолирован', hint: 'Откройте вкладку «Контракт» для деталей' };
+      instance.error = { code: 'CONTRACT_INVALID', message: tr("core.registry.plugins.s_2df61fb885"), hint: tr("core.registry.plugins.s_2c1f3f522d") };
     }
     return { manifest, latest: latest.manifest ?? manifest, instance, validation };
   });

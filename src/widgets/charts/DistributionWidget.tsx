@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { WidgetProps } from '../types';
 import { MetricData } from '../shared';
@@ -16,9 +17,9 @@ export function DistributionWidget({ config, ctx }: WidgetProps) {
         return (
           <>
             <div className="row" style={{ gap: 16, fontSize: 11.5, fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
-              <span>p50 <b style={{ color: 'var(--ink)', fontWeight: 500 }}>{fmtValue(p50, m.unit)}</b></span>
-              <span>p95 <b style={{ color: 'var(--ink)', fontWeight: 500 }}>{fmtValue(p95, m.unit)}</b></span>
-              <span>n = {fmtNumber(total, 0)}</span>
+              <span>{tr("widgets.charts.DistributionWidget.s_8615946584")}<b style={{ color: 'var(--ink)', fontWeight: 500 }}>{fmtValue(p50, m.unit)}</b></span>
+              <span>{tr("widgets.charts.DistributionWidget.s_cd79344568")}<b style={{ color: 'var(--ink)', fontWeight: 500 }}>{fmtValue(p95, m.unit)}</b></span>
+              <span>{tr("widgets.charts.DistributionWidget.s_3fd6d3dd96")}{fmtNumber(total, 0)}</span>
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -26,7 +27,7 @@ export function DistributionWidget({ config, ctx }: WidgetProps) {
                   <CartesianGrid stroke={c.grid} vertical={false} />
                   <XAxis dataKey="x" tickLine={false} stroke={c.grid} minTickGap={20} />
                   <YAxis width={40} tickLine={false} stroke="transparent" tickFormatter={(v) => fmtNumber(v, 0)} />
-                  <Tooltip cursor={{ fill: c.grid, opacity: 0.5 }} formatter={(v: number) => [fmtNumber(v, 0), 'наблюдений']} labelFormatter={(x) => `${x} ${m.unit}`} contentStyle={{ background: c.surface, border: `1px solid ${c.grid}`, fontSize: 12 }} />
+                  <Tooltip cursor={{ fill: c.grid, opacity: 0.5 }} formatter={(v: number) => [fmtNumber(v, 0), tr("widgets.charts.DistributionWidget.s_20da6c6c9c")]} labelFormatter={(x) => `${x} ${m.unit}`} contentStyle={{ background: c.surface, border: `1px solid ${c.grid}`, fontSize: 12 }} />
                   <Bar dataKey="count" fill={config.display.colors?.value ?? c.series[0]} isAnimationActive={false} />
                   <ReferenceLine x={p50} stroke={c.ink} strokeDasharray="3 3" />
                   <ReferenceLine x={p95} stroke={c.warn} strokeDasharray="3 3" />

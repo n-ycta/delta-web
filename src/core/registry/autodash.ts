@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { DashboardConfig, MetricDescriptor, PluginEntry, WidgetConfig } from '../contracts';
 import type { WidgetRegistry } from './WidgetRegistry';
 import { uid } from '../lib/random';
@@ -60,7 +61,7 @@ export function generatePluginDashboard(entry: PluginEntry, reg: WidgetRegistry)
   const layout = pack(ws.map((w) => w.size));
   const t = Date.now();
   return {
-    id: `gen_${manifest.id}`, name: manifest.name, description: `Сгенерирован из контракта ${manifest.id}@${manifest.version}`,
+    id: `gen_${manifest.id}`, name: manifest.name, description: tr("core.registry.autodash.s_9667cadb3b", { p0: (manifest.id), p1: (manifest.version) }),
     icon: manifest.icon, origin: 'generated', generatedFrom: manifest.id, range: '7d', refreshSec: 60, pinned: false,
     widgets: ws.map(({ size: _s, ...w }, i) => ({ ...w, layout: layout[i] })), createdAt: t, updatedAt: t,
   };
@@ -81,16 +82,16 @@ export function defaultHomeDashboard(entries: PluginEntry[], reg: WidgetRegistry
     return { ...rest, ...extra, display: { ...rest.display, ...(extra.display ?? {}) }, layout };
   };
   const widgets = [
-    sys('alerts', 'Требует внимания', 0, 0, 4, 6),
-    sys('nodes', 'Узлы', 4, 0, 8, 6),
+    sys('alerts', tr("core.registry.autodash.s_925c5165a9"), 0, 0, 4, 6),
+    sys('nodes', tr("core.registry.autodash.s_3293ac18db"), 4, 0, 8, 6),
     metric('dev.delta.typing', 'wpm', 'stat', { x: 0, y: 6, w: 3, h: 4 }),
     metric('dev.delta.health', 'steps', 'stat', { x: 3, y: 6, w: 3, h: 4 }),
     metric('dev.delta.typing', 'accuracy', 'stat', { x: 6, y: 6, w: 3, h: 4 }),
     metric('dev.delta.finance', 'spend', 'stat', { x: 9, y: 6, w: 3, h: 4 }),
-    metric('dev.delta.typing', 'wpm', 'timeseries', { x: 0, y: 10, w: 8, h: 7 }, { title: 'Скорость набора · RU / EN', display: { compare: false, chart: 'line' } }),
-    sys('plugins', 'Активность источников', 8, 10, 4, 7),
-    sys('events', 'Последние события', 0, 17, 7, 8),
+    metric('dev.delta.typing', 'wpm', 'timeseries', { x: 0, y: 10, w: 8, h: 7 }, { title: tr("core.registry.autodash.s_d39f5debb4"), display: { compare: false, chart: 'line' } }),
+    sys('plugins', tr("core.registry.autodash.s_b1b569eb07"), 8, 10, 4, 7),
+    sys('events', tr("core.registry.autodash.s_2355a3badd"), 0, 17, 7, 8),
     metric('dev.delta.home', 'co2', 'timeseries', { x: 7, y: 17, w: 5, h: 8 }, { display: { chart: 'line', showThresholds: true } }),
   ].filter(Boolean) as WidgetConfig[];
-  return { id: 'home', name: 'Обзор', origin: 'home', range: '24h', refreshSec: 30, pinned: true, widgets, createdAt: t, updatedAt: t };
+  return { id: 'home', name: tr("core.registry.autodash.s_39c6387206"), origin: 'home', range: '24h', refreshSec: 30, pinned: true, widgets, createdAt: t, updatedAt: t };
 }

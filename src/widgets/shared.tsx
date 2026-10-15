@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useMemo, type ReactNode } from 'react';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { MetricDescriptor, MetricQuery, MetricResult, Series, WidgetConfig } from '@/core/contracts';
@@ -32,7 +33,7 @@ export function MetricData({ cfg, ctx, overrides, children, isEmpty }: {
   if (res.error && !res.data) return <ErrorState compact error={res.error} onRetry={res.refetch} />;
   const r = res.data!;
   const empty = isEmpty ? isEmpty(r) : !r.series.some((s) => s.points.some((p) => p.v !== null)) && !r.categories?.length && !r.buckets?.length;
-  if (empty) return <Empty compact title="Нет данных за период">Источник не прислал значений. Попробуйте расширить диапазон.</Empty>;
+  if (empty) return <Empty compact title={tr("widgets.shared.s_8c7349e9ee")}>{tr("widgets.shared.s_dc798432ac")}</Empty>;
   return <>{children(r, ctx.metric)}</>;
 }
 
@@ -59,12 +60,12 @@ export function toRows(series: Series[]) {
 }
 
 export function Delta({ cur, prev, better }: { cur: number | null; prev: number | null; better: 'higher' | 'lower' | 'neutral' }) {
-  if (cur === null || prev === null || prev === 0) return <span className="delta neutral">—</span>;
+  if (cur === null || prev === null || prev === 0) return <span className="delta neutral">{tr("widgets.shared.s_1b93795b97")}</span>;
   const d = (cur - prev) / Math.abs(prev);
   const up = d > 0.005, down = d < -0.005;
   const good = better === 'neutral' ? 'neutral' : (better === 'higher' ? up : down) ? 'good' : (better === 'higher' ? down : up) ? 'bad' : 'neutral';
   const Icon = up ? ArrowUpRight : down ? ArrowDownRight : Minus;
-  return <span className={`delta ${good}`} title="Относительно предыдущего периода"><Icon size={12} />{(Math.abs(d) * 100).toFixed(1)}%</span>;
+  return <span className={`delta ${good}`} title={tr("widgets.shared.s_d59a35c97b")}><Icon size={12} />{(Math.abs(d) * 100).toFixed(1)}{tr("widgets.shared.s_4345cb1fa2")}</span>;
 }
 
 export function ChartTooltip({ active, payload, label, unit, decimals, span, labels }: any) {
@@ -87,7 +88,7 @@ export function Legend({ items, hidden, onToggle }: { items: { key: string; labe
   return (
     <div className="legend">
       {items.map((it) => (
-        <button key={it.key} aria-pressed={!hidden.includes(it.key)} onClick={() => onToggle(it.key)} title="Скрыть/показать серию">
+        <button key={it.key} aria-pressed={!hidden.includes(it.key)} onClick={() => onToggle(it.key)} title={tr("widgets.shared.s_5b3c9febb0")}>
           <span className={`sw ${it.dashed ? 'dash' : ''}`} style={{ background: it.color, color: it.color }} />{it.label}
         </button>
       ))}

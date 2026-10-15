@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type {
   AuditEntry, ConnectionConfig, CoreEvent, DashboardConfig, EventQuery, MetricQuery, MetricResult, NodeCommandId,
   NodeInfo, Notification, PluginInstance, Principal, RealtimeMessage, Role, Series, UptimeCell,
@@ -99,6 +100,6 @@ export class CoreApiError extends Error {
 
 export function toApiError(e: unknown): CoreApiError {
   if (e instanceof CoreApiError) return e;
-  if (e instanceof TypeError) return new CoreApiError('NETWORK', 'Ядро недоступно: сетевая ошибка', 0, true, 'Проверьте адрес ядра и доступность сети');
-  return new CoreApiError('UNKNOWN', e instanceof Error ? e.message : String(e));
+  if (e instanceof TypeError) return new CoreApiError(tr("api.types.s_6845c6d905"), tr("api.types.s_ab95737d3d"), 0, true, tr("api.types.s_8e91a06c8a"));
+  return new CoreApiError(tr("api.types.s_25ba44ec3b"), e instanceof Error ? e.message : String(e));
 }

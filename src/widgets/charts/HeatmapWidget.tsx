@@ -1,10 +1,11 @@
+import { tr } from '@/i18n';
 import { useState } from 'react';
 import type { WidgetProps } from '../types';
 import { MetricData } from '../shared';
 import { useChartColors } from '@/app/theme';
 import { fmtValue } from '@/core/lib/format';
 
-const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const DAYS = [tr("widgets.charts.HeatmapWidget.s_3770c0ef8e"), tr("widgets.charts.HeatmapWidget.s_93480c9383"), tr("widgets.charts.HeatmapWidget.s_387e39223d"), tr("widgets.charts.HeatmapWidget.s_9c8acdf376"), tr("widgets.charts.HeatmapWidget.s_e18bb0844b"), tr("widgets.charts.HeatmapWidget.s_e8bd00ada8"), tr("widgets.charts.HeatmapWidget.s_c58ca969a8")];
 
 /** Day-of-week × hour-of-day activity matrix. Always uses hourly buckets over ≥ 7 days. */
 export function HeatmapWidget({ config, ctx }: WidgetProps) {
@@ -36,9 +37,9 @@ export function HeatmapWidget({ config, ctx }: WidgetProps) {
               </div>
             </div>
             <div className="row" style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--muted)', paddingLeft: 28 }}>
-              {hover ? <span>{DAYS[hover.d]} {String(hover.h).padStart(2, '0')}:00 · ср. {fmtValue(hover.v, m.unit, m.precision)}</span> : <span>00 · · · 06 · · · 12 · · · 18 · · · 23</span>}
+              {hover ? <span>{DAYS[hover.d]} {String(hover.h).padStart(2, '0')}{tr("widgets.charts.HeatmapWidget.s_800d7b9eab")}{fmtValue(hover.v, m.unit, m.precision)}</span> : <span>{tr("widgets.charts.HeatmapWidget.s_f3e63541aa")}</span>}
               <span className="spacer" />
-              <span>{range} · по часам</span>
+              <span>{range} {tr("widgets.charts.HeatmapWidget.s_192f9c1282")}</span>
             </div>
           </div>
         );

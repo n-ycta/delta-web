@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { WidgetProps } from '../types';
 import { Delta, MetricData } from '../shared';
 import { useChartColors } from '@/app/theme';
@@ -38,9 +39,9 @@ export function ComparisonWidget({ config, ctx }: WidgetProps) {
             ))}
             {gap !== null && rows.length >= 2 && (
               <div className="row" style={{ marginTop: 'auto', borderTop: '1px solid var(--rule)', paddingTop: 8, fontSize: 12 }}>
-                <span className="muted">Разница {a.label} − {b.label}</span><span className="spacer" />
+                <span className="muted">{tr("widgets.charts.ComparisonWidget.s_004b9fd704")}{a.label} {tr("widgets.charts.ComparisonWidget.s_5db797afc3")}{b.label}</span><span className="spacer" />
                 <span className="num" style={{ fontWeight: 500 }}>{gap > 0 ? '+' : ''}{fmtValue(gap, m.unit, m.precision)}</span>
-                <span className="muted num" style={{ fontSize: 11 }}>({b.cur ? ((gap / (b.cur as number)) * 100).toFixed(0) : '—'}%)</span>
+                <span className="muted num" style={{ fontSize: 11 }}>{tr("widgets.charts.ComparisonWidget.s_28ed3a797d")}{b.cur ? ((gap / (b.cur as number)) * 100).toFixed(0) : '—'}{tr("widgets.charts.ComparisonWidget.s_ed510d3f3f")}</span>
               </div>
             )}
           </div>

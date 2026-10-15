@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import type { SettingField } from '@/core/contracts';
 import { Badge, Button, Field, Switch } from '@/ui/primitives';
@@ -8,11 +9,11 @@ export function defaultsOf(fields: SettingField[]) {
 
 function validate(f: SettingField, v: unknown): string | undefined {
   if (f.type === 'number') {
-    if (v === '' || v === undefined || Number.isNaN(Number(v))) return 'Введите число';
-    if (f.min !== undefined && Number(v) < f.min) return `Минимум ${f.min}`;
-    if (f.max !== undefined && Number(v) > f.max) return `Максимум ${f.max}`;
+    if (v === '' || v === undefined || Number.isNaN(Number(v))) return tr("pages.plugins.SettingsForm.s_c78b4f55e7");
+    if (f.min !== undefined && Number(v) < f.min) return tr("pages.plugins.SettingsForm.s_9ae2cbe3e5", { p0: (f.min) });
+    if (f.max !== undefined && Number(v) > f.max) return tr("pages.plugins.SettingsForm.s_b00c609cf9", { p0: (f.max) });
   }
-  if (f.type === 'string' && f.pattern && typeof v === 'string' && !new RegExp(f.pattern).test(v)) return 'Неверный формат';
+  if (f.type === 'string' && f.pattern && typeof v === 'string' && !new RegExp(f.pattern).test(v)) return tr("pages.plugins.SettingsForm.s_00e77dc8eb");
   return undefined;
 }
 
@@ -27,29 +28,29 @@ export function SettingsForm({ fields, values, onSubmit, saving, disabled }: { f
   useEffect(() => { setV(initial); setSecrets({}); }, [initial]);
   const errors = Object.fromEntries(fields.map((f) => [f.key, validate(f, v[f.key])]).filter(([, e]) => e));
   const dirty = JSON.stringify(v) !== JSON.stringify(initial) || Object.values(secrets).some(Boolean);
-  const groups = [...new Set(fields.map((f) => f.group ?? 'Основные'))];
+  const groups = [...new Set(fields.map((f) => f.group ?? tr("pages.plugins.SettingsForm.s_eee2285ba1")))];
   const set = (k: string, val: unknown) => setV((p) => ({ ...p, [k]: val }));
 
-  if (!fields.length) return <div className="muted">Плагин не объявляет настраиваемых параметров.</div>;
+  if (!fields.length) return <div className="muted">{tr("pages.plugins.SettingsForm.s_c81cb5a980")}</div>;
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (!Object.keys(errors).length) onSubmit({ ...v, ...Object.fromEntries(Object.entries(secrets).filter(([, s]) => s)) }); }}>
       {groups.map((g) => (
         <div key={g} className="panel" style={{ marginBottom: 14 }}>
           <div className="panel-head"><span className="panel-title">{g}</span></div>
           <div className="panel-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
-            {fields.filter((f) => (f.group ?? 'Основные') === g).map((f) => (
+            {fields.filter((f) => (f.group ?? tr("pages.plugins.SettingsForm.s_eee2285ba1")) === g).map((f) => (
               <div key={f.key} className="form-row">
                 <div>
                   <div style={{ fontWeight: 500 }}>{f.label}</div>
                   <div className="mono faint" style={{ fontSize: 11 }}>{f.key}</div>
-                  {f.requiresRestart && <Badge tone="warn">нужен перезапуск</Badge>}
+                  {f.requiresRestart && <Badge tone="warn">{tr("pages.plugins.SettingsForm.s_8d255547a6")}</Badge>}
                 </div>
                 <Field help={f.help} error={errors[f.key]}>
                   {f.type === 'string' && <input className="input" disabled={disabled} value={String(v[f.key] ?? '')} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} />}
                   {f.type === 'secret' && (
                     <div className="row">
-                      <input className="input mono" disabled={disabled} type="password" autoComplete="new-password" value={secrets[f.key] ?? ''} placeholder={values[f.key] ? '•••••••• (задан — введите для замены)' : f.placeholder ?? 'не задан'} onChange={(e) => setSecrets((s) => ({ ...s, [f.key]: e.target.value }))} />
-                      {values[f.key] ? <Badge tone="ok">задан</Badge> : <Badge>пусто</Badge>}
+                      <input className="input mono" disabled={disabled} type="password" autoComplete="new-password" value={secrets[f.key] ?? ''} placeholder={values[f.key] ? tr("pages.plugins.SettingsForm.s_530c963286") : f.placeholder ?? tr("pages.plugins.SettingsForm.s_55331e77f7")} onChange={(e) => setSecrets((s) => ({ ...s, [f.key]: e.target.value }))} />
+                      {values[f.key] ? <Badge tone="ok">{tr("pages.plugins.SettingsForm.s_681c395071")}</Badge> : <Badge>{tr("pages.plugins.SettingsForm.s_1646d49eb7")}</Badge>}
                     </div>
                   )}
                   {f.type === 'number' && (
@@ -76,9 +77,9 @@ export function SettingsForm({ fields, values, onSubmit, saving, disabled }: { f
         </div>
       ))}
       <div className="row">
-        <Button type="submit" variant="primary" disabled={!dirty || !!Object.keys(errors).length || disabled} loading={saving} perm="plugins.manage">Сохранить настройки</Button>
-        <Button type="button" variant="ghost" disabled={!dirty} onClick={() => { setV(initial); setSecrets({}); }}>Сбросить</Button>
-        {dirty && <span className="muted" style={{ fontSize: 12 }}>изменения не сохранены</span>}
+        <Button type="submit" variant="primary" disabled={!dirty || !!Object.keys(errors).length || disabled} loading={saving} perm="plugins.manage">{tr("pages.plugins.SettingsForm.s_87ae19737e")}</Button>
+        <Button type="button" variant="ghost" disabled={!dirty} onClick={() => { setV(initial); setSecrets({}); }}>{tr("pages.plugins.SettingsForm.s_058f162d29")}</Button>
+        {dirty && <span className="muted" style={{ fontSize: 12 }}>{tr("pages.plugins.SettingsForm.s_618362da69")}</span>}
       </div>
     </form>
   );

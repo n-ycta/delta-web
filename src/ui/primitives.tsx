@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { Tone } from './status';
@@ -18,7 +19,7 @@ export const Button = forwardRef<HTMLButtonElement, BtnProps>(function Button({ 
   const allowed = useCan(perm ?? 'dashboards.read');
   const cls = ['btn', variant === 'danger-solid' ? 'danger solid' : variant !== 'default' ? variant : '', size === 'sm' ? 'sm' : '', iconOnly ? 'icon' : '', className].join(' ');
   return (
-    <button ref={ref} className={cls} disabled={disabled || loading || !allowed} title={!allowed ? `Недостаточно прав: требуется ${perm}` : title} {...rest}>
+    <button ref={ref} className={cls} disabled={disabled || loading || !allowed} title={!allowed ? tr("ui.primitives.s_d5f2f33278", { p0: (perm) }) : title} {...rest}>
       {loading ? <Loader2 size={14} className="spin" /> : icon}
       {children}
     </button>

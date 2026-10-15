@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { X } from 'lucide-react';
 import { useUi } from '@/app/stores';
 
@@ -14,7 +15,7 @@ export function Toasts() {
             {t.body && <div className="t-body">{t.body}</div>}
             {t.action && <button className="t-action" style={{ marginTop: 6 }} onClick={() => { t.action!.run(); dismiss(t.id); }}>{t.action.label}</button>}
           </div>
-          <button onClick={() => dismiss(t.id)} aria-label="Закрыть"><X size={14} /></button>
+          <button onClick={() => dismiss(t.id)} aria-label={tr("ui.Toasts.s_4ae50d3073")}><X size={14} /></button>
         </div>
       ))}
     </div>

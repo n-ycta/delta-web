@@ -1,22 +1,23 @@
+import { tr } from '@/i18n';
 import { z } from 'zod';
 
 export const Role = z.enum(['owner', 'operator', 'analyst', 'viewer']);
 export type Role = z.infer<typeof Role>;
 
-export const ROLE_LABEL: Record<Role, string> = { owner: 'Владелец', operator: 'Оператор', analyst: 'Аналитик', viewer: 'Наблюдатель' };
+export const ROLE_LABEL: Record<Role, string> = { owner: tr("core.contracts.access.s_926e3b436e"), operator: tr("core.contracts.access.s_839e573793"), analyst: tr("core.contracts.access.s_a3d492a5f5"), viewer: tr("core.contracts.access.s_d7f45e99fa") };
 
 /** Console-level permissions. Plugins request their own data scopes separately. */
 export const CONSOLE_PERMISSIONS = [
-  { id: 'dashboards.read', label: 'Просмотр дашбордов' },
-  { id: 'dashboards.write', label: 'Редактирование дашбордов' },
-  { id: 'plugins.read', label: 'Просмотр плагинов' },
-  { id: 'plugins.manage', label: 'Установка и настройка плагинов' },
-  { id: 'nodes.read', label: 'Просмотр узлов' },
-  { id: 'nodes.command', label: 'Команды узлам' },
-  { id: 'nodes.admin', label: 'Администрирование узлов' },
-  { id: 'events.read', label: 'Журнал событий' },
-  { id: 'access.manage', label: 'Управление доступом' },
-  { id: 'system.config', label: 'Конфигурация системы' },
+  { id: 'dashboards.read', label: tr("core.contracts.access.s_6560629314") },
+  { id: 'dashboards.write', label: tr("core.contracts.access.s_9371729f82") },
+  { id: 'plugins.read', label: tr("core.contracts.access.s_d014a204ae") },
+  { id: 'plugins.manage', label: tr("core.contracts.access.s_fd9ee22c01") },
+  { id: 'nodes.read', label: tr("core.contracts.access.s_20f7774c48") },
+  { id: 'nodes.command', label: tr("core.contracts.access.s_156bc8b353") },
+  { id: 'nodes.admin', label: tr("core.contracts.access.s_2c96474b43") },
+  { id: 'events.read', label: tr("core.contracts.access.s_f2ee635aaa") },
+  { id: 'access.manage', label: tr("core.contracts.access.s_7d772b92e7") },
+  { id: 'system.config', label: tr("core.contracts.access.s_63073b2b53") },
 ] as const;
 export type ConsolePermission = (typeof CONSOLE_PERMISSIONS)[number]['id'];
 

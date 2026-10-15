@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import type { ReactNode } from 'react';
 import { AlertTriangle, Inbox, RotateCcw, WifiOff } from 'lucide-react';
 import type { CoreApiError } from '@/api';
@@ -21,11 +22,11 @@ export function ErrorState({ error, onRetry, compact, extra }: { error: CoreApiE
   return (
     <div className={`state err ${compact ? 'compact' : ''}`} role="alert">
       {!compact && <div className="state-icon">{network ? <WifiOff size={18} strokeWidth={1.6} /> : <AlertTriangle size={18} strokeWidth={1.6} />}</div>}
-      <h4>{network ? 'Нет связи с ядром' : 'Не удалось загрузить'}</h4>
+      <h4>{network ? tr("ui.states.s_0ac5883301") : tr("ui.states.s_c36f2b3ae4")}</h4>
       <p>{e.message}{e.hint && <><br /><span className="muted">{e.hint}</span></>}</p>
       {e.code && <span className="code">{e.code}{e.status ? ` · ${e.status}` : ''}</span>}
       <div className="row" style={{ marginTop: 6 }}>
-        {onRetry && (e.retryable ?? true) && <Button size="sm" icon={<RotateCcw size={13} />} onClick={onRetry}>Повторить</Button>}
+        {onRetry && (e.retryable ?? true) && <Button size="sm" icon={<RotateCcw size={13} />} onClick={onRetry}>{tr("ui.states.s_9e506acb19")}</Button>}
         {extra}
       </div>
     </div>

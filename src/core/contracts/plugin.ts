@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { z } from 'zod';
 import { Id, ReverseDnsId, SemverStr } from './common';
 
@@ -64,7 +65,7 @@ export const SettingField = z.discriminatedUnion('type', [
 ]);
 export type SettingField = z.infer<typeof SettingField>;
 
-export const PermissionScope = z.string().regex(/^[a-z]+(\.[a-z_*]+)+$/, 'Формат области: domain.resource[.action]');
+export const PermissionScope = z.string().regex(/^[a-z]+(\.[a-z_*]+)+$/, tr("core.contracts.plugin.s_944430b656"));
 export const PermissionRequest = z.object({
   scope: PermissionScope,
   reason: z.string(),
@@ -138,11 +139,11 @@ export interface PluginEntry {
 
 /** Capabilities the console understands. Anything else is reported as "unknown" but tolerated. */
 export const KNOWN_CAPABILITIES: Record<string, string> = {
-  'metrics.timeseries': 'Временные ряды метрик',
-  'metrics.realtime': 'Поток значений в реальном времени',
-  'events.stream': 'Поток событий',
-  'actions': 'Пользовательские действия',
-  'settings.live': 'Применение настроек без перезапуска',
-  'export.csv': 'Экспорт данных в CSV',
-  'storage.local': 'Локальное хранилище на узле',
+  'metrics.timeseries': tr("core.contracts.plugin.s_944f01fb2d"),
+  'metrics.realtime': tr("core.contracts.plugin.s_ddf80a0661"),
+  'events.stream': tr("core.contracts.plugin.s_9ad64a41fa"),
+  'actions': tr("core.contracts.plugin.s_82abc91d7b"),
+  'settings.live': tr("core.contracts.plugin.s_c52a75b7a8"),
+  'export.csv': tr("core.contracts.plugin.s_4dc23635b8"),
+  'storage.local': tr("core.contracts.plugin.s_3befbc9a45"),
 };

@@ -1,111 +1,75 @@
+import { tr } from '@/i18n';
 import type { ConnectionConfig, DashboardConfig, EventQuery, MetricQuery, NodeCommandId, RealtimeMessage, Role } from '@/core/contracts';
 import type { CoreApi } from '../types';
 import { CoreApiError } from '../types';
 
 export interface HttpAdapterOptions { baseUrl: string; token?: string; timeoutMs?: number }
-
-/**
- * REST + WebSocket adapter for the real Delta core (API v2).
- * Endpoint map is documented in docs/core-api.md; responses share the CoreApi types,
- * plugin manifests are still validated by the console after loading.
- */
+/** Delta v1 adapter. All UI operations call the independent web component. */
 export class HttpCoreAdapter implements CoreApi {
   readonly mode = 'http' as const;
   readonly endpoint: string;
-  private ws?: WebSocket;
   private listeners = new Set<(m: RealtimeMessage) => void>();
-  private backoff = 1000;
-  private closed = false;
-
-  constructor(private opts: HttpAdapterOptions) {
-    this.endpoint = opts.baseUrl.replace(/\/$/, '');
-  }
-
-  private async req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private timer?: ReturnType<typeof setTimeout>;
+  constructor(private opts: HttpAdapterOptions) { this.endpoint = opts.baseUrl.replace(/\/$/, '').replace(/\/v1$/, ''); }
+  private async call<T = any>(action: string, args: unknown = {}): Promise<T> {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), this.opts.timeoutMs ?? 15000);
-    let res: Response;
+    const timer = setTimeout(() => ctrl.abort(), this.opts.timeoutMs ?? 35000);
     try {
-      res = await fetch(this.endpoint + path, {
-        method,
-        signal: ctrl.signal,
-        headers: { 'content-type': 'application/json', accept: 'application/json', 'x-delta-client': 'console/0.9', ...(this.opts.token ? { authorization: `Bearer ${this.opts.token}` } : {}) },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
+      const res = await fetch(this.endpoint + '/v1/call', { method: 'POST', signal: ctrl.signal,
+        headers: { 'content-type': 'application/json', ...(this.opts.token ? { authorization: `Bearer ${this.opts.token}` } : {}) },
+        body: JSON.stringify({ capability: `web.${action}`, args }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new CoreApiError(data.error?.code ?? `HTTP_${res.status}`, data.error?.message ?? res.statusText, res.status, res.status >= 500);
+      return data.result as T;
     } catch (e) {
-      throw new CoreApiError(ctrl.signal.aborted ? 'TIMEOUT' : 'NETWORK', ctrl.signal.aborted ? 'Ядро не ответило вовремя' : `Нет связи с ${this.endpoint}`, 0, true, 'Проверьте адрес ядра в «Настройки → Подключение»');
+      if (e instanceof CoreApiError) throw e;
+      throw new CoreApiError(ctrl.signal.aborted ? 'TIMEOUT' : 'NETWORK', ctrl.signal.aborted ? tr("api.http.HttpCoreAdapter.s_404bda430d") : tr("api.http.HttpCoreAdapter.s_6cbca9c05a", { p0: (this.endpoint) }), 0, true, tr("api.http.HttpCoreAdapter.s_cc8e04188d"));
     } finally { clearTimeout(timer); }
-    if (res.status === 204) return undefined as T;
-    let data: unknown = null;
-    try { data = await res.json(); } catch { /* non-json */ }
-    if (!res.ok) {
-      const err = (data ?? {}) as { code?: string; message?: string; hint?: string };
-      throw new CoreApiError(err.code ?? `HTTP_${res.status}`, err.message ?? res.statusText, res.status, res.status >= 500 || res.status === 429, err.hint ?? (res.status === 401 ? 'Токен недействителен — обновите его в настройках подключения' : undefined));
-    }
-    return data as T;
   }
-
-  info() { return this.req<any>('GET', '/info'); }
-  listPlugins() { return this.req<any>('GET', '/plugins'); }
-  getPluginLogs(id: string, limit = 80) { return this.req<any>('GET', `/plugins/${encodeURIComponent(id)}/logs?limit=${limit}`); }
-  installPlugin(id: string, req: unknown) { return this.req<any>('POST', `/plugins/${encodeURIComponent(id)}/install`, req); }
-  updatePlugin(id: string) { return this.req<any>('POST', `/plugins/${encodeURIComponent(id)}/update`); }
-  setPluginEnabled(id: string, enabled: boolean) { return this.req<any>('POST', `/plugins/${encodeURIComponent(id)}/${enabled ? 'enable' : 'disable'}`); }
-  uninstallPlugin(id: string, opts: { purgeData: boolean }) { return this.req<void>('DELETE', `/plugins/${encodeURIComponent(id)}?purge=${opts.purgeData}`); }
-  updatePluginSettings(id: string, values: Record<string, unknown>) { return this.req<any>('PATCH', `/plugins/${encodeURIComponent(id)}/settings`, values); }
-  setPluginPermissions(id: string, scopes: string[]) { return this.req<any>('PUT', `/plugins/${encodeURIComponent(id)}/permissions`, { scopes }); }
-  setPluginNodes(id: string, nodeIds: string[]) { return this.req<any>('PUT', `/plugins/${encodeURIComponent(id)}/nodes`, { nodeIds }); }
-  runPluginAction(id: string, actionId: string) { return this.req<any>('POST', `/plugins/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionId)}`); }
-  queryMetric(q: MetricQuery) { return this.req<any>('POST', '/metrics/query', q); }
-  listNodes() { return this.req<any>('GET', '/nodes'); }
-  getNodeHistory(id: string, rangeMs: number) { return this.req<any>('GET', `/nodes/${id}/history?range=${rangeMs}`); }
-  getNodeUptime(id: string, days: number) { return this.req<any>('GET', `/nodes/${id}/uptime?days=${days}`); }
-  runNodeCommand(id: string, command: NodeCommandId, args?: Record<string, string>) { return this.req<any>('POST', `/nodes/${id}/commands`, { command, args }); }
-  updateNodeConnection(id: string, cfg: ConnectionConfig) { return this.req<any>('PUT', `/nodes/${id}/connection`, cfg); }
-  createPairingTicket(kind: string, name: string) { return this.req<any>('POST', '/nodes/pairing', { kind, name }); }
-  removeNode(id: string) { return this.req<void>('DELETE', `/nodes/${id}`); }
-  listEvents(q: EventQuery) {
-    const p = new URLSearchParams();
-    q.severities?.forEach((s) => p.append('severity', s));
-    q.sourceTypes?.forEach((s) => p.append('source', s));
-    if (q.sourceId) p.set('sourceId', q.sourceId);
-    if (q.text) p.set('q', q.text);
-    if (q.limit) p.set('limit', String(q.limit));
-    if (q.before) p.set('before', String(q.before));
-    return this.req<any>('GET', `/events?${p}`);
-  }
-  listNotifications() { return this.req<any>('GET', '/notifications'); }
-  markNotifications(ids: string[] | 'all', read: boolean) { return this.req<void>('POST', '/notifications/mark', { ids, read }); }
-  listDashboards() { return this.req<any>('GET', '/console/dashboards'); }
-  saveDashboard(d: DashboardConfig) { return this.req<any>('PUT', `/console/dashboards/${d.id}`, d); }
-  deleteDashboard(id: string) { return this.req<void>('DELETE', `/console/dashboards/${id}`); }
-  listPrincipals() { return this.req<any>('GET', '/access/principals'); }
-  createToken(input: { name: string; role: Role; scopes: string[]; ttlDays: number | null }) { return this.req<any>('POST', '/access/tokens', input); }
-  revokePrincipal(id: string) { return this.req<void>('DELETE', `/access/principals/${id}`); }
-  updatePrincipalRole(id: string, role: Role) { return this.req<any>('PATCH', `/access/principals/${id}`, { role }); }
-  listAudit(limit = 50) { return this.req<any>('GET', `/access/audit?limit=${limit}`); }
-
+  info() { return this.call('info'); }
+  listPlugins() { return this.call('plugins_list'); }
+  getPluginLogs(id: string, limit = 80) { return this.call('plugins_logs', { id, limit }); }
+  installPlugin(id: string, request: unknown) { return this.call('plugins_install', { id, request }); }
+  updatePlugin(id: string) { return this.call('plugins_update', { id }); }
+  setPluginEnabled(id: string, enabled: boolean) { return this.call('plugins_enable', { id, enabled }); }
+  uninstallPlugin(id: string, opts: { purgeData: boolean }) { return this.call<void>('plugins_uninstall', { id, ...opts }); }
+  updatePluginSettings(id: string, values: Record<string, unknown>) { return this.call('plugins_settings', { id, values }); }
+  setPluginPermissions(id: string, scopes: string[]) { return this.call('plugins_permissions', { id, scopes }); }
+  setPluginNodes(id: string, nodeIds: string[]) { return this.call('plugins_nodes', { id, nodeIds }); }
+  runPluginAction(id: string, actionId: string) { return this.call('plugins_action', { id, actionId }); }
+  queryMetric(query: MetricQuery) { return this.call('metrics_query', { query }); }
+  listNodes() { return this.call('nodes_list'); }
+  getNodeHistory(id: string, rangeMs: number) { return this.call('nodes_history', { id, rangeMs }); }
+  getNodeUptime(id: string, days: number) { return this.call('nodes_uptime', { id, days }); }
+  runNodeCommand(id: string, command: NodeCommandId, args?: Record<string, string>) { return this.call('nodes_command', { id, command, args }); }
+  updateNodeConnection(id: string, config: ConnectionConfig) { return this.call('nodes_connection', { id, config }); }
+  createPairingTicket(kind: string, name: string) { return this.call('nodes_pair', { kind, name }); }
+  removeNode(id: string) { return this.call<void>('nodes_remove', { id }); }
+  listEvents(query: EventQuery) { return this.call('events_list', { query }); }
+  listNotifications() { return this.call('notifications_list'); }
+  markNotifications(ids: string[] | 'all', read: boolean) { return this.call<void>('notifications_mark', { ids, read }); }
+  listDashboards() { return this.call('dashboards_list'); }
+  saveDashboard(dashboard: DashboardConfig) { return this.call('dashboards_save', { dashboard }); }
+  deleteDashboard(id: string) { return this.call<void>('dashboards_delete', { id }); }
+  listPrincipals() { return this.call('access_list'); }
+  createToken(input: { name: string; role: Role; scopes: string[]; ttlDays: number | null }) { return this.call('access_create', { input }); }
+  revokePrincipal(id: string) { return this.call<void>('access_revoke', { id }); }
+  updatePrincipalRole(id: string, role: Role) { return this.call('access_role', { id, role }); }
+  listAudit(limit = 50) { return this.call('audit_list', { limit }); }
   subscribe(handler: (msg: RealtimeMessage) => void): () => void {
-    this.listeners.add(handler);
-    if (!this.ws) this.connect();
-    return () => { this.listeners.delete(handler); if (!this.listeners.size) { this.closed = true; this.ws?.close(); this.ws = undefined; } };
+    const first = !this.listeners.size; this.listeners.add(handler); if (first) void this.poll();
+    return () => { this.listeners.delete(handler); if (!this.listeners.size) clearTimeout(this.timer); };
   }
-
-  private connect() {
-    this.closed = false;
-    const url = this.endpoint.replace(/^http/, 'ws') + '/stream' + (this.opts.token ? `?token=${encodeURIComponent(this.opts.token)}` : '');
-    let ws: WebSocket;
-    try { ws = new WebSocket(url); } catch { this.scheduleReconnect(); return; }
-    this.ws = ws;
-    const sentAt = Date.now();
-    ws.onopen = () => { this.backoff = 1000; this.emit({ type: 'connection', state: 'open', latencyMs: Date.now() - sentAt }); };
-    ws.onmessage = (e) => { try { this.emit(JSON.parse(e.data) as RealtimeMessage); } catch { /* ignore malformed frames */ } };
-    ws.onclose = () => { this.ws = undefined; if (!this.closed) { this.emit({ type: 'connection', state: 'reconnecting' }); this.scheduleReconnect(); } };
-    ws.onerror = () => ws.close();
+  private emit(m: RealtimeMessage) { this.listeners.forEach(l => l(m)); }
+  private async poll() {
+    if (!this.listeners.size) return;
+    const start = Date.now();
+    try {
+      const nodes = await this.listNodes();
+      this.emit({ type: 'connection', state: 'open', latencyMs: Date.now() - start });
+      nodes.forEach((node: any) => this.emit({ type: 'node.update', nodeId: node.id, patch: node }));
+      const plugins = await this.listPlugins(); plugins.forEach((p: any) => this.emit({ type: 'plugin.update', pluginId: p.instance.pluginId }));
+    } catch { this.emit({ type: 'connection', state: 'reconnecting' }); }
+    if (this.listeners.size) this.timer = setTimeout(() => void this.poll(), 15000);
   }
-  private scheduleReconnect() {
-    setTimeout(() => { if (!this.closed && this.listeners.size) this.connect(); }, this.backoff);
-    this.backoff = Math.min(this.backoff * 2, 30000);
-  }
-  private emit(m: RealtimeMessage) { this.listeners.forEach((l) => l(m)); }
 }

@@ -1,3 +1,4 @@
+import { tr } from '@/i18n';
 import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { WifiOff } from 'lucide-react';
@@ -34,15 +35,15 @@ export function Shell({ children }: { children: ReactNode }) {
         {disconnected && (
           <div className="banner err" role="status">
             <WifiOff size={14} />
-            <span className="grow">{ui.connection.state === 'reconnecting' ? 'Соединение с ядром потеряно, переподключаемся…' : `Нет связи с ядром (${api.endpoint}). Показаны последние полученные данные.`}</span>
-            <Button size="sm" onClick={() => { queryClient.invalidate('plugins'); queryClient.invalidate('nodes'); queryClient.invalidate('metric'); queryClient.invalidate('dashboards'); }}>Повторить</Button>
-            <Link to="/settings?tab=connection" className="btn sm ghost">Подключение</Link>
+            <span className="grow">{ui.connection.state === 'reconnecting' ? tr("layout.Shell.s_315bc1ad23") : tr("layout.Shell.s_b3cbff7b29", { p0: (api.endpoint) })}</span>
+            <Button size="sm" onClick={() => { queryClient.invalidate('plugins'); queryClient.invalidate('nodes'); queryClient.invalidate('metric'); queryClient.invalidate('dashboards'); }}>{tr("layout.Shell.s_9e506acb19")}</Button>
+            <Link to="/settings?tab=connection" className="btn sm ghost">{tr("layout.Shell.s_79e350f743")}</Link>
           </div>
         )}
         {prefs.viewAs && (
           <div className="banner info">
-            <span className="grow">Просмотр с правами роли «{ROLE_LABEL[prefs.viewAs]}». Недоступные действия отключены.</span>
-            <Button size="sm" onClick={() => prefs.set({ viewAs: null })}>Вернуть права владельца</Button>
+            <span className="grow">{tr("layout.Shell.s_a56e3d7306")}{ROLE_LABEL[prefs.viewAs]}{tr("layout.Shell.s_e40ed714e2")}</span>
+            <Button size="sm" onClick={() => prefs.set({ viewAs: null })}>{tr("layout.Shell.s_4bb0c16e83")}</Button>
           </div>
         )}
         <main className="content">{children}</main>
