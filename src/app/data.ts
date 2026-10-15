@@ -7,7 +7,7 @@ import { queryClient, useQuery } from './query';
 import { useApi } from './ApiContext';
 
 export function usePlugins() {
-  const q = useQuery('plugins', (api) => api.listPlugins());
+  const q = useQuery('plugins', (api) => api.listPlugins(), {refetchMs:10000});
   const entries = useMemo(() => (q.data ? normalizePlugins(q.data, widgetRegistry.knownVisualizations()) : undefined), [q.data]);
   return { ...q, data: entries };
 }

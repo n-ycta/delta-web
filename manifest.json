@@ -1,12 +1,12 @@
 {
   "id": "web",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Delta web console bridge",
   "metadata": {
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -89,7 +89,13 @@
     {
       "name": "plugins_list",
       "params": {},
-      "admin": false
+      "admin": false,
+      "description": "List plugins and their status",
+      "localizations": {
+        "ru": {
+          "description": "Список плагинов и их состояние"
+        }
+      }
     },
     {
       "name": "plugins_logs",
@@ -164,12 +170,24 @@
           "required": true
         }
       },
-      "admin": false
+      "admin": false,
+      "description": "Query metric series",
+      "localizations": {
+        "ru": {
+          "description": "Запросить временные ряды метрик"
+        }
+      }
     },
     {
       "name": "nodes_list",
       "params": {},
-      "admin": false
+      "admin": false,
+      "description": "List connected nodes",
+      "localizations": {
+        "ru": {
+          "description": "Список подключённых узлов"
+        }
+      }
     },
     {
       "name": "nodes_history",

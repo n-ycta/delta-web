@@ -30,14 +30,14 @@ export function PluginDetail() {
   const tab = (params.get('tab') as Tab) ?? 'overview';
   const [installOpen, setInstallOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
-  const [purge, setPurge] = useState(false);
+  const purge = false;
   const [actionConfirm, setActionConfirm] = useState<string | null>(null);
   const nav = useNavigate();
   const canManage = useCan('plugins.manage');
 
   const toggle = useMutation((api, en: boolean) => api.setPluginEnabled(pid, en), { invalidate: ['plugins'], onSuccess: (_r, en) => toast({ severity: 'success', title: en ? tr("pages.plugins.PluginDetail.s_891aa7aba1") : tr("pages.plugins.PluginDetail.s_01abca4746") }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_7c3f2ca256"), body: e.message }) });
   const update = useMutation((api) => api.updatePlugin(pid), { invalidate: ['plugins'], onSuccess: () => toast({ severity: 'info', title: tr("pages.plugins.PluginDetail.s_2c3417789a") }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_b653539cd4"), body: e.message }) });
-  const remove = useMutation((api) => api.uninstallPlugin(pid, { purgeData: purge }), { invalidate: ['plugins', 'nodes'], onSuccess: () => { setRemoveOpen(false); toast({ severity: 'info', title: tr("pages.plugins.PluginDetail.s_f433903ca1") }); } });
+  const remove = useMutation((api) => api.uninstallPlugin(pid, { purgeData: purge }), { invalidate: ['plugins', 'nodes'], onSuccess: () => { setRemoveOpen(false); toast({ severity: 'info', title: tr("pages.plugins.PluginDetail.s_f433903ca1") }); nav('/plugins'); }, onError: (err) => toast({ severity: 'error', title: tr('polish.uninstallFailed'), body: err.message }) });
   const action = useMutation((api, a: string) => api.runPluginAction(pid, a), { onSuccess: (r) => toast({ severity: 'success', title: tr("pages.plugins.PluginDetail.s_068de1f047"), body: tr("pages.plugins.PluginDetail.s_15d4eb7208", { p0: (r.durationMs) }) }), onError: (e) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_b5d97a28d9"), body: e.message + (e.hint ? ` — ${e.hint}` : '') }) });
 
   if (p.loading) return <div className="page"><Skeleton h={48} w={360} /><div style={{ height: 20 }} /><SkeletonRows rows={8} /></div>;
@@ -86,6 +86,7 @@ export function PluginDetail() {
         <div className="banner err" style={{ borderRadius: 6, border: 0, marginBottom: 16 }}><AlertTriangle size={15} /><span className="grow">{tr("pages.plugins.PluginDetail.s_8410e6fe3e")}{e.validation.issues.find((i) => i.severity === 'error')?.message}</span><Button size="sm" onClick={() => setParams({ tab: 'contract' })}>{tr("pages.plugins.PluginDetail.s_a8d745fa66")}</Button></div>
       )}
 
+      {inst.notices?.map(n => <div key={n.id} className={`banner ${n.severity}`} role="status" style={{marginBottom:12}}>{n.localizations?.[language] ?? n.message}</div>)}
       <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
         { id: 'overview', label: tr("pages.plugins.PluginDetail.s_39c6387206") },
         { id: 'settings', label: tr("pages.plugins.PluginDetail.s_7f17c7c62a"), count: m.settings.length || undefined },
@@ -105,7 +106,7 @@ export function PluginDetail() {
       <InstallDialog entry={e} open={installOpen} onClose={() => setInstallOpen(false)} />
       <Confirm open={removeOpen} onClose={() => setRemoveOpen(false)} danger title={tr("pages.plugins.PluginDetail.s_7c4c578b44", { p0: (m.name) })} confirmLabel={tr("pages.plugins.PluginDetail.s_86ea33aef5")} requireText={m.id} loading={remove.pending} onConfirm={() => remove.run()}
         body={tr("pages.plugins.PluginDetail.s_7c9db4c1ba")}>
-        <label className="check"><input type="checkbox" checked={purge} onChange={(ev) => setPurge(ev.target.checked)} /><span>{tr("pages.plugins.PluginDetail.s_eca26d0685")}<span className="muted">{tr("pages.plugins.PluginDetail.s_c4815d8fd8")}</span></span></label>
+        <label className="check"><input type="checkbox" checked={purge} disabled title={tr("polish.purgeUnavailable")} /><span>{tr("pages.plugins.PluginDetail.s_eca26d0685")}<span className="muted">{tr("polish.purgeUnavailable")}</span></span></label>
       </Confirm>
       <Confirm open={!!actionConfirm} onClose={() => setActionConfirm(null)} danger title={tr("pages.plugins.PluginDetail.s_18c108aa70")} confirmLabel={tr("pages.plugins.PluginDetail.s_224c8e93c8")} body={m.actions.find((a) => a.id === actionConfirm)?.label} onConfirm={() => { action.run(actionConfirm!); setActionConfirm(null); }} />
     </div>
@@ -198,7 +199,7 @@ function SettingsTab({ e }: { e: PluginEntry }) {
     onError: (err) => toast({ severity: 'error', title: tr("pages.plugins.PluginDetail.s_8976fe0108"), body: err.message }),
   });
   const canManage = useCan('plugins.manage');
-  return <div style={{ maxWidth: 920 }}><label>{tr("polish.targetNode")}<select className="input" value={nodeId} onChange={e=>setNodeId(e.target.value)}>{e.instance.nodeIds.map(id=><option key={id} value={id}>{nodes.data?.find(n=>n.id===id)?.name||id}</option>)}</select></label><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
+  return <div style={{ maxWidth: 920 }}><label className="field plugin-target">{tr("polish.targetNode")}<select className="select" value={nodeId} onChange={e=>setNodeId(e.target.value)}>{e.instance.nodeIds.map(id=><option key={id} value={id}>{nodes.data?.find(n=>n.id===id)?.name||id}</option>)}</select></label><SettingsForm fields={e.manifest.settings} values={e.instance.settings} saving={save.pending} disabled={!canManage} onSubmit={(v) => save.run(v)} /></div>;
 }
 
 function PermissionsTab({ e }: { e: PluginEntry }) {
