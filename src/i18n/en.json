@@ -1635,7 +1635,11 @@
     "bucket_10800000": "3 hours",
     "bucket_21600000": "6 hours",
     "bucket_86400000": "1 day",
-    "bucket_604800000": "1 week"
+    "bucket_604800000": "1 week",
+    "dismissPluginNotice": "Dismiss notification",
+    "pluginNotices": "Plugin notifications",
+    "pluginNoticesHelp": "Dismissals are saved in this browser and do not change plugin behavior. New or changed warnings appear again.",
+    "restorePluginNotices": "Restore dismissed notifications"
   },
   "polish": {
     "language": "Language",
