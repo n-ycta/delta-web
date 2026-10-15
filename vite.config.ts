@@ -8,12 +8,12 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
     chunkSizeWarningLimit: 1200,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          grid: ['react-grid-layout'],
+        manualChunks(id) {
+          if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'react';
+          if (id.includes('/node_modules/recharts/')) return 'charts';
+          if (id.includes('/node_modules/react-grid-layout/')) return 'grid';
         },
       },
     },
