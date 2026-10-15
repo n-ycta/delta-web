@@ -83,7 +83,7 @@ export function DashboardsPage() {
                   const sources = [...new Set(d.widgets.map((w) => (w.source.kind === 'metric' ? w.source.pluginId : 'system')))];
                   return (
                     <tr key={d.id} className="clickable" onClick={() => nav(`/dashboards/${d.id}`)}>
-                      <td><span className="row"><Icon name={d.icon ?? 'layout-dashboard'} size={15} className="muted" /><span style={{ fontWeight: 500 }}>{d.name}</span>{d.pinned && <Pin size={11} className="faint" />}{d.origin === 'generated' && <span className="badge mono">{tr("pages.Dashboards.s_2cd2dc3bfe")}</span>}</span></td>
+                      <td><span className="row"><Icon name={d.icon ?? 'layout-dashboard'} size={15} className="muted" /><span style={{ fontWeight: 500 }}>{d.name}</span>{d.pinned && <Pin size={11} className="faint" />}</span></td>
                       <td className="num" style={{ textAlign: 'left' }}>{d.widgets.length}</td>
                       <td className="muted truncate" style={{ maxWidth: 280 }}>{sources.map((s) => plugins.data?.find((p) => p.manifest.id === s)?.manifest.name ?? s).join(', ') || '—'}</td>
                       <td className="mono">{d.range}</td>

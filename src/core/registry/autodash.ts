@@ -61,8 +61,8 @@ export function generatePluginDashboard(entry: PluginEntry, reg: WidgetRegistry)
   const layout = pack(ws.map((w) => w.size));
   const t = Date.now();
   return {
-    id: `gen_${manifest.id}`, name: manifest.name, description: tr("core.registry.autodash.s_9667cadb3b", { p0: (manifest.id), p1: (manifest.version) }),
-    icon: manifest.icon, origin: 'generated', generatedFrom: manifest.id, range: '7d', refreshSec: 60, pinned: false,
+    id: `gen_${manifest.id}`, name: manifest.name,
+    icon: manifest.icon, origin: 'generated', generatedFrom: manifest.id, range: '7d', refreshSec: 15, pinned: false,
     widgets: ws.map(({ size: _s, ...w }, i) => ({ ...w, id:`gen_${manifest.id}_${i}_${w.type}`, layout: layout[i] })), createdAt: t, updatedAt: t,
   };
 }

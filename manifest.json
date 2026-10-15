@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -324,5 +324,5 @@
       "description": "Web telemetry persistence status and observed record activity"
     }
   ],
-  "version": "0.3.1"
+  "version": "0.3.2"
 }
