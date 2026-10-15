@@ -1,6 +1,6 @@
 # Delta Web
 
-Независимый плагин управления Delta: React 18 + TypeScript + Vite, Node.js 22.12+ backend. Оригинальный дизайн, светлая/тёмная тема, адаптивный layout, редактируемые дашборды и динамические Zod-контракты плагинов. Логотип — предоставленный SVG.
+Независимый плагин управления Delta: React 18 + TypeScript + Vite 8, Node.js 22.12+ backend. Оригинальный дизайн, светлая/тёмная тема, адаптивный layout, редактируемые дашборды и динамические Zod-контракты плагинов. Логотип — предоставленный SVG.
 
 ```sh
 npm ci
@@ -36,3 +36,7 @@ npm run build
 ```
 
 Токены не коммитить. Server admin credential необходим из-за admin-only управления исходного ядра, изолируйте backend и используйте TLS/VPN снаружи.
+
+## Live/browser QA
+
+After `delta/scripts/setup-local.mjs` on a disposable test node: `npm run test:e2e`. Install matching Chromium with `npm exec playwright install chromium --only-shell`; then `npm run test:first-login` and `npm run test:browser`. Tokens are read from runtime files outside repositories, never embedded in scripts. Full verification and limitations: `delta/docs/verification.md`.
