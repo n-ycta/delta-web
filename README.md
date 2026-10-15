@@ -103,3 +103,9 @@ query limit. Presentation and cadence are saved with the dashboard.
 A status endpoint may return notices with `id`, `severity`, `message`, localized strings and an optional `actionId`. The web console displays the action only if it is declared in the plugin manifest, uses the manifest description for dangerous-action confirmation, and forwards the caller's authority and UI `_locale`. It never authorizes a plugin using the web service's own administrator identity. The same generic renderer is used on plugin pages and related metric dashboards. OS-specific policy, security warnings and authorization state belong to the plugin, not to the web console.
 
 The compact sidebar uses a centred 64px rail, 44px navigation targets, 20px navigation glyphs and a top-mounted expand button. Mobile navigation ignores the desktop collapse preference.
+
+## 0.3 analytics widgets
+
+Categorical `bubbles` is generic: circle area is proportional to count, top-N 1–50, coverage share and accessible table. It also supports table/bar/donut views; donut folds the omitted tail into Other. Plugin metrics may declare `queryCapability` in their own component namespace. The bridge delegates with caller authorization; plugin-private queries never inherit the Web service admin token. Type owns all word schemas, privacy notices and consent. Saved generated dashboards gain newly declared metrics without moving existing widgets.
+
+Source activity uses plugin-published rates and explicit units (keystrokes/min vs records/min), not a decorative bar or unknown `/m`. Node CPU/memory/latency/availability are sampled every 15 seconds into storage source `dev.delta.web.node`, retained 90 days. Availability means observed checks, not guaranteed continuous uptime. Missing historical periods stay missing; history starts when the updated Web sampler runs.

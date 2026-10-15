@@ -50,7 +50,7 @@ function TimeBars({ r, m, cfg, ctx }: { r: MetricResult; m: MetricDescriptor; cf
 
 function CategoryBars({ r, m, cfg }: { r: MetricResult; m: MetricDescriptor; cfg: WidgetConfig }) {
   const c = useChartColors(cfg.display.palette);
-  const data = (r.categories ?? []).slice(0, cfg.display.limit ?? 10);
+  const data = [...(r.categories ?? [])].sort((a,b)=>b.value-a.value).slice(0, cfg.display.limit ?? 10);
   return (
     <div style={{ flex: 1, minHeight: 0 }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -59,7 +59,7 @@ function CategoryBars({ r, m, cfg }: { r: MetricResult; m: MetricDescriptor; cfg
           <YAxis type="category" dataKey="label" width={90} tickLine={false} stroke="transparent" />
           <Tooltip formatter={(v: number) => fmtValue(v, m.unit, 0)} cursor={{ fill: c.grid, opacity: 0.5 }} contentStyle={{ background: c.surface, border: `1px solid ${c.grid}`, fontSize: 12 }} />
           <Bar dataKey="value" isAnimationActive={false} radius={[0, 2, 2, 0]} label={{ position: 'right', formatter: (v: number) => fmtValue(v, m.unit, 0), fontSize: 10.5, fontFamily: 'IBM Plex Mono', fill: c.axis }}>
-            {data.map((d, i) => <Cell key={d.key} fill={cfg.display.colors?.[d.key] ?? (i === 0 ? c.series[1] : c.series[0])} fillOpacity={i === 0 ? 1 : 0.85 - i * 0.05} />)}
+            {data.map((d, i) => <Cell key={d.key} fill={cfg.display.colors?.[d.key] ?? (i === 0 ? c.series[1] : c.series[0])} fillOpacity={i === 0 ? 1 : Math.max(.4,0.85 - i * 0.05)} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

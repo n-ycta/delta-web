@@ -1,12 +1,11 @@
 {
   "id": "web",
-  "version": "0.2.7",
   "description": "Delta web console bridge",
   "metadata": {
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.2.7",
+      "version": "0.3.0",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -77,7 +76,10 @@
           "reason": "Required runtime authority. This is executable plugin code, not a sandbox.",
           "optional": false
         }
-      ]
+      ],
+      "endpoints": {
+        "status": "web.status"
+      }
     }
   },
   "capabilities": [
@@ -315,6 +317,11 @@
         }
       },
       "admin": true
+    },
+    {
+      "name": "status",
+      "params": {},
+      "description": "Web telemetry persistence status and observed record activity"
     }
   ]
 }

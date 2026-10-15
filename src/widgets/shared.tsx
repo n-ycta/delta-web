@@ -31,7 +31,7 @@ export function MetricData({ cfg, ctx, overrides, children, isEmpty }: {
   const q = buildQuery(cfg, ctx, overrides);
   const res = useMetric(q, ctx.refreshSec);
   if (!ctx.metric) return null;
-  if (res.loading) return <ChartSkeleton />;
+  if (res.loading && !res.data) return <ChartSkeleton />;
   if (res.error && !res.data) return <ErrorState compact error={res.error} onRetry={res.refetch} />;
   const r = res.data!;
   const empty = isEmpty ? isEmpty(r) : !r.series.some((s) => s.points.some((p) => p.v !== null)) && !r.categories?.length && !r.buckets?.length;

@@ -1602,7 +1602,7 @@
   "runtime": {
     "demoUser": "Demo owner",
     "noUser": "Not signed in",
-    "realNotice": "Delta · Live data refreshes every 15 seconds. System load history and system event streaming are not yet connected.",
+    "realNotice": "Node samples are stored every 15 seconds. Missing observations are not counted as downtime.",
     "appTitle": "Delta · Control Panel",
     "cpuLabel": "CPU",
     "crumb_dashboards": "Dashboards",
@@ -1704,5 +1704,20 @@
   "pluginContract": {
     "status": "Runtime status and notices",
     "settings": "Read current settings"
+  },
+  "analytics": {
+    "bubbles": "Word bubbles",
+    "bubblesDescription": "Circle area is proportional to frequency. Hover or focus to see the full word and count.",
+    "bubbleCoverage": "Top {{shown}} · {{share}}% of occurrences",
+    "tableAlternative": "Show accessible table",
+    "word": "Word",
+    "frequency": "Frequency",
+    "flagged": "Marked word",
+    "other": "Other",
+    "dynamicFilter": "Comma-separated values, e.g. ru, en, de. Empty means all.",
+    "noRate": "Rate not published",
+    "eventsPerMinute": "events/min",
+    "historyStarting": "No saved samples in this period yet. History is collected every 15 seconds while the web plugin runs.",
+    "observedAvailability": "Observed samples; gaps are unknown"
   }
 }

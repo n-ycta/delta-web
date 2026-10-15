@@ -14,21 +14,19 @@ export function PluginActivityWidget(_: WidgetProps) {
   if (loading) return <SkeletonRows rows={5} />;
   if (error && !data) return <ErrorState compact error={error} onRetry={refetch} />;
   const list = data!.filter(isInstalled).sort((a, b) => (b.instance.eventsPerMin ?? 0) - (a.instance.eventsPerMin ?? 0));
-  const max = Math.max(...list.map((p) => p.instance.eventsPerMin ?? 0), 1);
   return (
     <div style={{ overflow: 'auto', flex: 1, margin: '0 -12px' }}>
       {list.map((p) => {
         const st = PLUGIN_STATUS[p.instance.status];
         const rate = p.instance.status === 'active' || p.instance.status === 'degraded' ? p.instance.eventsPerMin : 0;
         return (
-          <Link key={p.manifest.id} to={`/plugins/${p.manifest.id}`} style={{ display: 'grid', gridTemplateColumns: '18px minmax(0,1fr) 64px 46px', gap: 8, alignItems: 'center', padding: '6px 12px', borderTop: '1px solid var(--rule)', fontSize: 12 }}>
+          <Link key={p.manifest.id} to={`/plugins/${p.manifest.id}`} style={{ display: 'grid', gridTemplateColumns: '18px minmax(0,1fr) minmax(100px,auto)', gap: 8, alignItems: 'center', padding: '6px 12px', borderTop: '1px solid var(--rule)', fontSize: 12 }}>
             <Icon name={p.manifest.icon} size={14} className="muted" />
             <span className="col" style={{ gap: 0, minWidth: 0 }}>
               <span className="row" style={{ gap: 6 }}><span className="truncate">{p.manifest.name}</span><Dot tone={st.tone} /></span>
               <span className="muted" style={{ fontSize: 10.5 }}>{p.instance.lastSyncAt ? tr("widgets.system.PluginActivityWidget.s_3cf538dc55", { p0: (ago(p.instance.lastSyncAt)) }) : st.label}</span>
             </span>
-            <div className="meter"><span style={{ width: `${((rate ?? 0) / max) * 100}%` }} /></div>
-            <span className="num muted" style={{ fontSize: 11, textAlign: 'right' }}>{fmtNumber(rate, 1)}{tr("widgets.system.PluginActivityWidget.s_4398873b3b")}</span>
+            <span className="num muted" style={{ fontSize: 11, textAlign: 'right' }}>{rate===undefined?tr('analytics.noRate'):`${fmtNumber(rate, 1)} ${p.instance.activityUnit||tr('analytics.eventsPerMinute')}`}</span>
           </Link>
         );
       })}

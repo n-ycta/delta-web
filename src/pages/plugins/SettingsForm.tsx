@@ -50,7 +50,7 @@ export function SettingsForm({ fields, values, onSubmit, saving, disabled }: { f
                   {f.requiresRestart && <Badge tone="warn">{tr("pages.plugins.SettingsForm.s_8d255547a6")}</Badge>}
                 </div>
                 <Field help={f.help} error={errors[f.key]}>
-                  {f.type === 'string' && <input aria-labelledby={`setting-${f.key}-label`} className="input" disabled={disabled || saving} value={String(v[f.key] ?? '')} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} />}
+                  {f.type === 'string' && (f.multiline ? <textarea aria-labelledby={`setting-${f.key}-label`} className="input" rows={4} disabled={disabled || saving} value={String(v[f.key] ?? '')} placeholder={f.placeholder} onChange={e=>set(f.key,e.target.value)} /> : <input aria-labelledby={`setting-${f.key}-label`} className="input" disabled={disabled || saving} value={String(v[f.key] ?? '')} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} />)}
                   {f.type === 'secret' && (
                     <div className="row">
                       <input aria-labelledby={`setting-${f.key}-label`} className="input mono" disabled={disabled || saving} type="password" autoComplete="new-password" value={secrets[f.key] ?? ''} placeholder={values[f.key] ? tr("pages.plugins.SettingsForm.s_530c963286") : f.placeholder ?? tr("pages.plugins.SettingsForm.s_55331e77f7")} onChange={(e) => setSecrets((s) => ({ ...s, [f.key]: e.target.value }))} />
