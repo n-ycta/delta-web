@@ -44,6 +44,7 @@
 ### Validation
 - Real two-core tests through OpenSSH cover password/encrypted-key setup, both routing directions, trust downgrade, core restart without Web and removal.
 - Browser tests cover consent gating, desktop/mobile layout and absence of persisted login credentials.
+- Verified the real Debian 12 VPS bootstrap/update, restricted OpenSSH key, private reverse listener, both routing directions and removal of temporary test access.
 
 ## [v0.4.1]
 
