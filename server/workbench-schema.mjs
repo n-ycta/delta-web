@@ -1,4 +1,4 @@
-// Generated from model.ts; SHA256 6c7a66f9400e55980d80ee1539c16db86c6c400f2cea55bf46297a298967da85
+// Generated from model.ts; SHA256 ee624cbfb231e73ae94c6776044e3bdb0dd810435a4fa4a0e11e666675ecdaf4
 import { z } from "zod";
 export const defaultHome = {
     date: true,
@@ -121,8 +121,8 @@ export function validateWorkspace(value) {
         icon: z.string().regex(/^[a-z0-9-]{1,70}$/),
         template: text,
         theme: z.enum(["paper", "daylight", "graphite", "midnight"]),
-        nav: z.enum(["side", "top", "bottom", "hidden"]),
-        mobileNav: z.enum(["side", "top", "bottom", "hidden"]),
+        nav: z.enum(["side", "top", "bottom", "dock", "hidden"]),
+        mobileNav: z.enum(["side", "top", "bottom", "dock", "hidden"]),
         chrome: z.boolean().default(true),
         brand: z.boolean(),
         logo: z.boolean(),
