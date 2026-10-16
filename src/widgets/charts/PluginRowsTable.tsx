@@ -36,8 +36,8 @@ function Rows({ config, ctx }: WidgetProps) {
   );
   return (
     <div className="col" style={{ flex: 1, minHeight: 0, minWidth: 0, gap: 8 }}>
-      <div className="row" style={{ gap: 8 }}>
-        {entry.instance.nodeIds.length > 1 && (
+      {entry.instance.nodeIds.length > 1 && (
+        <div className="row" style={{ gap: 8 }}>
           <select
             className="select"
             aria-label={tr('polish.targetNode')}
@@ -52,12 +52,8 @@ function Rows({ config, ctx }: WidgetProps) {
               <option key={id}>{id}</option>
             ))}
           </select>
-        )}
-        <span className="spacer" />
-        <Button size="sm" onClick={q.refetch} disabled={q.fetching}>
-          {tr('pluginData.refresh')}
-        </Button>
-      </div>
+        </div>
+      )}
       {q.error && <ErrorState error={q.error} onRetry={q.refetch} />}
       {!q.error && q.data?.rows.length === 0 && <Empty compact title={tr('pluginData.empty')} />}
       <div className="table-wrap" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

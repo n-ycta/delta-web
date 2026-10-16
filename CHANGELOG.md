@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.6.3]
+
+- Compact table refresh: an accessible icon in the widget header beside the menu, with no separate action row. Plugin-page view panels use the same icon-only refresh control.
+- Manual record refresh reuses in-flight requests instead of launching duplicate requests.
+- Includes the contract 1.6, conditional settings, record tables and node-aware updater introduced in v0.6.2.
+
 ## [v0.6.2]
 
 - UI contract 1.6: bounded declarative settings branches (`visibleWhen`, nested all/any/not). Irrelevant controls and empty groups are hidden without clearing saved values or transmitting hidden draft edits.

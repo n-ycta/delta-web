@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { tr, locale } from '@/i18n';
 import type { PluginEntry, PluginDataView } from '@/core/contracts';
@@ -62,8 +63,16 @@ function DataView({ entry, view }: { entry: PluginEntry; view: PluginDataView })
     <Panel
       title={view.label}
       actions={
-        <Button onClick={q.refetch} disabled={q.fetching}>
-          {tr('pluginData.refresh')}
+        <Button
+          size="sm"
+          variant="ghost"
+          iconOnly
+          title={tr('pluginData.refresh')}
+          aria-label={tr('pluginData.refresh')}
+          onClick={q.refetch}
+          disabled={q.fetching}
+        >
+          <RefreshCw size={14} />
         </Button>
       }
     >

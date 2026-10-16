@@ -1,11 +1,13 @@
+import { queryClient } from '@/app/query';
 import { tr } from '@/i18n';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bug,
   Copy,
   Download,
   MoreHorizontal,
+  RefreshCw,
   Puzzle,
   Settings2,
   Table2,
@@ -53,6 +55,7 @@ function download(name: string, text: string, type = 'text/csv') {
 export const WidgetFrame = memo(function WidgetFrame(p: FrameProps) {
   const { config, plugins, editing } = p;
   const api = useApi();
+  const [refreshing, setRefreshing] = useState(false);
   const nav = useNavigate();
   const resolution = useMemo(() => widgetRegistry.resolve(config), [config]);
   const src = config.source;
@@ -251,6 +254,28 @@ export const WidgetFrame = memo(function WidgetFrame(p: FrameProps) {
         <span className="widget-title truncate">{title}</span>
         {meta && <span className="widget-meta truncate desktop-only">{meta}</span>}
         <span className="spacer" />
+        {src.kind === 'plugin-view' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            title={tr('pluginData.refresh')}
+            aria-label={tr('pluginData.refresh')}
+            disabled={refreshing}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={async () => {
+              setRefreshing(true);
+              try {
+                await queryClient.refetchPrefix(`plugins/${src.pluginId}/view/${src.viewId}`);
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+          >
+            <RefreshCw size={14} />
+          </Button>
+        )}
+
         {resolution.status === 'migrated' && (
           <span
             className="badge mono"
