@@ -401,7 +401,7 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 .viz-option > .score { flex: 0 0 auto; }
 .widget-source-meta { white-space: normal; overflow-wrap: anywhere; word-break: normal; }
 
-.update-item {display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);min-width:0;flex-wrap:wrap;}
+.update-item {display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);min-width:0;flex-wrap:wrap;}
 .update-item:last-child {border-bottom:0;}
 .update-item .grow {overflow-wrap:anywhere;}
 .updates-page .form-row > * {min-width:0;}
@@ -449,3 +449,24 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
 
 .modal { animation: modal-in .14s var(--ease); }
 @keyframes modal-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 6px)); } }
+
+/* Shared responsive layout rules. Content owns width; controls do not force page overflow. */
+.page, .panel-body, .col, .row > *, .form-row > * { min-width: 0; }
+.page > *, .settings-content, .settings-content > * { max-width: 100%; }
+.settings-content { width: 100%; }
+.settings-page .form-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); }
+.settings-page .form-row:has(.switch) { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.settings-page .form-row:has(.switch) > :last-child { justify-self: end; }
+.settings-page .field-help { max-width: 75ch; }
+.settings-page .input[type="number"] { width: min(100%, 12rem); }
+.form-row > .field { width: 100%; }
+.row > .input-group, .row > .select, .row > .input { max-width: 100%; }
+.panel-head > .panel-title { min-width: 0; overflow-wrap: anywhere; }
+.panel-head > .spacer, .panel-head > .grow { min-width: 0; }
+.panel-head > .btn { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .settings-page .form-row:not(:has(.switch)) { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .settings-page .form-row:has(.switch) { gap: var(--sp-4); }
+  .row.wrap > .input-group { flex: 1 1 180px; }
+  .page-head .row, .panel-head { flex-wrap: wrap; }
+}

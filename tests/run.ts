@@ -1,3 +1,4 @@
+import { dashboardCount, dashboardPlugins } from '../src/core/registry/dashboardIndex';
 import {
   matchesCondition,
   isSettingVisible,
@@ -485,6 +486,32 @@ test('generic setting branches support nested AND/OR/NOT and preserve hidden set
   eq(values.concurrency, 7);
   ok(!SettingCondition.safeParse({ key: 'mode', equals: 'parallel', execute: 'anything' }).success);
   ok(!SettingCondition.safeParse({ all: [] }).success);
+});
+test('dashboard counter includes generated plugin dashboards exactly once and counts user copies separately', () => {
+  const entry = normalizePlugins(
+    [
+      {
+        manifest: M.typing,
+        latest: M.typing,
+        instance: {
+          pluginId: M.typing.id,
+          status: 'active',
+          installedVersion: M.typing.version,
+          latestVersion: M.typing.version,
+          nodeIds: [],
+          settings: {},
+          grantedPermissions: [],
+        },
+      },
+    ],
+    known,
+  )[0];
+  const generated = generatePluginDashboard(entry, widgetRegistry);
+  eq(dashboardCount([], [entry]), 1);
+  eq(dashboardCount([generated], [entry]), 1);
+  eq(dashboardCount([generated, { ...generated, id: 'copy', origin: 'user' }], [entry]), 2);
+  eq(dashboardCount([generated], []), 0);
+  eq(dashboardPlugins([entry]).length, 1);
 });
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

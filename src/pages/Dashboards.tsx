@@ -1,3 +1,4 @@
+import { dashboardPlugins } from '@/core/registry/dashboardIndex';
 import { tr } from '@/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -56,12 +57,7 @@ export function DashboardsPage() {
       .filter((d) => d.origin === 'generated')
       .map((d) => [d.generatedFrom, d]),
   );
-  const auto = (plugins.data ?? []).filter(
-    (p) =>
-      isInstalled(p) &&
-      p.validation.compatible &&
-      (p.manifest.metrics.length || p.manifest.views.some((v) => v.dashboard)),
-  );
+  const auto = dashboardPlugins(plugins.data ?? []);
 
   const create = async () => {
     const t = Date.now();

@@ -235,6 +235,18 @@ export function Updates() {
             onChange={(v) => set({ autoPlugins: v })}
           />
         </div>
+        <div className="form-row">
+          <div>
+            {tr('updates.autoRemote')}
+            <div className="field-help">{tr('updates.autoRemoteHelp')}</div>
+          </div>
+          <Switch
+            checked={draft.autoRemote ?? false}
+            disabled={!draft.autoCore}
+            label={tr('updates.autoRemote')}
+            onChange={(v) => set({ autoRemote: v })}
+          />
+        </div>
         <Button
           disabled={
             !dirty ||

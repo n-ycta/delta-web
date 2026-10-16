@@ -2,6 +2,23 @@ import { resolve, dirname } from 'node:path';
 import { Updater, UpdateError, errorCode } from './updater.mjs';
 import { DeltaError } from './delta-sdk.mjs';
 export const updateMessages = {
+  remote_setup_failed: [
+    'The target updater did not start. Check the Node runtime and network on that node.',
+    'Установщик целевого узла не запустился. Проверьте Node и сеть на этом узле.',
+  ],
+  remote_update_unknown: [
+    'Connection timed out. The target update may still be running; check its status before retrying.',
+    'Связь не восстановилась вовремя. Обновление на целевом узле может продолжаться; проверьте состояние перед повтором.',
+  ],
+  autoRemote: [
+    'Include remote cores in automatic installation',
+    'Автоматически обновлять удалённые ядра',
+  ],
+  autoRemoteHelp: [
+    'Separate opt-in for trusted remote nodes. Manual remote updates remain available.',
+    'Отдельное согласие для доверенных удалённых узлов. Ручное удалённое обновление доступно независимо.',
+  ],
+  preparing: ['Preparing target node', 'Подготовка целевого узла'],
   remote_core: [
     'Update this core from its own node profile. Remote core binary replacement is not supported.',
     'Обновите это ядро из его собственного профиля узла. Удалённая замена бинарного файла не поддерживается.',

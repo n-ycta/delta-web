@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.6.4]
+
+- Owner-authorized updates of paired-node cores through an independent target-node maintenance worker. Official version and SHA-256 pinning, target identity checks, restart health verification and existing rollback protections; no remote file replacement from the browser. Automatic remote core updates require a new, separate opt-in.
+- Shared dashboard eligibility/counting keeps sidebar counts consistent with user and plugin dashboards, without counting saved generated layouts twice. Supervisor-only maintenance/SSH processes no longer appear as installed plugins.
+- Full-width settings, right-aligned switches, wrapping action headers and viewport-bounded controls across settings, nodes, events and contracts. Fixed an undefined border token; compact RU/EN actions.
+- Regression coverage includes two-node core restart/update, owner-only maintenance APIs, responsive layouts and dashboard classification.
+
 ## [v0.6.3]
 
 - Compact table refresh: an accessible icon in the widget header beside the menu, with no separate action row. Plugin-page view panels use the same icon-only refresh control.

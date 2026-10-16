@@ -1738,7 +1738,7 @@
     "disabledPreserved": "Disabled — remains disabled after updating.",
     "available": "Update available",
     "current": "Up to date",
-    "install": "Install update",
+    "install": "Update",
     "progress": "Update progress",
     "reload": "Reload",
     "preferences": "Update preferences",
@@ -1750,7 +1750,7 @@
     "autoWarning": "Allow official stable releases to execute code on this node and restart components without another confirmation. Core/Web updates briefly disconnect the console. Running updates finish even if this option is turned off.",
     "autoCore": "Include core in automatic installation",
     "autoPlugins": "Include plugins and Web in automatic installation",
-    "save": "Save preferences",
+    "save": "Save",
     "installConfirm": "Install selected updates?",
     "disconnectHint": "The independent worker will continue if the console disconnects. Data and identity are kept. Failed core health checks trigger rollback to the saved binary. Wait for reconnection; do not stop the node.",
     "enable": "Enable",
@@ -1803,7 +1803,12 @@
     "node_changed": "Node identity changed. Check the connection and retry.",
     "unavailable": "Unavailable",
     "unknown": "Unknown",
-    "forbidden": "This connection is not authorized to inspect or update the node."
+    "forbidden": "This connection is not authorized to inspect or update the node.",
+    "remote_setup_failed": "The target updater did not start. Check the Node runtime and network on that node.",
+    "remote_update_unknown": "Connection timed out. The target update may still be running; check its status before retrying.",
+    "autoRemote": "Include remote cores in automatic installation",
+    "autoRemoteHelp": "Separate opt-in for trusted remote nodes. Manual remote updates remain available.",
+    "preparing": "Preparing target node"
   },
   "events": {
     "refresh": "Refresh",

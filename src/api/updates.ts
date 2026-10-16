@@ -5,6 +5,7 @@ export interface UpdateSettings {
   autoInstall: boolean;
   autoCore: boolean;
   autoPlugins: boolean;
+  autoRemote: boolean;
 }
 export interface UpdateItem {
   id: string;

@@ -28,6 +28,8 @@ test('stable semantic versions never treat 0.10 as older than 0.9, reject pre-re
   assert.throws(() => parseSettings({ intervalMinutes: 1 }));
   assert.throws(() => parseSettings({ command: 'rm' }));
   assert.equal(parseSettings({ autoInstall: true }).autoInstall, true);
+  assert.equal(parseSettings({ autoCore: true }).autoRemote, false);
+  assert.equal(parseSettings({ autoRemote: true }).autoRemote, true);
 });
 async function fixture() {
   const home = await mkdtemp(join(tmpdir(), 'delta-updates-'));
@@ -295,6 +297,7 @@ test('generic per-node inventory includes arbitrary plugins, disabled unknown ve
           return [
             { id: 'leads', enabled: true },
             { id: 'arbitrary', enabled: false },
+            { id: 'ssh-fixture', enabled: true },
           ];
         if (cap === 'packages.catalog')
           return {
@@ -310,11 +313,12 @@ test('generic per-node inventory includes arbitrary plugins, disabled unknown ve
     const check = await f.u.performCheck(),
       lead = check.items.find((i) => i.id === entry.id);
     assert.equal(lead.nodeId, 'vps');
+    assert(!check.items.some((i) => i.component === 'ssh-fixture'));
     assert.equal(lead.release, 'https://github.com/n-ycta/delta-leads/releases/tag/v0.1.3');
     assert.equal(check.items.find((i) => i.component === 'arbitrary').blocked, 'version_unknown');
     assert.equal(
       check.items.find((i) => i.nodeId === 'vps' && i.kind === 'core').blocked,
-      'remote_core',
+      undefined,
     );
     await f.u.apply(lead.target);
     const job = (await f.u.status()).job;

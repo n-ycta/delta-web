@@ -29,6 +29,7 @@ export const defaults = {
   autoInstall: false,
   autoCore: true,
   autoPlugins: true,
+  autoRemote: false,
 };
 export class UpdateError extends Error {
   constructor(code) {
@@ -161,6 +162,92 @@ export function unpackCore(body) {
 export function errorCode(e) {
   return e instanceof UpdateError ? e.code : 'operation_failed';
 }
+// Fixed official Web release supplies the target-side updater. No user URLs or scripts are accepted.
+export const UPDATER_RELEASE = '0.6.4';
+export async function remoteBootstrap(version) {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error('invalid_release');
+  const { readFile, writeFile, mkdir } = await import('node:fs/promises');
+  const { resolve, dirname, join } = await import('node:path');
+  const { createHash } = await import('node:crypto');
+  const { gunzipSync } = await import('node:zlib');
+  const home = resolve(process.env.DELTA_HOME || dirname(dirname(process.env.DELTA_DATA || '')));
+  const config = JSON.parse(await readFile(join(home, 'config.json'), 'utf8'));
+  if (config.node_id !== process.env.DELTA_NODE_ID) throw Error('node_changed');
+  const get = async (url, limit) => {
+    let u = new URL(url);
+    for (let i = 0; i < 6; i++) {
+      if (
+        u.protocol !== 'https:' ||
+        ![
+          'github.com',
+          'release-assets.githubusercontent.com',
+          'objects.githubusercontent.com',
+        ].includes(u.hostname) ||
+        u.username ||
+        u.password
+      )
+        throw Error('untrusted_release');
+      const r = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(60000) });
+      if ([301, 302, 303, 307, 308].includes(r.status)) {
+        u = new URL(r.headers.get('location'), u);
+        continue;
+      }
+      if (!r.ok) throw Error('download_failed');
+      let size = 0,
+        parts = [];
+      for await (const part of r.body) {
+        size += part.length;
+        if (size > limit) throw Error('archive_size');
+        parts.push(part);
+      }
+      return Buffer.concat(parts);
+    }
+    throw Error('untrusted_release');
+  };
+  const base = 'https://github.com/n-ycta/delta-web/releases/download/v' + version + '/';
+  const [archive, sums] = await Promise.all([
+    get(base + 'delta-web.tar.gz', 50000000),
+    get(base + 'SHA256SUMS', 100000),
+  ]);
+  const hash = createHash('sha256').update(archive).digest('hex');
+  if (
+    !sums
+      .toString()
+      .split('\n')
+      .some((l) => {
+        const [h, n] = l.trim().split(/\s+/);
+        return h === hash && n === 'delta-web.tar.gz';
+      })
+  )
+    throw Error('checksum');
+  const tar = gunzipSync(archive, { maxOutputLength: 150000000 }),
+    files = new Map();
+  for (let pos = 0; pos + 512 <= tar.length; ) {
+    const h = tar.subarray(pos, pos + 512);
+    if (h.every((n) => n === 0)) break;
+    const name = h
+      .subarray(0, 100)
+      .toString()
+      .split('\0')[0]
+      .replace(/^(\.\/)+/, '');
+    const size = parseInt(h.subarray(124, 136).toString().replace(/\0/g, '').trim() || '0', 8);
+    if (!Number.isSafeInteger(size) || size < 0 || pos + 512 + size > tar.length)
+      throw Error('invalid_archive');
+    if (['server/updater.mjs', 'server/remote-updater.mjs'].includes(name)) {
+      if ((h[156] !== 48 && h[156] !== 0) || files.has(name)) throw Error('invalid_archive');
+      files.set(name, tar.subarray(pos + 512, pos + 512 + size));
+    }
+    pos += 512 + Math.ceil(size / 512) * 512;
+  }
+  if (files.size !== 2) throw Error('invalid_archive');
+  const dir = join(home, 'data', 'updates', 'remote-' + version);
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  for (const [name, data] of files)
+    await writeFile(join(dir, name.slice(7)), data, { mode: 0o600 });
+  await import((await import('node:url')).pathToFileURL(join(dir, 'remote-updater.mjs')).href).then(
+    (m) => m.serveRemoteUpdater(),
+  );
+}
 export class Updater {
   constructor(
     home,
@@ -202,6 +289,21 @@ export class Updater {
       signal: AbortSignal.timeout(30000),
     });
     const data = await r.json();
+    if (
+      !data.ok &&
+      capability.startsWith('delta-updater.') &&
+      [
+        'invalid_target',
+        'invalid_release',
+        'invalid_job',
+        'busy',
+        'node_changed',
+        'managed_install_required',
+        'unsupported_platform',
+        'nothing_to_update',
+      ].includes(data.error?.message)
+    )
+      throw new UpdateError(data.error.message);
     if (!data.ok)
       throw new UpdateError(
         data.error?.code === 'conflict'
@@ -271,6 +373,21 @@ export class Updater {
       signal: AbortSignal.timeout(30000),
     });
     const data = await r.json();
+    if (
+      !data.ok &&
+      capability.startsWith('delta-updater.') &&
+      [
+        'invalid_target',
+        'invalid_release',
+        'invalid_job',
+        'busy',
+        'node_changed',
+        'managed_install_required',
+        'unsupported_platform',
+        'nothing_to_update',
+      ].includes(data.error?.message)
+    )
+      throw new UpdateError(data.error.message);
     if (!r.ok || !data.ok)
       throw new UpdateError(
         data.error?.code === 'forbidden'
@@ -399,7 +516,7 @@ export class Updater {
         available: !!version && compareVersions(version, info.version) > 0,
         enabled: true,
         ...(!node.local
-          ? { blocked: 'remote_core' }
+          ? {}
           : !target
             ? { blocked: 'unsupported_platform' }
             : !managedCore
@@ -421,7 +538,13 @@ export class Updater {
         managed = values[1].status === 'fulfilled' ? values[1].value : [],
         catalog = values[2].status === 'fulfilled' ? values[2].value : { plugins: [] };
       const ids = new Set([
-        ...managed.map((c) => c.id),
+        ...managed
+          .filter(
+            (c) =>
+              catalog.plugins?.some((p) => p.component === c.id) ||
+              components.some((p) => p.id === c.id && p.metadata?.ui),
+          )
+          .map((c) => c.id),
         ...components.filter((c) => c.metadata?.ui).map((c) => c.id),
       ]);
       for (const component of ids) {
@@ -597,7 +720,10 @@ export class Updater {
       let items = (target === 'all' ? checked.items : matches).filter(
         (i) =>
           i.available &&
-          (!automatic || (i.kind === 'core' ? settings.autoCore : settings.autoPlugins)),
+          (!automatic ||
+            (i.kind === 'core'
+              ? settings.autoCore && (i.local || settings.autoRemote)
+              : settings.autoPlugins)),
       );
       // Remote/read-only rows never block an unrelated node update. Keep the local source-only guard explicit.
       if (
@@ -607,7 +733,10 @@ export class Updater {
       items = items.filter((i) => !i.blocked);
       if (!items.length) throw new UpdateError('nothing_to_update');
       for (const item of items) {
-        if ((await this.route(item, 'packages.jobs')).some((j) => j.status === 'installing'))
+        if (
+          compareVersions(item.coreVersion, '0.3.4') >= 0 &&
+          (await this.route(item, 'packages.jobs')).some((j) => j.status === 'installing')
+        )
           throw new UpdateError('another_install');
         if (
           item.kind !== 'core' &&
@@ -734,8 +863,11 @@ export class Updater {
           if (identity.node_id !== item.nodeId) throw new UpdateError('node_changed');
         }
         if (item.kind === 'core' && !item.local && item.nodeId)
-          throw new UpdateError('remote_core');
-        if (item.kind === 'core')
+          await this.installRemoteCore(item, async (phase) => {
+            item.phase = phase;
+            await save();
+          });
+        else if (item.kind === 'core')
           await this.coreInstall(item, async (phase) => {
             item.phase = phase;
             await save();
@@ -783,6 +915,85 @@ export class Updater {
       await unlink(join(this.dir, 'worker-' + id + '.mjs')).catch(() => {});
     }
     return job;
+  }
+  async ensureRemoteUpdater(item) {
+    const cap = 'delta-updater.info';
+    try {
+      const existing = await this.route(item, cap);
+      if (existing.nodeId === item.nodeId) return existing;
+      throw new UpdateError('node_changed');
+    } catch (e) {
+      if (e.code === 'forbidden' || e.code === 'node_changed') throw e;
+    }
+    const managed = await this.route(item, 'supervisor.list');
+    if (managed.some((m) => m.id === 'delta-updater'))
+      await this.route(item, 'supervisor.remove', { id: 'delta-updater' });
+    const node =
+      managed
+        .map((m) => m.command?.[0])
+        .find((p) => typeof p === 'string' && /(?:^|[\\/])node(?:\.exe)?$/i.test(p)) || 'node';
+    const code = `(${remoteBootstrap.toString()})(${JSON.stringify(UPDATER_RELEASE)}).catch(()=>process.exit(1))`;
+    await this.route(item, 'supervisor.add', {
+      id: 'delta-updater',
+      command: [node, '--input-type=module', '-e', code],
+      scopes: ['register:delta-updater'],
+      enabled: true,
+    });
+    for (const deadline = Date.now() + 180000; Date.now() < deadline; ) {
+      await sleep(1000);
+      try {
+        const info = await this.route(item, cap);
+        if (info.nodeId !== item.nodeId) throw new UpdateError('node_changed');
+        return info;
+      } catch (e) {
+        if (e.code === 'forbidden' || e.code === 'node_changed') throw e;
+      }
+    }
+    await this.route(item, 'supervisor.remove', { id: 'delta-updater' }).catch(() => {});
+    throw new UpdateError('remote_setup_failed');
+  }
+  async installRemoteCore(item, progress) {
+    await progress('preparing');
+    const info = await this.ensureRemoteUpdater(item);
+    if (info.core?.blocked || info.core?.latest !== item.latest) {
+      await this.route(item, 'supervisor.remove', { id: 'delta-updater' }).catch(() => {});
+      throw new UpdateError(info.core?.blocked || 'invalid_release');
+    }
+    const accepted = await this.route(item, 'delta-updater.apply', {
+      nodeId: item.nodeId,
+      version: item.latest,
+    });
+    let terminal = false;
+    try {
+      for (const deadline = Date.now() + 900000; Date.now() < deadline; ) {
+        await sleep(1000);
+        let state;
+        try {
+          state = await this.route(item, 'delta-updater.status', { jobId: accepted.jobId });
+        } catch (e) {
+          if (e.code === 'forbidden') throw e;
+          continue;
+        }
+        if (state.nodeId !== item.nodeId) throw new UpdateError('node_changed');
+        const job = state.job;
+        await progress(job.items?.[0]?.phase || job.status);
+        if (['failed', 'rolled_back'].includes(job.status)) {
+          terminal = true;
+          throw new UpdateError(job.error || 'operation_failed');
+        }
+        if (job.status === 'complete') {
+          const current = await this.route(item, 'core.info');
+          if (current.node_id !== item.nodeId || current.version !== item.latest)
+            throw new UpdateError('core_health');
+          terminal = true;
+          return;
+        }
+      }
+      throw new UpdateError('remote_update_unknown');
+    } finally {
+      if (terminal)
+        await this.route(item, 'supervisor.remove', { id: 'delta-updater' }).catch(() => {});
+    }
   }
   async findCore(binary) {
     const expected = await realpath(binary);

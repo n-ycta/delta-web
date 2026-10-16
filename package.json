@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.3",
+  "version": "0.6.4",
   "type": "module",
   "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
