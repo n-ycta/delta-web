@@ -462,7 +462,7 @@ export function createBridge(
       const p = await find(id),
         local = await client.call('core.info');
       for (const node of p.instance.nodeIds)
-        await delegated(c, 'packages.install', { id, optionalDependencies:request.optionalDependencies||[], approveDependencies:request.approveDependencies===true }, node === local.node_id ? undefined : node);
+        await delegated(c, 'packages.install', { id, optionalDependencies:[], approveDependencies:false }, node === local.node_id ? undefined : node);
       return { ...p.instance, status: 'updating' };
     },
     'web.plugins_settings': async ({ id, values, nodeId, _locale = 'en' }, c) => {
@@ -504,7 +504,7 @@ export function createBridge(
         local = await client.call('core.info');
       for (const node of nodeIds)
         if (!p.instance.nodeIds.includes(node))
-          await delegated(c, 'packages.install', { id, optionalDependencies:request.optionalDependencies||[], approveDependencies:request.approveDependencies===true }, node === local.node_id ? undefined : node);
+          await delegated(c, 'packages.install', { id, optionalDependencies:[], approveDependencies:false }, node === local.node_id ? undefined : node);
       for (const node of p.instance.nodeIds)
         if (!nodeIds.includes(node))
           await delegated(

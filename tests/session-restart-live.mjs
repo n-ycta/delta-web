@@ -32,6 +32,6 @@ try{
  const info=await post('/api/v1/call',{capability:'web.info',args:{}});assert.equal(info.status,200);assert.equal(info.data.result.principal.name,'key:'+enrolled.id);
  assert.equal((await post('/api/v1/call',{capability:'tokens.create',args:{name:'forbidden',scopes:['admin']}})).status,403);
  await api('identity.remove',{id:enrolled.id});assert.equal((await post('/api/v1/call',{capability:'web.info',args:{}})).status,401);
- await page.reload();await page.getByRole('link',{name:'Sign in',exact:true}).waitFor();assert.equal(await page.getByText('Connection to core lost, reconnecting…',{exact:true}).count(),0);
+ await page.reload();await page.getByRole('heading',{name:'Sign in',exact:true}).waitFor();assert.equal(await page.getByText('Connection to core lost, reconnecting…',{exact:true}).count(),0);
  console.log('PASS: remembered scoped login survives real core, Web and browser process restarts; key revocation still denies access and UI offers sign-in, not reconnect');
 }finally{if(browser)await browser.close();await stop(web);await stop(core);await rm(dir,{recursive:true,force:true})}

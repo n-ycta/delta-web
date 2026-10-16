@@ -7,7 +7,7 @@ const core=await client.call('core.info');if(!/^0\.4\.(?:[3-9]|[1-9][0-9]+)$/.te
 const services=createServices(client),sessions=await createSessions(client);
 const server=createServer(async(req,res)=>{
  try{
-  res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','no-referrer');
+  res.setHeader('x-content-type-options','nosniff');res.setHeader('x-frame-options','DENY');res.setHeader('content-security-policy',"frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'");res.setHeader('referrer-policy','no-referrer');
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname.startsWith('/mcp/')){await proxyMcp(req,res,pathname);return}
   if(pathname.startsWith('/session/')){await sessions.http(req,res,pathname);return}

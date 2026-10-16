@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.7",
+  "version": "0.6.8",
   "type": "module",
   "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -28,11 +28,12 @@
     "test:plugin-notice-browser": "node scripts/plugin-notice-browser.cjs",
     "test:ssh": "node tests/ssh-onboarding-live.mjs",
     "test:ssh-browser": "node scripts/ssh-wizard-browser.cjs",
-    "test:session-restart": "node tests/session-restart-live.mjs"
+    "test:session-restart": "node tests/session-restart-live.mjs",
+    "test:auth": "node tests/auth-gate-live.mjs"
   },
   "dependencies": {
-    "zod": "^3.23.8",
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/a702becd0ea9a1ce90d4b0e1299366d152ff9fc7.tar.gz"
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/1609047e00cd638adf754c2f830a9cd1e18b6bb8.tar.gz",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
@@ -40,14 +41,16 @@
     "@types/react-dom": "^18.3.0",
     "@types/react-grid-layout": "^1.3.5",
     "@vitejs/plugin-react": "^6.1.2",
+    "delta-mcp": "https://github.com/n-ycta/delta-mcp/archive/21662946a7d627b5121add2ed60ce63b21479ab2.tar.gz",
+    "delta-observability": "https://github.com/n-ycta/delta-observability/archive/0a98dd179f286996c096f1336dcd2d0f7e3c2f16.tar.gz",
+    "delta-provision": "https://github.com/n-ycta/delta-provision/archive/9c57538faf2f3609e0e8b7f76c61ff3c7bf1c64d.tar.gz",
+    "delta-updater": "https://github.com/n-ycta/delta-updater/archive/f79f30ffb4e9ecbb81d58dfd5db35b1c1d737d1a.tar.gz",
     "playwright": "^1.63.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
     "vite": "^8.3.4",
-    "delta-mcp": "https://github.com/n-ycta/delta-mcp/archive/21662946a7d627b5121add2ed60ce63b21479ab2.tar.gz",
-    "delta-updater": "https://github.com/n-ycta/delta-updater/archive/f79f30ffb4e9ecbb81d58dfd5db35b1c1d737d1a.tar.gz",
-    "delta-provision": "https://github.com/n-ycta/delta-provision/archive/9c57538faf2f3609e0e8b7f76c61ff3c7bf1c64d.tar.gz",
-    "delta-observability": "https://github.com/n-ycta/delta-observability/archive/0a98dd179f286996c096f1336dcd2d0f7e3c2f16.tar.gz"
+    "@noble/curves": "^1.8.2",
+    "@noble/hashes": "^1.7.2"
   },
   "license": "Apache-2.0"
 }

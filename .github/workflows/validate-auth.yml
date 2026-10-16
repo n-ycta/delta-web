@@ -1,0 +1,30 @@
+name: Validate authentication
+on:
+  push:
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  authentication:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/checkout@v4
+        with:
+          repository: n-ycta/delta
+          ref: e841d9ad283b78cfc383f1fc8653e77e2c050216
+          path: core-fixture
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: {workspaces: 'core-fixture -> target'}
+      - run: cargo build --locked --manifest-path core-fixture/Cargo.toml --bin delta
+      - run: npm ci && npm run build && npm test && npm run test:server && npm run test:i18n
+      - run: npx playwright install --with-deps chromium
+      - name: Verify real authentication and restart persistence
+        env:
+          DELTA_TEST_BINARY: ${{ github.workspace }}/core-fixture/target/debug/delta
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from 'playwright'; console.log(chromium.executablePath())")
+          npm run test:auth
+          npm run test:session-restart

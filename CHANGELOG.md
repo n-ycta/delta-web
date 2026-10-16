@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.6.8]
+
+- Require explicit sign-in before management screens mount; stale demo settings cannot impersonate a production owner.
+- Add key, API-token and one-use setup flows in shared UI 0.1.3.
+- Limit installer bootstrap sessions to one hour, rotate sessions on sign-in, enforce HTTPS/localhost origins, rate-limit authentication and harden private session storage.
+- Verify anonymous/forged/revoked sessions cannot access owner capabilities.
+- Fix update/node-assignment API references to an undefined installation request.
+
+
 ## [v0.6.7]
 
 - Consume shared UI 0.1.2 with readable mobile dependency rows and fail-closed refresh state.
