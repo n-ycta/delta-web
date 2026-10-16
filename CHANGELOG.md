@@ -9,14 +9,25 @@
 
 ## [Unreleased]
 
-- Keep owner bootstrap sessions for 30 days; offer Remember this device on signed login and distinguish expired authorization from a disconnected core. Private keys remain browser-only; revoked/expired sessions still require sign-in.
+- No pending changes.
 
-- Check the running core version and OpenSSH availability before SSH authentication; distinguish missing dependencies from an outdated or unavailable core.
-- Offer a direct, confirmed core update in the SSH wizard, show progress, and recheck readiness when it finishes.
-- Show a truthful failure heading instead of suggesting that a failed connection is still running.
-- Resolve OpenSSH to an absolute executable path, including standard Linux and Windows locations.
+## [v0.5.1]
 
-- Improve release documentation and changelog-backed release publishing; no new runtime release is created for this maintenance change.
+### Fixes
+- Keep owner setup sessions for 30 days and restore valid sessions after Web restarts.
+- Show an explicit sign-in action for expired authorization instead of a misleading reconnect loop.
+- Clear stale manually entered browser tokens after successful key sign-in.
+- Label failed SSH setup jobs as failed rather than suggesting installation is still running.
+
+### Improvements
+- Add Remember this device for 30 days to signed key login; private signing keys and recovery phrases remain browser-only.
+- Check the running core and OpenSSH before requesting SSH credentials.
+- Offer a direct, confirmed core update from the SSH wizard, with progress and an automatic readiness recheck.
+- Resolve OpenSSH to its absolute executable path, including standard Linux and Windows locations.
+
+### Upgrade notes
+- Update Delta Core to v0.4.1 for restart-safe signed login. Existing expired sessions require one fresh sign-in.
+- SSH server deployment is still Linux-only. This patch does not change existing peer trust grants.
 
 ## [v0.5.0]
 

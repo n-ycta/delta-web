@@ -77,11 +77,11 @@ Jobs expose sanitized phase/error codes and resume visibility after browser refr
 
 Tests: `npm run test:server` covers authorization, consent, target binding, job redaction and transport arguments. `DELTA_TEST_BINARY=/path/to/new/delta node tests/ssh-onboarding-live.mjs` exercises real password/encrypted-key SSH bootstrap, two real cores, both routing directions, one-way/mutual administration, downgrade, core restart without Web and removal. The test uses a preinstalled isolated server fixture; it does not pretend to validate Linux package installation or real provider SSH policy.
 
-### Pending SSH wizard improvements (Unreleased)
+### SSH wizard preflight and updates (v0.5.1)
 
-The owner-only `web.nodes_ssh_preflight` checks the running local core and resolves OpenSSH to an absolute executable path before host probing or SSH authentication. An outdated core has a direct **Update core** action, with explicit confirmation and progress through the existing updater; readiness is rechecked after completion. Failed setup jobs are labelled as failed rather than still connecting. These source changes do not create a new runtime release.
+The owner-only `web.nodes_ssh_preflight` checks the running local core and resolves OpenSSH to an absolute executable path before host probing or SSH authentication. An outdated core has a direct **Update core** action, with explicit confirmation and progress through the existing updater; readiness is rechecked after completion. Failed setup jobs are labelled as failed rather than still connecting. These changes are included in v0.5.1.
 
-### Restart-safe browser sessions (Unreleased)
+### Restart-safe browser sessions (v0.5.1)
 
 Owner bootstrap cookies last 30 days. Signed key login offers **Remember this device for 30 days** (enabled by default); the lifetime is included in the signed challenge, never accepted as an unsigned login escalation. Core stores only the token hash, Web keeps the corresponding credential in its private server-side session file, and the browser receives an HttpOnly SameSite cookie. Private signing keys and recovery phrases are never persisted by this feature. Logout, token expiry and enrolled-key revocation remain effective. An old core without the signed remember extension is reported explicitly instead of promising restart-safe login.
 
