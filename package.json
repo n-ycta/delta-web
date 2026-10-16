@@ -33,7 +33,7 @@
     "test:recovery": "node tests/recovery-live.mjs"
   },
   "dependencies": {
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/630875c3ebd47b7fb3fb7dd18b79505457b951dd.tar.gz",
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/55a6ea27ac4177e1b9350ab69afa5db8e4f821f6.tar.gz",
     "zod": "^3.23.8"
   },
   "devDependencies": {
