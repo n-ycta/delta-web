@@ -1,3 +1,4 @@
+import { isSettingVisible, settingsPayload } from './visibility';
 import { mergeProfileValues, type SettingsProfiles } from './profiles';
 import { tr } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
@@ -70,12 +71,17 @@ export function SettingsForm({
     setAcknowledged([]);
     setConfirmation(null);
   }, [initial]);
+  const visible = fields.filter((f) => isSettingVisible(f, v));
   const errors = Object.fromEntries(
-    fields.map((f) => [f.key, validate(f, v[f.key])]).filter(([, e]) => e),
+    visible.map((f) => [f.key, validate(f, v[f.key])]).filter(([, e]) => e),
   );
   const dirty = JSON.stringify(v) !== JSON.stringify(initial) || Object.keys(secrets).length > 0;
   const groups = [
-    ...new Set(fields.map((f) => f.group ?? tr('pages.plugins.SettingsForm.s_eee2285ba1'))),
+    ...new Set(
+      visible
+        .filter((f) => f.key !== profiles?.selectionKey)
+        .map((f) => f.group ?? tr('pages.plugins.SettingsForm.s_eee2285ba1')),
+    ),
   ];
   const set = (k: string, val: unknown) => setV((p) => ({ ...p, [k]: val }));
 
@@ -88,14 +94,8 @@ export function SettingsForm({
         e.preventDefault();
         if (!Object.keys(errors).length)
           onSubmit({
-            ...Object.fromEntries(
-              Object.entries(v).filter(
-                ([key]) =>
-                  !key.startsWith('_') && !fields.some((f) => f.key === key && f.type === 'secret'),
-              ),
-            ),
+            ...settingsPayload(fields, v, secrets),
             ...(acknowledged.length ? { _confirmations: acknowledged } : {}),
-            ...secrets,
           });
       }}
     >
@@ -127,14 +127,7 @@ export function SettingsForm({
               disabled={disabled || saving || !!Object.keys(errors).length}
               onClick={() =>
                 onAction?.(a.id, {
-                  ...Object.fromEntries(
-                    Object.entries(v).filter(
-                      ([key]) =>
-                        !key.startsWith('_') &&
-                        !fields.some((f) => f.key === key && f.type === 'secret'),
-                    ),
-                  ),
-                  ...secrets,
+                  ...settingsPayload(fields, v, secrets),
                 })
               }
             >
@@ -149,7 +142,7 @@ export function SettingsForm({
             <span className="panel-title">{g}</span>
           </div>
           <div className="panel-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
-            {fields
+            {visible
               .filter((f) => f.key !== profiles?.selectionKey)
               .filter((f) => (f.group ?? tr('pages.plugins.SettingsForm.s_eee2285ba1')) === g)
               .map((f) => (

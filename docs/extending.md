@@ -120,3 +120,25 @@ An action with `settingsAction:true` is available in Settings and receives `{val
 MCP catalogs include curated core tools and namespaced methods belonging to registered UI plugins. Capability params become JSON input schemas, including nested objects. Owners explicitly select methods; admin methods receive individual admin:method scopes, never global admin. Profile creation pins plugin ownership, and calls revalidate availability, target node and permissions. Existing profiles are not automatically broadened when a plugin gains methods: refresh the catalog and create a new explicitly scoped profile. Field redaction is not a safe substitute for withholding access to arbitrary logs.
 
 Destructive settings actions remain in the confirmed action menu rather than the inline draft-validation toolbar.
+
+## Contract 1.6: conditional settings and record tables
+
+Plugins opt in with `contract: "^1.6.0"`. These features are generic; the console has no plugin-specific business logic.
+
+A setting may declare a `visibleWhen` expression. Leaves compare another draft value using strict `equals`, or `oneOf`. Combine them with `all`, `any`, or `not` (maximum three nesting levels, eight children per branch, twenty values per `oneOf`). Missing values do not satisfy a leaf. Conditions are data, never evaluated JavaScript.
+
+```json
+{"key":"parallelism","type":"number","label":"Parallel requests","default":3,"visibleWhen":{"all":[{"key":"enabled","equals":true},{"key":"mode","equals":"parallel"}]}}
+```
+
+Hidden values are retained in the draft and on the node; hidden controls are not validated or submitted. Settings endpoints must merge partial updates. A visibility condition is not an authorization rule: enforce all security and input validation on the node/API.
+
+A declared view can opt into a generated dashboard with `dashboard: {"args":{"verdict":"lead"},"limit":10}`. Its existing column definitions (`text`, `number`, `datetime`, `badge`, `link` + optional `urlKey`) determine cell rendering. The existing widget type remains `table`; it now accepts a `plugin-view` source:
+
+```json
+{"kind":"plugin-view","pluginId":"dev.example.search","viewId":"items","nodeId":"optional-node","args":{"verdict":"lead"}}
+```
+
+Data calls use the same permission-checked, declared namespaced endpoint as the plugin-page table. Links accept HTTPS without embedded credentials, open separately with `noopener noreferrer`, and never render raw HTML. View arguments/defaults, column labels and data ordering belong to the plugin; it should return newest-first rows where appropriate. Saved generated dashboards gain missing opt-in tables below existing widgets; user layout and original metric IDs are preserved.
+
+Updater inventory discovers supervisor installations and registered UI plugins on local, connected and paired nodes. Unknown/unmanaged versions and unavailable nodes are explicit; remote disabled versions are never guessed from catalog versions. Package jobs are pinned and routed to their node; remote core binary replacement is not supported. Existing peer trust/scopes are required and never escalated automatically.

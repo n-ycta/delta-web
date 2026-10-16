@@ -57,7 +57,10 @@ export function DashboardsPage() {
       .map((d) => [d.generatedFrom, d]),
   );
   const auto = (plugins.data ?? []).filter(
-    (p) => isInstalled(p) && p.validation.compatible && p.manifest.metrics.length,
+    (p) =>
+      isInstalled(p) &&
+      p.validation.compatible &&
+      (p.manifest.metrics.length || p.manifest.views.some((v) => v.dashboard)),
   );
 
   const create = async () => {
@@ -209,7 +212,7 @@ export function DashboardsPage() {
                   const sources = [
                     ...new Set(
                       d.widgets.map((w) =>
-                        w.source.kind === 'metric' ? w.source.pluginId : 'system',
+                        w.source.kind !== 'system' ? w.source.pluginId : 'system',
                       ),
                     ),
                   ];
@@ -374,7 +377,10 @@ export function DashboardsPage() {
               <option value="">{tr('pages.Dashboards.s_201dda28ad')}</option>
               {(plugins.data ?? [])
                 .filter(
-                  (p) => isInstalled(p) && p.manifest.metrics.length && p.validation.compatible,
+                  (p) =>
+                    isInstalled(p) &&
+                    (p.manifest.metrics.length || p.manifest.views.some((v) => v.dashboard)) &&
+                    p.validation.compatible,
                 )
                 .map((p) => (
                   <option key={p.manifest.id} value={p.manifest.id}>

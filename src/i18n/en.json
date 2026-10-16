@@ -1730,8 +1730,8 @@
   "updates": {
     "title": "Updates",
     "description": "Core, Web and installed plugins — verified stable releases.",
-    "check": "Check now",
-    "installAll": "Update all",
+    "check": "Check",
+    "installAll": "Update",
     "lastCheck": "Last check",
     "never": "Not checked yet",
     "components": "Installed components",
@@ -1740,7 +1740,7 @@
     "current": "Up to date",
     "install": "Install update",
     "progress": "Update progress",
-    "reload": "Reload updated Web",
+    "reload": "Reload",
     "preferences": "Update preferences",
     "automaticCheck": "Check automatically",
     "backgroundHint": "Checks run on this node while the Web service is running, even with the browser closed. Only installed plugins are updated.",
@@ -1793,7 +1793,17 @@
     "independent_worker": "Cannot launch an independent worker; the core was not stopped.",
     "invalid_settings": "Invalid update settings.",
     "permissions": "Cannot protect private update files.",
-    "managed_install_required": "Core self-update requires the official per-user installation in this node profile. Source/system-package binaries are not replaced."
+    "managed_install_required": "Core self-update requires the official per-user installation in this node profile. Source/system-package binaries are not replaced.",
+    "remote_core": "Update this core from its own node profile. Remote core binary replacement is not supported.",
+    "node_offline": "Node is offline. Last known installation data is shown.",
+    "version_unknown": "Installed version is unknown",
+    "unmanaged_plugin": "Registered plugin is not managed by this node supervisor.",
+    "not_in_catalog": "No official catalog entry for this installed plugin.",
+    "release_unavailable": "Release information is temporarily unavailable.",
+    "node_changed": "Node identity changed. Check the connection and retry.",
+    "unavailable": "Unavailable",
+    "unknown": "Unknown",
+    "forbidden": "This connection is not authorized to inspect or update the node."
   },
   "events": {
     "refresh": "Refresh",

@@ -77,6 +77,13 @@ const dashboard = z.object({
         title: z.string().optional(),
         source: z.discriminatedUnion('kind', [
           z.object({
+            kind: z.literal('plugin-view'),
+            pluginId: z.string(),
+            viewId: z.string(),
+            nodeId: z.string().optional(),
+            args: z.record(z.unknown()).optional(),
+          }),
+          z.object({
             kind: z.literal('metric'),
             pluginId: z.string(),
             metricId: z.string(),

@@ -59,7 +59,32 @@ export const MetricDescriptor = z.object({
 });
 export type MetricDescriptor = z.infer<typeof MetricDescriptor>;
 
+/** Bounded declarative branches, evaluated against draft values; never executable expressions. */
+export type SettingCondition =
+  | { key: string; equals: string | number | boolean | null }
+  | { key: string; oneOf: (string | number | boolean | null)[] }
+  | { all: SettingCondition[] }
+  | { any: SettingCondition[] }
+  | { not: SettingCondition };
+const conditionValue = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const conditionLeaf = z.union([
+  z.object({ key: Id, equals: conditionValue }).strict(),
+  z.object({ key: Id, oneOf: z.array(conditionValue).min(1).max(20) }).strict(),
+]);
+function conditionSchema(depth: number): z.ZodType<SettingCondition> {
+  if (!depth) return conditionLeaf;
+  const child = conditionSchema(depth - 1);
+  return z.union([
+    conditionLeaf,
+    z.object({ all: z.array(child).min(1).max(8) }).strict(),
+    z.object({ any: z.array(child).min(1).max(8) }).strict(),
+    z.object({ not: child }).strict(),
+  ]);
+}
+export const SettingCondition = conditionSchema(3);
+
 const SettingBase = z.object({
+  visibleWhen: SettingCondition.optional(),
   key: Id,
   label: z.string(),
   help: z.string().optional(),
@@ -124,6 +149,12 @@ export const PluginAction = z.object({
 });
 
 export const PluginDataView = z.object({
+  dashboard: z
+    .object({
+      args: z.record(z.unknown()).optional(),
+      limit: z.number().int().min(1).max(50).default(10),
+    })
+    .optional(),
   id: Id,
   label: z.string(),
   capability: z.string(),

@@ -15,31 +15,49 @@ export const SystemSource = z.object({
   feed: z.enum(['nodes', 'events', 'alerts', 'plugins', 'note']),
   params: z.record(z.unknown()).optional(),
 });
-export const WidgetSource = z.discriminatedUnion('kind', [MetricSource, SystemSource]);
+export const PluginViewSource = z.object({
+  kind: z.literal('plugin-view'),
+  pluginId: z.string(),
+  viewId: z.string(),
+  nodeId: z.string().optional(),
+  args: z.record(z.unknown()).optional(),
+});
+export const WidgetSource = z.discriminatedUnion('kind', [
+  MetricSource,
+  SystemSource,
+  PluginViewSource,
+]);
 export type WidgetSource = z.infer<typeof WidgetSource>;
 export type MetricSource = z.infer<typeof MetricSource>;
 
-export const WidgetDisplay = z.object({
-  chart: z.enum(['dots', 'line', 'area', 'bar', 'step']).optional(),
-  connectNulls: z.boolean().optional(),
-  stepMs: z.number().int().min(1000).max(604800000).nullable().optional(),
-  stacked: z.boolean().optional(),
-  showLegend: z.boolean().optional(),
-  showGrid: z.boolean().optional(),
-  compare: z.boolean().optional(),
-  colors: z.record(z.string()).optional(),
-  palette: z.string().optional(),
-  decimals: z.number().int().min(0).max(4).optional(),
-  yMin: z.number().nullable().optional(),
-  yMax: z.number().nullable().optional(),
-  showThresholds: z.boolean().optional(),
-  rangeOverride: TimeRangePreset.nullable().optional(),
-  limit: z.number().int().min(1).max(50).optional(),
-  text: z.string().optional(),
-}).passthrough();
+export const WidgetDisplay = z
+  .object({
+    chart: z.enum(['dots', 'line', 'area', 'bar', 'step']).optional(),
+    connectNulls: z.boolean().optional(),
+    stepMs: z.number().int().min(1000).max(604800000).nullable().optional(),
+    stacked: z.boolean().optional(),
+    showLegend: z.boolean().optional(),
+    showGrid: z.boolean().optional(),
+    compare: z.boolean().optional(),
+    colors: z.record(z.string()).optional(),
+    palette: z.string().optional(),
+    decimals: z.number().int().min(0).max(4).optional(),
+    yMin: z.number().nullable().optional(),
+    yMax: z.number().nullable().optional(),
+    showThresholds: z.boolean().optional(),
+    rangeOverride: TimeRangePreset.nullable().optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+    text: z.string().optional(),
+  })
+  .passthrough();
 export type WidgetDisplay = z.infer<typeof WidgetDisplay>;
 
-export const WidgetLayout = z.object({ x: z.number().int().min(0), y: z.number().int().min(0), w: z.number().int().min(1), h: z.number().int().min(1) });
+export const WidgetLayout = z.object({
+  x: z.number().int().min(0),
+  y: z.number().int().min(0),
+  w: z.number().int().min(1),
+  h: z.number().int().min(1),
+});
 export type WidgetLayout = z.infer<typeof WidgetLayout>;
 
 export const WidgetConfig = z.object({

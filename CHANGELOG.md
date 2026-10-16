@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.6.2]
+
+- UI contract 1.6: bounded declarative settings branches (`visibleWhen`, nested all/any/not). Irrelevant controls and empty groups are hidden without clearing saved values or transmitting hidden draft edits.
+- Extend the existing Table widget with typed plugin record sources, safe clickable HTTPS post links, node selection, pagination and refresh. No new widget type or Leads-specific runtime code.
+- Auto-generate opt-in record tables from plugin views; append missing tables to saved plugin dashboards without resetting layouts or changing metric widget IDs.
+- Discover updates across the local profile, the service-connected core and paired nodes. Preserve separate installation identities; show unknown/unmanaged/offline installations and partial-discovery warnings rather than silently omitting plugins.
+- Route pinned package installations and job polling to the selected node. Use catalog repository links, preserve disabled installs, and never replace a remote core with local files. Automatic installation still requires separate consent.
+- RU/EN regression tests for links, branches, layouts, persistent delivery integration and multi-node updates.
+
 ## [v0.6.1]
 
 - Route plugin metrics to an active installed node, including paired remote nodes; an inactive local installation no longer masks an active remote one. Use live remote manifest versions instead of stale cached schemas.

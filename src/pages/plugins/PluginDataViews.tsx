@@ -13,7 +13,7 @@ export function safeDataLink(value: unknown) {
     return undefined;
   }
 }
-function Cell({
+export function DataCell({
   row,
   column,
 }: {
@@ -26,7 +26,12 @@ function Cell({
   if (column.type === 'link') {
     const url = safeDataLink(row[column.urlKey || column.key]);
     return url ? (
-      <a href={url} target="_blank" rel="noopener noreferrer">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'var(--accent)', textDecoration: 'underline', textUnderlineOffset: 3 }}
+      >
         {text}
       </a>
     ) : (
@@ -119,7 +124,7 @@ function DataView({ entry, view }: { entry: PluginEntry; view: PluginDataView })
                           verticalAlign: 'top',
                         }}
                       >
-                        <Cell row={row} column={c} />
+                        <DataCell row={row} column={c} />
                       </td>
                     ))}
                   </tr>

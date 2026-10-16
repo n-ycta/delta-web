@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Download, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useDashboards, usePlugin } from '@/app/data';
 import { useCan } from '@/app/stores';
-import { generatePluginDashboard } from '@/core/registry/autodash';
+import { generatePluginDashboard, mergeGeneratedDashboard } from '@/core/registry/autodash';
 import { widgetRegistry } from '@/widgets/registry';
 import { DashboardView } from '@/dashboards/DashboardView';
 import { downloadJson, useDashboardActions } from '@/dashboards/useDashboardActions';
@@ -43,20 +43,7 @@ export function DashboardPage() {
   const d: DashboardConfig | undefined = useMemo(() => {
     if (!stored || stored.origin !== 'generated' || !plugin.data) return stored ?? generated;
     const fresh = generatePluginDashboard(plugin.data, widgetRegistry);
-    const existing = new Set(
-      stored.widgets.flatMap((w) => (w.source.kind === 'metric' ? [w.source.metricId] : [])),
-    );
-    let y = stored.widgets.reduce((n, w) => Math.max(n, w.layout.y + w.layout.h), 0);
-    const added = fresh.widgets
-      .filter(
-        (w) => w.source.kind === 'metric' && !existing.has(w.source.metricId) && w.type !== 'stat',
-      )
-      .map((w) => {
-        const next = { ...w, layout: { ...w.layout, x: 0, y, w: 12 } };
-        y += w.layout.h;
-        return next;
-      });
-    return { ...stored, widgets: [...stored.widgets, ...added] };
+    return mergeGeneratedDashboard(stored, fresh);
   }, [stored, generated, plugin.data]);
 
   if (dashboards.error && !dashboards.data)
