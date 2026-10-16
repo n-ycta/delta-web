@@ -31,23 +31,9 @@
     "test:session-restart": "node tests/session-restart-live.mjs"
   },
   "dependencies": {
-    "@fontsource/ibm-plex-mono": "^5.0.14",
-    "@fontsource/ibm-plex-sans": "^5.0.21",
-    "@noble/curves": "^1.8.2",
-    "@noble/hashes": "^1.7.2",
-    "@scure/base": "^1.2.4",
-    "@scure/bip39": "^1.5.4",
-    "d3-hierarchy": "^3.1.2",
-    "lucide-react": "^0.447.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-grid-layout": "1.4.4",
-    "react-router-dom": "^7.18.4",
-    "recharts": "^2.12.7",
     "ssh2": "^1.17.0",
     "zod": "^3.23.8",
-    "zustand": "^4.5.5",
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/dd49bbee053385ea830e2a4ec5d6057976c34bb6.tar.gz"
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/eaf941e68441bb2d401c1a3a584f509d993028bd.tar.gz"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
