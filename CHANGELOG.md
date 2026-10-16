@@ -1,3 +1,9 @@
+## [v0.6.11]
+
+- Fix embedded Console forms, side grids and navigation adapting to their own pane width.
+- Restore intended navigation and outline styling without generic button overrides.
+- Pin shared UI 0.2.1; existing workspace data and Media package remain unchanged.
+
 ## [v0.6.10]
 
 - Preserve the complete Console inside a composable application workbench.
