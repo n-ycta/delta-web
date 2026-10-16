@@ -135,3 +135,20 @@ Update the local core to **0.4.0+** and Web to **0.5.0+**, then open **Nodes →
 The wizard installs/reuses a bare Linux node, not another Web panel. Root setup configures an unprivileged delta service account and boot persistence; non-root setup requires an existing systemd user lingering configuration. A separate restricted key maintains a core-supervised bidirectional SSH tunnel. No router port forwarding or manually configured VPN is needed for a publicly reachable SSH VPS. Setup credentials are not saved. Use the local console or HTTPS, not a public plaintext Web URL.
 
 The controller needs OpenSSH; the server must allow SSH TCP forwarding and must not force the reverse listener onto a public address. The wizard verifies its actual loopback binding before pairing. Completed connections survive closing Web and core restart. Incoming trust can be changed in **Node → Connection**; removing the node removes the local tunnel and private key. The initiating computer must be online. Invitation-based setup over an existing protected network remains available. See [the extension guide](docs/extending.md#ssh-server-onboarding) for limits, security and tests.
+
+## Headless service integrations (0.6.6)
+
+Requires Delta Core >=0.4.3, <0.5.0. Web is the browser host and compatibility facade; it does not own these background services:
+
+| Optional plugin | Enabled functions |
+| --- | --- |
+| `delta-mcp` | MCP gateway and profile constructor |
+| `delta-updater` | Release checks, schedules and update jobs |
+| `delta-provision` | SSH preflight, installation and connection maintenance |
+| `delta-observability` | Persistent events, node history and metric aggregation |
+
+Dependencies are declared in the manifest. Missing, disabled, offline or incompatible optional providers gate only their declared features. The generic installer exposes optional selection and checks the graph before executing packages. See Core's dependency contract for explicit provider bindings and removal safeguards.
+
+Upgrade Core first. For the MCP cutover, stop the legacy Web process before starting the new MCP service; profile IDs and issued credentials are preserved. Configure `DELTA_MCP_URL` only when the local MCP listener differs from `http://127.0.0.1:7720`. Remote access requires an HTTPS reverse proxy or an authenticated tunnel.
+
+Server tests consume immutable source archives of the independent service packages as development-only dependencies. Production Web has no SSH library or service implementation dependency.

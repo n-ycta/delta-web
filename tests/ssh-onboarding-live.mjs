@@ -15,7 +15,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
-import { SSHOnboarding } from "../server/ssh-onboarding.mjs";
+import { SSHOnboarding } from "delta-provision/server/ssh-onboarding.mjs";
 import { DeltaClient } from "../server/delta-sdk.mjs";
 const exec = promisify(execFile),
   sleep = (ms) => new Promise((r) => setTimeout(r, ms));

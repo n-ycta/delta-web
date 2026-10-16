@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.6.6]
+
+### Improvements
+- Move MCP, update scheduling, SSH provisioning, telemetry and the durable event journal into four independent headless plugins.
+- Retain Web API aliases and MCP URL forwarding as compatibility adapters; Web no longer starts those background services.
+- Consume shared Delta UI 0.1.1 with optional dependency selection, version diagnostics and generic capability/feature gates.
+- Forward service calls with the original principal through Core, never with Web's administrative credential.
+
+### Upgrade notes
+- Upgrade Core to 0.4.3 before this Web version. Install the optional service plugins for their corresponding functions; missing services do not block unrelated Web features.
+- MCP profiles migrate only after legacy Web is stopped or upgraded. Keep a private profile backup before the cutover. The default independent listener is localhost:7720; existing Web `/mcp/:id` addresses are proxied.
+- Existing owner keys work. Narrowly scoped compatibility keys may need explicit destination-service scopes. Dependency installation is ordered, not an atomic group rollback.
+- Native hosts and independent signed UI updates remain incomplete; this release does not close all P0/P1 requirements.
+
 ## [v0.6.5]
 
 ### Improvements

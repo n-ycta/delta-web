@@ -10,8 +10,8 @@ import {
   parseSettings,
   officialDownload,
   unpackCore,
-} from '../server/updater.mjs';
-import { updateHandlers } from '../server/update-service.mjs';
+} from 'delta-updater/server/updater.mjs';
+import { updateHandlers } from 'delta-updater/server/update-service.mjs';
 const settings = {
   automaticCheck: true,
   intervalMinutes: 60,
@@ -154,7 +154,7 @@ test('update owner boundary rejects scoped users before privileged service opera
     },
   });
   await assert.rejects(
-    h['web.updates_status']({ _locale: 'ru' }, { scopes: ['call:web.updates_status'] }),
+    h['updater.status']({ _locale: 'ru' }, { scopes: ['call:updater.status'] }),
     (e) => e.code === 'forbidden' && /владелец/.test(e.message),
   );
   assert.equal(touched, false);

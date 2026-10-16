@@ -7,7 +7,7 @@ import {join} from 'node:path';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createHash} from 'node:crypto';
-import {Updater,UpdateError,officialDownload,unpackCore} from '../server/updater.mjs';
+import {Updater,UpdateError,officialDownload,unpackCore} from 'delta-updater/server/updater.mjs';
 const exec=promisify(execFile),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const target=platform()==='win32'?'windows-x64':'linux-'+arch();
 const asset='delta-'+target+'.tar.gz',exe=platform()==='win32'?'delta.exe':'delta';

@@ -5,9 +5,9 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.6.5",
+      "version": "0.6.6",
       "contract": "^1.4.0",
-      "description": "Browser host for the shared Delta UI; sessions, MCP and node administration.",
+      "description": "Browser host for Delta UI with optional headless service integrations.",
       "publisher": "Delta",
       "icon": "layout-dashboard",
       "category": "system",
@@ -79,7 +79,52 @@
       ],
       "endpoints": {
         "status": "web.status"
-      }
+      },
+      "dependencies": [
+        {
+          "id": "core",
+          "kind": "core",
+          "version": ">=0.4.3, <0.5.0",
+          "required": true
+        },
+        {
+          "id": "dev.delta.mcp",
+          "kind": "plugin",
+          "version": ">=0.1.0, <0.2.0",
+          "required": false,
+          "features": [
+            "mcp"
+          ]
+        },
+        {
+          "id": "dev.delta.updater",
+          "kind": "plugin",
+          "version": ">=0.1.0, <0.2.0",
+          "required": false,
+          "features": [
+            "updates"
+          ]
+        },
+        {
+          "id": "dev.delta.provision",
+          "kind": "plugin",
+          "version": ">=0.1.0, <0.2.0",
+          "required": false,
+          "features": [
+            "ssh"
+          ]
+        },
+        {
+          "id": "dev.delta.observability",
+          "kind": "plugin",
+          "version": ">=0.1.0, <0.2.0",
+          "required": false,
+          "features": [
+            "metrics",
+            "events"
+          ]
+        }
+      ]
     }
   },
   "capabilities": [
@@ -178,7 +223,10 @@
         "ru": {
           "description": "Запросить временные ряды метрик"
         }
-      }
+      },
+      "requires": [
+        "metrics"
+      ]
     },
     {
       "name": "nodes_list",
@@ -194,12 +242,18 @@
     {
       "name": "nodes_history",
       "params": {},
-      "admin": false
+      "admin": false,
+      "requires": [
+        "metrics"
+      ]
     },
     {
       "name": "nodes_uptime",
       "params": {},
-      "admin": false
+      "admin": false,
+      "requires": [
+        "metrics"
+      ]
     },
     {
       "name": "nodes_command",
@@ -251,7 +305,10 @@
     {
       "name": "events_list",
       "params": {},
-      "admin": false
+      "admin": false,
+      "requires": [
+        "events"
+      ]
     },
     {
       "name": "notifications_list",
@@ -291,12 +348,18 @@
     {
       "name": "mcp_list",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "mcp"
+      ]
     },
     {
       "name": "mcp_catalog",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "mcp"
+      ]
     },
     {
       "name": "mcp_create",
@@ -306,7 +369,10 @@
           "required": true
         }
       },
-      "admin": true
+      "admin": true,
+      "requires": [
+        "mcp"
+      ]
     },
     {
       "name": "mcp_revoke",
@@ -316,7 +382,10 @@
           "required": true
         }
       },
-      "admin": true
+      "admin": true,
+      "requires": [
+        "mcp"
+      ]
     },
     {
       "name": "status",
@@ -326,37 +395,58 @@
     {
       "name": "updates_status",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "updates"
+      ]
     },
     {
       "name": "updates_check",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "updates"
+      ]
     },
     {
       "name": "updates_settings",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "updates"
+      ]
     },
     {
       "name": "updates_install",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "updates"
+      ]
     },
     {
       "name": "nodes_ssh_probe",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "ssh"
+      ]
     },
     {
       "name": "nodes_ssh_install",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "ssh"
+      ]
     },
     {
       "name": "nodes_ssh_status",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "ssh"
+      ]
     },
     {
       "name": "nodes_trust",
@@ -366,7 +456,10 @@
     {
       "name": "nodes_ssh_preflight",
       "params": {},
-      "admin": true
+      "admin": true,
+      "requires": [
+        "ssh"
+      ]
     },
     {
       "name": "plugins_query",
@@ -375,5 +468,5 @@
       "admin": false
     }
   ],
-  "version": "0.6.5"
+  "version": "0.6.6"
 }

@@ -1,3 +1,5 @@
+import {AsyncLocalStorage} from 'node:async_hooks';
+const invocationContext=new AsyncLocalStorage();
 import {readFileSync} from 'node:fs';
 const ru=JSON.parse(readFileSync(new URL('./locales/en.json',import.meta.url)));
 // Delta v1 external-component SDK. No dependency on the core source tree.
@@ -14,6 +16,11 @@ export class DeltaClient {
   const envelope = await response.json();
   if (!response.ok || !envelope.ok) throw new DeltaError(envelope.error?.code || 'unavailable', envelope.error?.message || `HTTP ${response.status}`);
   return envelope.result;
+ }
+ forward(capability, args = {}, node) {
+  const ctx=invocationContext.getStore();
+  if(!ctx) throw new DeltaError('forbidden','No live invocation context');
+  return this.request('POST', `/components/${ctx.component}/call`, {session:ctx.session,invocation:ctx.invocation,capability,args,...(node?{node}:{})});
  }
  call(capability, args = {}, node) { return this.request('POST', '/call', { capability, args, ...(node ? {node} : {}) }); }
 }
@@ -34,11 +41,11 @@ export async function servePlugin(client, manifest, handlers, {signal} = {}) {
     try {
      const handler = handlers[invocation.capability];
      if (!handler) throw new DeltaError('not_found', ru.sdkUnknownCapability);
-     result = {ok:true, result:await handler(invocation.args, invocation.caller)};
+     result = {ok:true, result:await invocationContext.run({component:manifest.id,session,invocation:invocation.id},()=>handler(invocation.args||{}, invocation.caller))};
     } catch(e) { result = {ok:false, error:{code:e.code || 'handler_error', message:e.code ? e.message : ru.sdkHandlerFailure}}; if (!e.code) console.error('Plugin handler failed:', e.message); }
     try { await client.request('POST', `/components/${manifest.id}/result`, {session,id:invocation.id,...result}); } catch(e) { console.error('Result delivery failed:',e.code || e.name); }
    })();
-  } catch(e) { console.error('Delta reconnect:', e.code || e.name); session = undefined; await new Promise(r=>setTimeout(r,2000)); }
+  } catch(e) { if(['unauthorized','forbidden','bad_request','conflict'].includes(e.code))throw e; console.error('Delta reconnect:', e.code || e.name); session = undefined; await new Promise(r=>setTimeout(r,2000)); }
  }
  if (session) await client.request('DELETE',`/components/${manifest.id}?session=${encodeURIComponent(session)}`).catch(()=>{});
 }

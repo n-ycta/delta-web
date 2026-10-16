@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createMcp, constrain, toolSchema } from '../server/mcp.mjs';
+import { createMcp, constrain, toolSchema } from 'delta-mcp/server/mcp.mjs';
 const base = { nodes: [], plugins: ['dev.delta.type'], maxRangeDays: 7, maxRows: 12 };
 test('MCP data policy rejects other sources and excessive ranges', () => {
   assert.throws(() => constrain(base, 'storage.query', { source: 'other', from: 1, to: 2 }));
@@ -36,24 +36,24 @@ test('MCP profile creation uses explicit scopes, hides secrets and revokes', asy
       m = await createMcp(service, join(d, 'mcp.json')),
       owner = { scopes: ['admin'] };
     await assert.rejects(
-      m.handlers['web.mcp_create'](
+      m.handlers['mcp.create'](
         { profile: { name: 'x', capabilities: ['tokens.create'] } },
         owner,
       ),
     );
-    await assert.rejects(m.handlers['web.mcp_list']({}, { scopes: [] }));
-    const r = await m.handlers['web.mcp_create'](
+    await assert.rejects(m.handlers['mcp.list']({}, { scopes: [] }));
+    const r = await m.handlers['mcp.create'](
       { profile: { name: 'ops', capabilities: ['supervisor.restart', 'system.info'] } },
       owner,
     );
     assert.deepEqual(calls[0][1].scopes, ['admin:supervisor.restart', 'call:system.info']);
     assert.ok(r.secret.startsWith('dmc_'));
-    const p = (await m.handlers['web.mcp_list']({}, owner))[0];
+    const p = (await m.handlers['mcp.list']({}, owner))[0];
     assert.equal(p.token, undefined);
     assert.equal(p.secretHash, undefined);
-    await m.handlers['web.mcp_revoke']({ id: r.profile.id }, owner);
+    await m.handlers['mcp.revoke']({ id: r.profile.id }, owner);
     assert.equal(calls[1][0], 'tokens.revoke');
-    assert.equal((await m.handlers['web.mcp_list']({}, owner)).length, 0);
+    assert.equal((await m.handlers['mcp.list']({}, owner)).length, 0);
   } finally {
     await rm(d, { recursive: true, force: true });
   }
@@ -99,11 +99,11 @@ test('MCP discovers plugin methods and structured params, grants only explicit a
   };
   const m = await createMcp(service, join(d, 'mcp.json')),
     owner = { scopes: ['admin'] };
-  const catalog = await m.handlers['web.mcp_catalog']({}, owner);
+  const catalog = await m.handlers['mcp.catalog']({}, owner);
   assert.equal(catalog.length, 1);
   assert.equal(catalog[0].pluginId, 'dev.example.search');
   assert.equal(toolSchema(spec.name, spec).properties.values.properties.enabled.type, 'boolean');
-  await m.handlers['web.mcp_create'](
+  await m.handlers['mcp.create'](
     {
       profile: {
         name: 'search',
@@ -117,7 +117,7 @@ test('MCP discovers plugin methods and structured params, grants only explicit a
     'admin:search.settings',
   ]);
   await assert.rejects(
-    m.handlers['web.mcp_create'](
+    m.handlers['mcp.create'](
       {
         profile: {
           name: 'wrong',

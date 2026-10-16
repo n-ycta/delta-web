@@ -8,7 +8,7 @@ import {
   sshHandlers,
   tunnelArgs,
   findOpenSSH,
-} from "../server/ssh-onboarding.mjs";
+} from "delta-provision/server/ssh-onboarding.mjs";
 const owner = { kind: "token", scopes: ["admin"] },
   target = { host: "server.example", port: 22, username: "root" },
   pause = () => new Promise((r) => setTimeout(r, 10));
@@ -47,14 +47,14 @@ test("only local owner can probe or submit SSH credentials; peer-admin and narro
   try {
     for (const caller of [
       { scopes: ["call:*"] },
-      { scopes: ["admin:web.nodes_ssh_probe"] },
+      { scopes: ["admin:provision.probe"] },
       { kind: "peer", scopes: ["admin"] },
     ])
       await assert.rejects(
-        () => f.handlers["web.nodes_ssh_probe"](target, caller),
+        () => f.handlers["provision.probe"](target, caller),
         (e) => e.code === "forbidden",
       );
-    assert((await f.handlers["web.nodes_ssh_probe"](target, owner)).ticket);
+    assert((await f.handlers["provision.probe"](target, owner)).ticket);
   } finally {
     await f.close();
   }
@@ -238,7 +238,7 @@ test("missing SSH and unavailable local core have separate simultaneous diagnost
     r = await f.service.preflight();
     assert.deepEqual(r.errors, ["local_core_unavailable", "ssh_missing"]);
     await assert.rejects(
-      () => f.handlers["web.nodes_ssh_preflight"]({}, { scopes: ["call:*"] }),
+      () => f.handlers["provision.preflight"]({}, { scopes: ["call:*"] }),
       (e) => e.code === "forbidden",
     );
   } finally {

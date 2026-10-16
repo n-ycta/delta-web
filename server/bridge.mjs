@@ -1,11 +1,9 @@
-import { withEventAudit } from './events.mjs';
-import { createTelemetry } from './telemetry.mjs';
+import { withEventAudit } from './services.mjs';
 import { ManifestCatalog } from './catalog.mjs';
 import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { DeltaError, allowed } from './delta-sdk.mjs';
-import { queryMetric } from './metrics.mjs';
 const hostVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version;
 const uiVersion = JSON.parse(readFileSync(new URL('../node_modules/@delta/ui/package.json', import.meta.url))).version;
 const ru = JSON.parse(readFileSync(new URL('./locales/en.json', import.meta.url)));
@@ -24,6 +22,7 @@ const permissionMap = {
 };
 const roleCaps = {
   viewer: [
+    'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
@@ -33,6 +32,7 @@ const roleCaps = {
     'web.notifications_mark',
   ],
   analyst: [
+    'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
@@ -45,6 +45,7 @@ const roleCaps = {
     'web.notifications_mark',
   ],
   operator: [
+    'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
@@ -113,7 +114,7 @@ const dashboard = z.object({
 export function createBridge(
   client,
   storage = 'storage',
-  monitor = createTelemetry(client, storage),
+  monitor = {history:()=>{throw new DeltaError('unavailable','Observability is not installed')},uptime:()=>{throw new DeltaError('unavailable','Observability is not installed')},status:()=>({error:'missing_dependency'})},
   updater,
   events,
   sshSetup,
@@ -439,7 +440,7 @@ export function createBridge(
         local = await client.call('core.info');
       const nodes = request.nodeIds?.length ? request.nodeIds : [local.node_id];
       for (const node of nodes)
-        await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+        await delegated(c, 'packages.install', { id, optionalDependencies:request.optionalDependencies||[], approveDependencies:request.approveDependencies===true }, node === local.node_id ? undefined : node);
       return { ...p.instance, status: 'installing' };
     },
     'web.plugins_uninstall': async ({ id, purgeData }, c) => {
@@ -458,7 +459,7 @@ export function createBridge(
       const p = await find(id),
         local = await client.call('core.info');
       for (const node of p.instance.nodeIds)
-        await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+        await delegated(c, 'packages.install', { id, optionalDependencies:request.optionalDependencies||[], approveDependencies:request.approveDependencies===true }, node === local.node_id ? undefined : node);
       return { ...p.instance, status: 'updating' };
     },
     'web.plugins_settings': async ({ id, values, nodeId, _locale = 'en' }, c) => {
@@ -500,7 +501,7 @@ export function createBridge(
         local = await client.call('core.info');
       for (const node of nodeIds)
         if (!p.instance.nodeIds.includes(node))
-          await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+          await delegated(c, 'packages.install', { id, optionalDependencies:request.optionalDependencies||[], approveDependencies:request.approveDependencies===true }, node === local.node_id ? undefined : node);
       for (const node of p.instance.nodeIds)
         if (!nodeIds.includes(node))
           await delegated(
@@ -588,7 +589,7 @@ export function createBridge(
           { query: prepared, _locale },
           node === local.node_id ? undefined : node,
         );
-      } else result = await queryMetric(client, storage, prepared);
+      } else result = await client.forward('observability.query', {query:prepared,_locale});
       const localized = p.manifest.localizations?.[_locale]?.metrics?.find((x) => x.id === m.id);
       const dimension =
         localized?.dimensions?.find((d) => d.id === query.groupBy) ||
@@ -673,25 +674,7 @@ export function createBridge(
     },
     'web.nodes_history': async ({ id, rangeMs }) => monitor.history(id, rangeMs),
     'web.nodes_uptime': async ({ id, days }) => monitor.uptime(id, days),
-    'web.status': async () => {
-      const a = monitor.status();
-      return {
-        settings: {},
-        activity: { ...a, rateLabel: { ru: 'записей/мин', en: 'records/min' } },
-        notices: a.error
-          ? [
-              {
-                id: 'web.telemetry',
-                severity: 'warn',
-                message: 'Node telemetry cannot be persisted to storage.',
-                localizations: {
-                  ru: 'История узлов пока не записывается: проверьте подключение хранилища.',
-                },
-              },
-            ]
-          : [],
-      };
-    },
+    'web.status': async () => ({settings:{},activity:{},notices:[]}),
     'web.nodes_command': async ({ id, command, args = {} }, c) => {
       const map = {
         ping: ['system.ping', {}],

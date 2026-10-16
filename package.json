@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.5",
+  "version": "0.6.6",
   "type": "module",
   "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -31,9 +31,8 @@
     "test:session-restart": "node tests/session-restart-live.mjs"
   },
   "dependencies": {
-    "ssh2": "^1.17.0",
     "zod": "^3.23.8",
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/52b034e94c3de66b310cbe242e790204c2f73e01.tar.gz"
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/4fe9f464ddcbeaae522469e4a1480c1ec0e79ff5.tar.gz"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
@@ -44,7 +43,11 @@
     "playwright": "^1.63.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "delta-mcp": "https://github.com/n-ycta/delta-mcp/archive/e95df6d84f5f3c89c940e10a9a974328103bf29a.tar.gz",
+    "delta-updater": "https://github.com/n-ycta/delta-updater/archive/f79f30ffb4e9ecbb81d58dfd5db35b1c1d737d1a.tar.gz",
+    "delta-provision": "https://github.com/n-ycta/delta-provision/archive/9c57538faf2f3609e0e8b7f76c61ff3c7bf1c64d.tar.gz",
+    "delta-observability": "https://github.com/n-ycta/delta-observability/archive/bd3a37d62436201d03f4411c05acec05e2e3c17b.tar.gz"
   },
   "license": "Apache-2.0"
 }

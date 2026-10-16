@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { remoteHandlers } from '../server/remote-updater.mjs';
-import { remoteBootstrap } from '../server/updater.mjs';
+import { remoteHandlers } from 'delta-updater/server/remote-updater.mjs';
+import { remoteBootstrap } from 'delta-updater/server/updater.mjs';
 const owner = { scopes: ['admin'] };
 test('remote maintenance API is owner-only, node-pinned and version-pinned; duplicate start returns the running job', async () => {
   let applied = 0,
