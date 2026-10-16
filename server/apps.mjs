@@ -123,7 +123,11 @@ export async function createApps(client, sessions, options = {}) {
                       "utf8",
                     ),
                   );
-                  return { ...item, ...(m.ui ? { ui: m.ui } : {}) };
+                  return {
+                    ...item,
+                    version: m.version,
+                    ...(m.ui ? { ui: m.ui } : {}),
+                  };
                 } catch {
                   return item;
                 }
@@ -184,7 +188,12 @@ export async function createApps(client, sessions, options = {}) {
             if (total > MAX_PACKAGE) throw Error("package_limit");
             parts.push(b);
           }
-          reply(200, await install(root, Buffer.concat(parts), item));
+          reply(
+            200,
+            await install(root, Buffer.concat(parts), item, {
+              replace: a.replace === true,
+            }),
+          );
         } finally {
           busy = false;
         }

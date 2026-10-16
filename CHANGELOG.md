@@ -1,3 +1,16 @@
+## [v0.6.10]
+
+- Preserve the complete Console inside a composable application workbench.
+- Add four themes, four starter applications, nested tabs, splits, windows,
+  canvas layouts, responsive dock navigation and editable overview sections.
+- Expose validated shared Media surfaces beside existing dashboard widgets.
+- Add compact, hideable host controls with keyboard recovery.
+- Persist owner-private workspaces with revision checks; preserve existing
+  dashboards and credentials. Portable app updates verify assets before replacement.
+- Pin Delta UI 0.2.0 and the reviewed Media 0.1.0-alpha.3 package.
+- Spotify/SoundCloud account integration, cross-device media synchronization and
+  native background playback are not introduced by this release.
+
 # Changelog
 
 ## [v0.6.9]
