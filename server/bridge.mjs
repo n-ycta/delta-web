@@ -6,6 +6,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { DeltaError, allowed } from './delta-sdk.mjs';
 import { queryMetric } from './metrics.mjs';
+const hostVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version;
+const uiVersion = JSON.parse(readFileSync(new URL('../node_modules/@delta/ui/package.json', import.meta.url))).version;
 const ru = JSON.parse(readFileSync(new URL('./locales/en.json', import.meta.url)));
 const russian = JSON.parse(readFileSync(new URL('./locales/ru.json', import.meta.url)));
 const localMessage = (message, locale) =>
@@ -347,6 +349,8 @@ export function createBridge(
       return {
         name: i.name,
         coreVersion: i.version,
+        hostVersion,
+        uiVersion,
         apiVersion: '1.0.0',
         startedAt: Date.now() - i.uptime * 1000,
         features: ['capabilities', 'external-components', 'storage-v1', 'polling'],

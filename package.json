@@ -33,7 +33,7 @@
   "dependencies": {
     "ssh2": "^1.17.0",
     "zod": "^3.23.8",
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/eaf941e68441bb2d401c1a3a584f509d993028bd.tar.gz"
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/52b034e94c3de66b310cbe242e790204c2f73e01.tar.gz"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
