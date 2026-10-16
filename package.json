@@ -1,19 +1,19 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.4",
+  "version": "0.6.5",
   "type": "module",
-  "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
+  "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
     "dev": "vite",
     "dev:http": "vite --mode http",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "tsx tests/run.ts",
+    "test": "tsx --tsconfig node_modules/@delta/ui/tsconfig.json node_modules/@delta/ui/tests/run.ts",
     "start": "node --env-file-if-exists=.env server/main.mjs",
     "test:server": "node --test tests/*.test.mjs",
-    "test:i18n": "node scripts/check-i18n.cjs && node scripts/check-locales.cjs",
+    "test:i18n": "node node_modules/@delta/ui/scripts/check-i18n.cjs && node node_modules/@delta/ui/scripts/check-locales.cjs",
     "test:e2e": "node tests/e2e-live.mjs",
     "test:browser": "node scripts/smoke-browser.cjs",
     "test:first-login": "node scripts/first-login.cjs",
@@ -46,7 +46,8 @@
     "recharts": "^2.12.7",
     "ssh2": "^1.17.0",
     "zod": "^3.23.8",
-    "zustand": "^4.5.5"
+    "zustand": "^4.5.5",
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/dd49bbee053385ea830e2a4ec5d6057976c34bb6.tar.gz"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",

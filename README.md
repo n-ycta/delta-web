@@ -1,3 +1,5 @@
+> Architecture: this repository is now the browser/server host. Shared screens and frontend tests live in [delta-ui](https://github.com/n-ycta/delta-ui), pinned to an immutable commit in package-lock.json. Sessions, MCP, SSH, update workers and server capabilities stay here. UI updates are currently bundled at host build time, not independently hot-swapped.
+
 # Delta Web
 
 **One control room for your Delta devices, plugins and data.** A separate React/TypeScript web plugin, connected to the core through its capability API.

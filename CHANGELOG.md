@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.6.5]
+
+### Improvements
+- Browser host consumes the immutable shared `@delta/ui` package. Pages, dashboards, translations, styles and client logic are maintained in `delta-ui`, not copied into each host.
+- Existing sessions, MCP, SSH onboarding, updater, telemetry and server capabilities remain in Web with unchanged compatibility.
+
+### Upgrade notes
+- This stage bundles the verified UI at build time. Independent signed UI activation/rollback is not yet enabled. Desktop/Android support is experimental and does not imply full Web service parity.
+
 ## [v0.6.4]
 
 - Owner-authorized updates of paired-node cores through an independent target-node maintenance worker. Official version and SHA-256 pinning, target identity checks, restart health verification and existing rollback protections; no remote file replacement from the browser. Automatic remote core updates require a new, separate opt-in.

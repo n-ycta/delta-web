@@ -4,8 +4,9 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   base: './',
+  publicDir: fileURLToPath(new URL('./node_modules/@delta/ui/public', import.meta.url)),
   plugins: [react()],
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  resolve: { alias: { '@': fileURLToPath(new URL('./node_modules/@delta/ui/src', import.meta.url)) } },
   build: {
     chunkSizeWarningLimit: 1200,
     rolldownOptions: {
