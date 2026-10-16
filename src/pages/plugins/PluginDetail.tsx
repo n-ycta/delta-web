@@ -1,3 +1,4 @@
+import { ActionOutput } from './ActionOutput';
 import { PluginDataViews } from './PluginDataViews';
 import { PluginNotices } from '@/ui/PluginNotices';
 import { tr, language } from '@/i18n';
@@ -446,9 +447,7 @@ export function PluginDetail() {
         onClose={() => setActionOutput(null)}
         title={tr('pluginData.output')}
       >
-        <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-          {actionOutput?.join('\n')}
-        </pre>
+        <ActionOutput lines={actionOutput ?? []} />
       </Modal>
       <Confirm
         open={!!actionConfirm}
@@ -663,10 +662,17 @@ function Overview({ e }: { e: PluginEntry }) {
 function SettingsTab({ e }: { e: PluginEntry }) {
   const nodes = useNodes(),
     [nodeId, setNodeId] = useState(e.instance.nodeIds[0]);
+  const canManage = useCan('plugins.manage');
+  const current = useQuery(
+    canManage && e.manifest.capabilities.includes('settings.read')
+      ? `plugin-settings/${e.manifest.id}/${nodeId}`
+      : null,
+    (api) => api.updatePluginSettings(e.manifest.id, undefined, nodeId),
+  );
   const save = useMutation(
     (api, v: Record<string, unknown>) => api.updatePluginSettings(e.manifest.id, v, nodeId),
     {
-      invalidate: ['plugins'],
+      invalidate: ['plugins', 'plugin-settings'],
       onSuccess: () =>
         toast({
           severity: 'success',
@@ -683,9 +689,17 @@ function SettingsTab({ e }: { e: PluginEntry }) {
         }),
     },
   );
-  const canManage = useCan('plugins.manage');
+  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
+  const diagnostic = useMutation(
+    (api, request: { id: string; values: Record<string, unknown> }) =>
+      api.runPluginAction(e.manifest.id, request.id, { values: request.values }, nodeId),
+    {
+      onSuccess: (result) => setDiagnosticResult(result.output.join('\n')),
+      onError: (err) => setDiagnosticResult(err.message),
+    },
+  );
   return (
-    <div style={{ maxWidth: 920 }}>
+    <div style={{ width: '100%', minWidth: 0 }}>
       <label className="field plugin-target">
         {tr('polish.targetNode')}
         <select className="select" value={nodeId} onChange={(e) => setNodeId(e.target.value)}>
@@ -696,13 +710,25 @@ function SettingsTab({ e }: { e: PluginEntry }) {
           ))}
         </select>
       </label>
+      {current.error && <ErrorState error={current.error} onRetry={current.refetch} />}
       <SettingsForm
         fields={e.manifest.settings}
-        values={e.instance.settings}
-        saving={save.pending}
-        disabled={!canManage}
+        profiles={e.manifest.settingsProfiles}
+        actions={e.manifest.actions.filter((a) => a.settingsAction && !a.dangerous)}
+        onAction={(id, values) => diagnostic.run({ id, values })}
+        values={current.data?.settings ?? e.instance.settings}
+        saving={save.pending || diagnostic.pending}
+        disabled={!canManage || current.loading || !!current.error}
         onSubmit={(v) => save.run(v)}
       />
+      <Modal
+        open={diagnosticResult !== null}
+        onClose={() => setDiagnosticResult(null)}
+        title={tr('pluginData.result')}
+        wide
+      >
+        <ActionOutput lines={diagnosticResult ? [diagnosticResult] : []} />
+      </Modal>
     </div>
   );
 }

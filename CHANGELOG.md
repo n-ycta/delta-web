@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.6.1]
+
+- Route plugin metrics to an active installed node, including paired remote nodes; an inactive local installation no longer masks an active remote one. Use live remote manifest versions instead of stale cached schemas.
+- Full-width schema-driven settings, bounded multiline controls, compact icon-only secret clearing, themed expansion editor and viewport-safe modal scrolling/animation.
+- Generic composable settings profiles with per-field merge preview and protected custom prompt fields; no plugin IDs or business logic in the console.
+- Generic draft-aware validation actions and structured results; reading selected-node settings is no longer incorrectly recorded as a save.
+- Dynamic MCP discovery for registered plugin capabilities and nested parameter schemas; explicit scoped admin grants, plugin ownership pinning, node checks and revocation remain enforced.
+- Saved generated dashboards stay in Plugin dashboards, while intentional user copies remain in Mine. Saved layouts are retained.
+- RU/EN labels and 135 automated tests, plus live two-node transport/MCP and desktop/mobile browser regressions.
+
 ## [v0.6.0]
 
 - UI contract 1.5: generic paginated plugin data views, typed action input forms and result output.

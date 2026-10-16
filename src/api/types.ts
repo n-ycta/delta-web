@@ -59,7 +59,7 @@ export interface CoreApi {
   updatePlugin(pluginId: string): Promise<PluginInstance>;
   setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginInstance>;
   uninstallPlugin(pluginId: string, opts: { purgeData: boolean }): Promise<void>;
-  updatePluginSettings(pluginId: string, values: Record<string, unknown>, nodeId?: string): Promise<PluginInstance>;
+  updatePluginSettings(pluginId: string, values?: Record<string, unknown>, nodeId?: string): Promise<PluginInstance>;
   setPluginPermissions(pluginId: string, scopes: string[]): Promise<PluginInstance>;
   setPluginNodes(pluginId: string, nodeIds: string[]): Promise<PluginInstance>;
   runPluginAction(pluginId: string, actionId: string, values?: Record<string, unknown>, nodeId?: string): Promise<CommandResult>;

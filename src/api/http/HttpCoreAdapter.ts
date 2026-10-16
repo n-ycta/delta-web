@@ -40,7 +40,7 @@ export class HttpCoreAdapter implements CoreApi {
   updatePlugin(id: string) { return this.call('plugins_update', { id }); }
   setPluginEnabled(id: string, enabled: boolean) { return this.call('plugins_enable', { id, enabled }); }
   uninstallPlugin(id: string, opts: { purgeData: boolean }) { return this.call<void>('plugins_uninstall', { id, ...opts }); }
-  updatePluginSettings(id: string, values: Record<string, unknown>, nodeId?: string) { return this.call('plugins_settings', { id, values, nodeId }); }
+  updatePluginSettings(id: string, values?: Record<string, unknown>, nodeId?: string) { return this.call('plugins_settings', { id, values, nodeId }); }
   setPluginPermissions(id: string, scopes: string[]) { return this.call('plugins_permissions', { id, scopes }); }
   setPluginNodes(id: string, nodeIds: string[]) { return this.call('plugins_nodes', { id, nodeIds }); }
   runPluginAction(id: string, actionId: string, values?:Record<string,unknown>,nodeId?:string) { return this.call('plugins_action', { id, actionId, values, nodeId }); }

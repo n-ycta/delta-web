@@ -1,3 +1,4 @@
+import {mergeProfileValues} from '../src/pages/plugins/profiles';
 import { noticeKey, noticeFingerprint, dismissNotice } from '../src/ui/pluginNoticeState';
 import { queryStep } from '../src/widgets/intervals';
 import { WidgetDisplay } from '../src/core/contracts/dashboard';
@@ -110,5 +111,10 @@ test('generic plugin views and typed action inputs require contract 1.5', () => 
   ok(!v({...manifest,views:[{...manifest.views[0],columns:[{key:'x',label:'X',type:'html'}]}]}).report.compatible);
 });
 
+test('generic profiles merge deterministically without losing overlapping values',()=>{
+ const config={selectionKey:'selected',protectedKeys:['prompt'],items:[{id:'a',label:'A',values:{words:'one\ntwo',prompt:'A'}},{id:'b',label:'B',values:{words:'two\nthree',prompt:'B'}}]};
+ eq(mergeProfileValues(config,['b','a']),{words:'one\ntwo\nthree',prompt:'A\nB'});
+ eq(mergeProfileValues(config,['b']),{words:'two\nthree',prompt:'B'});
+});
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

@@ -119,6 +119,7 @@ export const PluginAction = z.object({
   label: z.string(),
   description: z.string().optional(),
   dangerous: z.boolean().default(false),
+  settingsAction: z.boolean().optional(),
   inputs: z.array(SettingField).default([]),
 });
 
@@ -191,6 +192,15 @@ export const PluginManifest = z.object({
     )
     .default([]),
   permissions: z.array(PermissionRequest).default([]),
+  settingsProfiles: z
+    .object({
+      selectionKey: z.string(),
+      protectedKeys: z.array(z.string()).default([]),
+      items: z
+        .array(z.object({ id: z.string(), label: z.string(), values: z.record(z.unknown()) }))
+        .max(20),
+    })
+    .optional(),
   settings: z.array(SettingField).default([]),
   views: z.array(PluginDataView).max(10).default([]),
   metrics: z.array(MetricDescriptor).default([]),

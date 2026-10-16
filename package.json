@@ -1,9 +1,9 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
-  "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
+  "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
     "dev": "vite",
     "dev:http": "vite --mode http",

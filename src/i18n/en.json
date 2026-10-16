@@ -743,7 +743,7 @@
     "s_37c44a307c": "The current layout will be replaced by a set of widgets selected under the current plugin contract."
   },
   "pages.Dashboards": {
-    "s_91db70e4f0": "New dashboard",
+    "s_91db70e4f0": "Create",
     "s_82178e6940": "The file is not a Delta dashboard.",
     "s_cf0ba52e13": "Imported with warnings",
     "s_6ca21f5817": "{{p0}} widget(s) of unknown type - they can be replaced on the dashboard.",
@@ -1873,11 +1873,20 @@
   "pluginData": {
     "clearSecret": "Clear saved secret",
     "refresh": "Refresh",
-    "apply": "Apply filters",
+    "apply": "Apply",
     "empty": "No records",
     "previous": "Previous",
     "next": "Next",
-    "run": "Run action",
-    "output": "Action output"
+    "run": "Run",
+    "output": "Action output",
+    "expand": "Expand",
+    "done": "Done",
+    "profiles": "Profiles",
+    "preview": "Preview",
+    "profileHelp": "Select profiles to combine. Check each field to replace it. Unchecked fields keep your current values. The AI prompt is protected by default. Changes are saved only with Save.",
+    "result": "Result",
+    "searchCapabilities": "Search capabilities",
+    "admin": "Admin",
+    "create": "Create"
   }
 }

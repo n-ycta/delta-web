@@ -1,7 +1,9 @@
+import { mergeProfileValues, type SettingsProfiles } from './profiles';
 import { tr } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import type { SettingField } from '@/core/contracts';
-import { Confirm } from '@/ui/overlays';
+import { Maximize2, Trash2 } from 'lucide-react';
+import { Confirm, Modal } from '@/ui/overlays';
 import { Badge, Button, Field, Switch } from '@/ui/primitives';
 
 export function defaultsOf(fields: SettingField[]) {
@@ -36,6 +38,9 @@ export function SettingsForm({
   disabled,
   submitLabel,
   allowPristine = false,
+  profiles,
+  actions = [],
+  onAction,
 }: {
   fields: SettingField[];
   values: Record<string, unknown>;
@@ -44,10 +49,18 @@ export function SettingsForm({
   disabled?: boolean;
   submitLabel?: string;
   allowPristine?: boolean;
+  profiles?: SettingsProfiles;
+  actions?: { id: string; label: string; description?: string }[];
+  onAction?: (id: string, values: Record<string, unknown>) => void;
 }) {
   const initialKey = JSON.stringify([fields, values]);
   const initial = useMemo(() => ({ ...defaultsOf(fields), ...values }), [initialKey]);
   const [v, setV] = useState<Record<string, unknown>>(initial);
+  const [choosing, setChoosing] = useState(false);
+  const [profileIds, setProfileIds] = useState<string[]>([]);
+  const [proposal, setProposal] = useState<Record<string, unknown> | null>(null);
+  const [accepted, setAccepted] = useState<string[]>([]);
+  const [editor, setEditor] = useState<SettingField | null>(null);
   const [confirmation, setConfirmation] = useState<SettingField | null>(null);
   const [acknowledged, setAcknowledged] = useState<string[]>([]);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
@@ -86,6 +99,50 @@ export function SettingsForm({
           });
       }}
     >
+      {(profiles || actions.length > 0) && (
+        <div className="row wrap" style={{ marginBottom: 14 }}>
+          {profiles && (
+            <Button
+              type="button"
+              disabled={disabled || saving}
+              onClick={() => {
+                setProfileIds(
+                  Array.isArray(v[profiles.selectionKey])
+                    ? (v[profiles.selectionKey] as string[])
+                    : [],
+                );
+                setProposal(null);
+                setChoosing(true);
+              }}
+            >
+              {tr('pluginData.profiles')}
+            </Button>
+          )}
+          {actions.map((a) => (
+            <Button
+              key={a.id}
+              type="button"
+              size="sm"
+              title={a.description}
+              disabled={disabled || saving || !!Object.keys(errors).length}
+              onClick={() =>
+                onAction?.(a.id, {
+                  ...Object.fromEntries(
+                    Object.entries(v).filter(
+                      ([key]) =>
+                        !key.startsWith('_') &&
+                        !fields.some((f) => f.key === key && f.type === 'secret'),
+                    ),
+                  ),
+                  ...secrets,
+                })
+              }
+            >
+              {a.label}
+            </Button>
+          ))}
+        </div>
+      )}
       {groups.map((g) => (
         <div key={g} className="panel" style={{ marginBottom: 14 }}>
           <div className="panel-head">
@@ -93,6 +150,7 @@ export function SettingsForm({
           </div>
           <div className="panel-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
             {fields
+              .filter((f) => f.key !== profiles?.selectionKey)
               .filter((f) => (f.group ?? tr('pages.plugins.SettingsForm.s_eee2285ba1')) === g)
               .map((f) => (
                 <div key={f.key} className="form-row">
@@ -114,15 +172,29 @@ export function SettingsForm({
                   <Field help={f.help} error={errors[f.key]}>
                     {f.type === 'string' &&
                       (f.multiline ? (
-                        <textarea
-                          aria-labelledby={`setting-${f.key}-label`}
-                          className="input"
-                          rows={4}
-                          disabled={disabled || saving}
-                          value={String(v[f.key] ?? '')}
-                          placeholder={f.placeholder}
-                          onChange={(e) => set(f.key, e.target.value)}
-                        />
+                        <div className="setting-editor">
+                          <textarea
+                            aria-labelledby={`setting-${f.key}-label`}
+                            className="textarea"
+                            rows={5}
+                            disabled={disabled || saving}
+                            value={String(v[f.key] ?? '')}
+                            placeholder={f.placeholder}
+                            onChange={(e) => set(f.key, e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            iconOnly
+                            title={tr('pluginData.expand')}
+                            aria-label={tr('pluginData.expand')}
+                            disabled={disabled || saving}
+                            onClick={() => setEditor(f)}
+                          >
+                            <Maximize2 size={14} />
+                          </Button>
+                        </div>
                       ) : (
                         <input
                           aria-labelledby={`setting-${f.key}-label`}
@@ -134,7 +206,7 @@ export function SettingsForm({
                         />
                       ))}
                     {f.type === 'secret' && (
-                      <div className="row">
+                      <div className="row setting-secret">
                         <input
                           aria-labelledby={`setting-${f.key}-label`}
                           className="input mono"
@@ -153,10 +225,15 @@ export function SettingsForm({
                         />
                         <Button
                           type="button"
+                          size="sm"
+                          variant="ghost"
+                          iconOnly
+                          title={tr('pluginData.clearSecret')}
+                          aria-label={tr('pluginData.clearSecret')}
                           disabled={disabled || saving}
                           onClick={() => setSecrets((p) => ({ ...p, [f.key]: '' }))}
                         >
-                          {tr('pluginData.clearSecret')}
+                          <Trash2 size={14} />
                         </Button>
                         {(Array.isArray(values._configuredSecrets) &&
                           values._configuredSecrets.includes(f.key)) ||
@@ -272,6 +349,139 @@ export function SettingsForm({
           </span>
         )}
       </div>
+      <Modal
+        open={choosing}
+        onClose={() => setChoosing(false)}
+        title={tr('pluginData.profiles')}
+        wide
+        footer={
+          proposal ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={disabled || saving}
+              onClick={() => {
+                if (!profiles) return;
+                setV((old) => ({
+                  ...old,
+                  ...Object.fromEntries(
+                    Object.entries(proposal).filter(([key]) => accepted.includes(key)),
+                  ),
+                  [profiles.selectionKey]: profileIds,
+                }));
+                setChoosing(false);
+              }}
+            >
+              {tr('pluginData.apply')}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled={!profileIds.length}
+              onClick={() => {
+                if (!profiles) return;
+                const proposed = mergeProfileValues(profiles, profileIds);
+                const previous = mergeProfileValues(
+                  profiles,
+                  Array.isArray(v[profiles.selectionKey])
+                    ? (v[profiles.selectionKey] as string[])
+                    : [],
+                );
+                const valid = Object.fromEntries(
+                  Object.entries(proposed).filter(([key]) =>
+                    fields.some((f) => f.key === key && f.type !== 'secret'),
+                  ),
+                );
+                // The manifest's field limits are enforced by the plugin API at Save.
+                setProposal(valid);
+                setAccepted(
+                  Object.keys(valid).filter(
+                    (key) =>
+                      !profiles.protectedKeys.includes(key) &&
+                      (v[key] === undefined ||
+                        v[key] === '' ||
+                        JSON.stringify(v[key]) === JSON.stringify(previous[key]) ||
+                        (JSON.stringify(v[key]) === JSON.stringify(initial[key]) &&
+                          JSON.stringify(initial[key]) ===
+                            JSON.stringify(defaultsOf(fields)[key]))),
+                  ),
+                );
+              }}
+            >
+              {tr('pluginData.preview')}
+            </Button>
+          )
+        }
+      >
+        <p className="muted">{tr('pluginData.profileHelp')}</p>
+        {!proposal ? (
+          <div className="col gap-3">
+            {profiles?.items.map((p) => (
+              <label className="check" key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={profileIds.includes(p.id)}
+                  onChange={(e) =>
+                    setProfileIds((ids) =>
+                      e.target.checked ? [...ids, p.id] : ids.filter((id) => id !== p.id),
+                    )
+                  }
+                />
+                {p.label}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="col gap-3">
+            {Object.entries(proposal).map(([key, value]) => (
+              <div className="panel" key={key}>
+                <div className="panel-head">
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={accepted.includes(key)}
+                      onChange={(e) =>
+                        setAccepted((keys) =>
+                          e.target.checked ? [...keys, key] : keys.filter((k) => k !== key),
+                        )
+                      }
+                    />
+                    {fields.find((f) => f.key === key)?.label ?? key}
+                  </label>
+                </div>
+                <div className="panel-body">
+                  <div className="profile-diff">
+                    <pre>{String(v[key] ?? '')}</pre>
+                    <pre>{String(value)}</pre>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+      <Modal
+        open={!!editor}
+        onClose={() => setEditor(null)}
+        title={editor?.label}
+        wide
+        footer={
+          <Button type="button" onClick={() => setEditor(null)}>
+            {tr('pluginData.done')}
+          </Button>
+        }
+      >
+        {editor && (
+          <textarea
+            className="textarea setting-editor-expanded"
+            autoFocus
+            aria-label={editor.label}
+            disabled={disabled || saving}
+            value={String(v[editor.key] ?? '')}
+            onChange={(e) => set(editor.key, e.target.value)}
+          />
+        )}
+      </Modal>
       <Confirm
         open={!!confirmation}
         onClose={() => setConfirmation(null)}

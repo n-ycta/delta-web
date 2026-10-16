@@ -203,9 +203,10 @@ export class MockCoreAdapter implements CoreApi {
       this.pushEvent({ severity: 'warn', source: { type: 'console', id: 'console' }, code: 'PLUGIN_REMOVED', message: tr("api.mock.MockCoreAdapter.s_b527972312", { p0: (pluginId), p1: (opts.purgeData ? tr("api.mock.MockCoreAdapter.s_57e535d098") : tr("api.mock.MockCoreAdapter.s_60598a48ca")) }) });
     });
   }
-  updatePluginSettings(pluginId: string, values: Record<string, unknown>): Promise<PluginInstance> {
+  updatePluginSettings(pluginId: string, values?: Record<string, unknown>): Promise<PluginInstance> {
     return this.net(() => {
       const i = this.inst(pluginId);
+      if(values===undefined)return {...i};
       const secrets = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '__unchanged__'));
       i.settings = { ...i.settings, ...secrets };
       if (pluginId === 'dev.delta.browser' && typeof values.syncToken === 'string' && values.syncToken.length > 3 && values.syncToken !== '__unchanged__') {

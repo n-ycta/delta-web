@@ -1,95 +1,930 @@
-import {withEventAudit} from './events.mjs';
-import {createTelemetry} from './telemetry.mjs';
-import {ManifestCatalog} from './catalog.mjs';
-import {z} from 'zod';import {createHash,randomUUID} from 'node:crypto';import {readFileSync} from 'node:fs';import {DeltaError,allowed} from './delta-sdk.mjs';import {queryMetric} from './metrics.mjs';
-const ru=JSON.parse(readFileSync(new URL('./locales/en.json',import.meta.url)));
-const russian=JSON.parse(readFileSync(new URL('./locales/ru.json',import.meta.url)));
-const localMessage=(message,locale)=>locale==='ru'?(russian[Object.keys(ru).find(k=>ru[k]===message)]||message):message;
-const permissionMap={'metrics.read':['web.metrics_query'],'events.read':['web.events_list'],'dashboards.read':['web.dashboards_list'],'dashboards.write':['web.dashboards_save','web.dashboards_delete'],'plugins.read':['web.plugins_list'],'nodes.read':['web.nodes_list'],'nodes.command':['web.nodes_command'],'ingest.write':['typing.ingest']};
-const roleCaps={viewer:['web.info','web.plugins_list','web.nodes_list','web.dashboards_list','web.metrics_query','web.notifications_list','web.notifications_mark'],analyst:['web.info','web.plugins_list','web.nodes_list','web.dashboards_list','web.dashboards_save','web.dashboards_delete','web.metrics_query','web.events_list','web.notifications_list','web.notifications_mark'],operator:['web.info','web.plugins_list','web.nodes_list','web.dashboards_list','web.dashboards_save','web.dashboards_delete','web.metrics_query','web.events_list','web.nodes_command','web.notifications_list','web.notifications_mark']};
-const dashboard=z.object({id:z.string().min(1).max(128),name:z.string().min(1).max(80),description:z.string().optional(),icon:z.string().optional(),origin:z.enum(['home','user','generated']),generatedFrom:z.string().optional(),range:z.enum(['15m','1h','6h','24h','7d','30d','90d']),refreshSec:z.number().int().min(0).max(3600),pinned:z.boolean(),createdAt:z.number(),updatedAt:z.number(),widgets:z.array(z.object({id:z.string(),type:z.string(),typeVersion:z.string(),title:z.string().optional(),source:z.discriminatedUnion('kind',[z.object({kind:z.literal('metric'),pluginId:z.string(),metricId:z.string(),aggregation:z.string().optional(),groupBy:z.string().optional(),filters:z.record(z.array(z.string())).optional()}),z.object({kind:z.literal('system'),feed:z.enum(['nodes','events','alerts','plugins','note']),params:z.record(z.unknown()).optional()})]),display:z.record(z.unknown()),layout:z.object({x:z.number().int().min(0),y:z.number().int().min(0),w:z.number().int().min(1).max(24),h:z.number().int().min(1).max(100)})})).max(100)});
-export function createBridge(client,storage='storage',monitor=createTelemetry(client,storage),updater,events,sshSetup){
- const catalog=new ManifestCatalog();
- const unsupported=()=>{throw new DeltaError('not_found',ru.unsupported)};
- const ns=(caller,prefix)=>prefix+'_'+createHash('sha256').update(JSON.stringify([caller.kind,caller.peer_id,caller.name])).digest('hex').slice(0,24);
- const listDocs=async(c,n)=>(await client.call(storage+'.document_list',{namespace:ns(c,n)})).map(r=>r.value);
- const writeDoc=(c,n,key,value)=>client.call(storage+'.document_put',{namespace:ns(c,n),key,value});
- const delegated=async(c,cap,args={},node)=>{
-  if(!allowed(c,cap))throw new DeltaError('forbidden',ru.delegation);
-  if(!c.scopes?.includes('admin')){
-   const catalog=node?await client.call('core.catalog'):await client.request('GET','/capabilities');
-   const spec=catalog.find(s=>s.name===cap&&(!node||s.node===node||s.node_name===node));
-   if(!spec||!allowed(c,cap,!!spec.admin))throw new DeltaError('forbidden',ru.delegation);
-  }
-  return client.call(cap,args,node);
- };
- let cachedIndex={plugins:[]},indexAt=0;
- const index=async()=>{if(Date.now()-indexAt>60000){try{cachedIndex=await client.call('packages.catalog');indexAt=Date.now()}catch(e){indexAt=Date.now();}}return cachedIndex;};
- const components=()=>client.call('core.components');
- const records=async()=>{
-  const local=await client.call('core.info');const [cs,managed,registry]=await Promise.all([components(),client.call('supervisor.list').catch(()=>[]),index()]);
-  const known=await catalog.sync(cs);for(const item of registry.plugins||[])if(!known.some(c=>c.metadata.ui.id===item.id))known.push({id:item.component,version:item.version,metadata:{ui:item.manifest}});
-  const peers=await client.call('peers.list').catch(()=>[]),remote=[];
-  for(const peer of peers.filter(p=>p.online)){try{const list=await client.call('core.components',{},peer.node_id);for(const c of list.filter(c=>c.metadata?.ui))remote.push({...c,nodeId:peer.node_id});const managed=await client.call('supervisor.list',{},peer.node_id).catch(()=>[]);for(const m of managed)if(!list.some(c=>c.id===m.id)){const knownItem=known.find(c=>c.id===m.id);if(knownItem)remote.push({...knownItem,nodeId:peer.node_id,disabled:!m.enabled,failed:m.enabled&&!m.running});}}catch{}}
-  for(const c of remote)if(!known.some(k=>k.metadata.ui.id===c.metadata.ui.id))known.push(c);
-  let jobs=[];try{jobs=await client.call('packages.jobs')}catch{}
-  return known.map(c=>{const live=cs.some(x=>x.id===c.id),process=managed.find(x=>x.id===c.id),entry=registry.plugins?.find(x=>x.id===c.metadata.ui.id),other=remote.filter(x=>x.id===c.id),job=jobs.filter(j=>j.pluginId===c.metadata.ui.id).sort((a,b)=>(a.startedAt||0)-(b.startedAt||0)).at(-1);const status=job?.status==='installing'?'installing':process&&!process.enabled?'disabled':process&&!process.running?'error':live||other.some(x=>!x.disabled&&!x.failed)?'active':other.length?(other.every(x=>x.disabled)?'disabled':'error'):process?'error':'available';return {manifest:c.metadata.ui,latest:entry?.manifest||c.metadata.ui,instance:{pluginId:c.metadata.ui.id,status,...(live||process||other.length?{installedVersion:c.version}:{}),latestVersion:entry?.version||c.version,nodeIds:[...(live||process?[local.node_id]:[]),...other.map(x=>x.nodeId)],settings:{},grantedPermissions:(live||process||other.length)?(c.metadata.ui.permissions||[]).map(p=>p.scope):[],...(!live&&job?.status==='failed'?{error:job.error}:!live&&process?.enabled?{error:{code:'unavailable',message:ru.noPlugin}}:{})},componentId:c.id};});
- };
+import { withEventAudit } from './events.mjs';
+import { createTelemetry } from './telemetry.mjs';
+import { ManifestCatalog } from './catalog.mjs';
+import { z } from 'zod';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { DeltaError, allowed } from './delta-sdk.mjs';
+import { queryMetric } from './metrics.mjs';
+const ru = JSON.parse(readFileSync(new URL('./locales/en.json', import.meta.url)));
+const russian = JSON.parse(readFileSync(new URL('./locales/ru.json', import.meta.url)));
+const localMessage = (message, locale) =>
+  locale === 'ru' ? russian[Object.keys(ru).find((k) => ru[k] === message)] || message : message;
+const permissionMap = {
+  'metrics.read': ['web.metrics_query'],
+  'events.read': ['web.events_list'],
+  'dashboards.read': ['web.dashboards_list'],
+  'dashboards.write': ['web.dashboards_save', 'web.dashboards_delete'],
+  'plugins.read': ['web.plugins_list'],
+  'nodes.read': ['web.nodes_list'],
+  'nodes.command': ['web.nodes_command'],
+  'ingest.write': ['typing.ingest'],
+};
+const roleCaps = {
+  viewer: [
+    'web.info',
+    'web.plugins_list',
+    'web.nodes_list',
+    'web.dashboards_list',
+    'web.metrics_query',
+    'web.notifications_list',
+    'web.notifications_mark',
+  ],
+  analyst: [
+    'web.info',
+    'web.plugins_list',
+    'web.nodes_list',
+    'web.dashboards_list',
+    'web.dashboards_save',
+    'web.dashboards_delete',
+    'web.metrics_query',
+    'web.events_list',
+    'web.notifications_list',
+    'web.notifications_mark',
+  ],
+  operator: [
+    'web.info',
+    'web.plugins_list',
+    'web.nodes_list',
+    'web.dashboards_list',
+    'web.dashboards_save',
+    'web.dashboards_delete',
+    'web.metrics_query',
+    'web.events_list',
+    'web.nodes_command',
+    'web.notifications_list',
+    'web.notifications_mark',
+  ],
+};
+const dashboard = z.object({
+  id: z.string().min(1).max(128),
+  name: z.string().min(1).max(80),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  origin: z.enum(['home', 'user', 'generated']),
+  generatedFrom: z.string().optional(),
+  range: z.enum(['15m', '1h', '6h', '24h', '7d', '30d', '90d']),
+  refreshSec: z.number().int().min(0).max(3600),
+  pinned: z.boolean(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  widgets: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        typeVersion: z.string(),
+        title: z.string().optional(),
+        source: z.discriminatedUnion('kind', [
+          z.object({
+            kind: z.literal('metric'),
+            pluginId: z.string(),
+            metricId: z.string(),
+            aggregation: z.string().optional(),
+            groupBy: z.string().optional(),
+            filters: z.record(z.array(z.string())).optional(),
+          }),
+          z.object({
+            kind: z.literal('system'),
+            feed: z.enum(['nodes', 'events', 'alerts', 'plugins', 'note']),
+            params: z.record(z.unknown()).optional(),
+          }),
+        ]),
+        display: z.record(z.unknown()),
+        layout: z.object({
+          x: z.number().int().min(0),
+          y: z.number().int().min(0),
+          w: z.number().int().min(1).max(24),
+          h: z.number().int().min(1).max(100),
+        }),
+      }),
+    )
+    .max(100),
+});
+export function createBridge(
+  client,
+  storage = 'storage',
+  monitor = createTelemetry(client, storage),
+  updater,
+  events,
+  sshSetup,
+) {
+  const catalog = new ManifestCatalog();
+  const unsupported = () => {
+    throw new DeltaError('not_found', ru.unsupported);
+  };
+  const ns = (caller, prefix) =>
+    prefix +
+    '_' +
+    createHash('sha256')
+      .update(JSON.stringify([caller.kind, caller.peer_id, caller.name]))
+      .digest('hex')
+      .slice(0, 24);
+  const listDocs = async (c, n) =>
+    (await client.call(storage + '.document_list', { namespace: ns(c, n) })).map((r) => r.value);
+  const writeDoc = (c, n, key, value) =>
+    client.call(storage + '.document_put', { namespace: ns(c, n), key, value });
+  const delegated = async (c, cap, args = {}, node) => {
+    if (!allowed(c, cap)) throw new DeltaError('forbidden', ru.delegation);
+    if (!c.scopes?.includes('admin')) {
+      const catalog = node
+        ? await client.call('core.catalog')
+        : await client.request('GET', '/capabilities');
+      const spec = catalog.find(
+        (s) => s.name === cap && (!node || s.node === node || s.node_name === node),
+      );
+      if (!spec || !allowed(c, cap, !!spec.admin)) throw new DeltaError('forbidden', ru.delegation);
+    }
+    return client.call(cap, args, node);
+  };
+  let cachedIndex = { plugins: [] },
+    indexAt = 0;
+  const index = async () => {
+    if (Date.now() - indexAt > 60000) {
+      try {
+        cachedIndex = await client.call('packages.catalog');
+        indexAt = Date.now();
+      } catch (e) {
+        indexAt = Date.now();
+      }
+    }
+    return cachedIndex;
+  };
+  const components = () => client.call('core.components');
+  const records = async () => {
+    const local = await client.call('core.info');
+    const [cs, managed, registry] = await Promise.all([
+      components(),
+      client.call('supervisor.list').catch(() => []),
+      index(),
+    ]);
+    const known = await catalog.sync(cs);
+    for (const item of registry.plugins || [])
+      if (!known.some((c) => c.metadata.ui.id === item.id))
+        known.push({ id: item.component, version: item.version, metadata: { ui: item.manifest } });
+    const peers = await client.call('peers.list').catch(() => []),
+      remote = [];
+    for (const peer of peers.filter((p) => p.online)) {
+      try {
+        const list = await client.call('core.components', {}, peer.node_id);
+        for (const c of list.filter((c) => c.metadata?.ui))
+          remote.push({ ...c, nodeId: peer.node_id });
+        const managed = await client.call('supervisor.list', {}, peer.node_id).catch(() => []);
+        for (const m of managed)
+          if (!list.some((c) => c.id === m.id)) {
+            const knownItem = known.find((c) => c.id === m.id);
+            if (knownItem)
+              remote.push({
+                ...knownItem,
+                nodeId: peer.node_id,
+                disabled: !m.enabled,
+                failed: m.enabled && !m.running,
+              });
+          }
+      } catch {}
+    }
+    for (const c of remote) {
+      const pos = known.findIndex((k) => k.metadata.ui.id === c.metadata.ui.id);
+      if (pos < 0) known.push(c);
+      else if (!cs.some((l) => l.id === c.id) && !c.disabled && !c.failed) known[pos] = c;
+    }
+    let jobs = [];
+    try {
+      jobs = await client.call('packages.jobs');
+    } catch {}
+    return known.map((c) => {
+      const live = cs.some((x) => x.id === c.id),
+        process = managed.find((x) => x.id === c.id),
+        entry = registry.plugins?.find((x) => x.id === c.metadata.ui.id),
+        other = remote.filter((x) => x.id === c.id),
+        job = jobs
+          .filter((j) => j.pluginId === c.metadata.ui.id)
+          .sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0))
+          .at(-1);
+      const status =
+        job?.status === 'installing'
+          ? 'installing'
+          : live || other.some((x) => !x.disabled && !x.failed)
+            ? 'active'
+            : process && !process.enabled
+              ? 'disabled'
+              : process && !process.running
+                ? 'error'
+                : other.length
+                  ? other.every((x) => x.disabled)
+                    ? 'disabled'
+                    : 'error'
+                  : process
+                    ? 'error'
+                    : 'available';
+      return {
+        manifest: c.metadata.ui,
+        latest: entry?.manifest || c.metadata.ui,
+        instance: {
+          pluginId: c.metadata.ui.id,
+          status,
+          ...(live || process || other.length ? { installedVersion: c.version } : {}),
+          latestVersion: entry?.version || c.version,
+          nodeIds: [
+            ...new Set([
+              ...(live ? [local.node_id] : []),
+              ...other.filter((x) => !x.disabled && !x.failed).map((x) => x.nodeId),
+              ...(!live && process ? [local.node_id] : []),
+              ...other.filter((x) => x.disabled || x.failed).map((x) => x.nodeId),
+            ]),
+          ],
+          settings: {},
+          grantedPermissions:
+            live || process || other.length
+              ? (c.metadata.ui.permissions || []).map((p) => p.scope)
+              : [],
+          ...(!live && !other.some((x) => !x.disabled && !x.failed) && job?.status === 'failed'
+            ? { error: job.error }
+            : !live && !other.some((x) => !x.disabled && !x.failed) && process?.enabled
+              ? { error: { code: 'unavailable', message: ru.noPlugin } }
+              : {}),
+        },
+        componentId: c.id,
+      };
+    });
+  };
 
- const find=async id=>{const r=(await records()).find(p=>p.manifest.id===id);if(!r)throw new DeltaError('not_found',ru.noPlugin);return r};
- const principal=r=>({id:r.id,name:r.name,kind:'token',role:r.scopes.includes('admin')?'owner':r.scopes.includes('call:web.nodes_command')?'operator':r.scopes.includes('call:web.dashboards_save')?'analyst':'viewer',createdAt:(r.created_at||0)*1000,scopes:r.scopes,...(r.expires_at?{expiresAt:r.expires_at*1000}:{})});
- const nodeInfo=async(info,node)=>{
-  const before=performance.now();const [s,cs,managed]=await Promise.all([client.call('system.info',{},node),client.call('core.components',{},node),client.call('supervisor.list',{},node).catch(()=>[])]);
-  const latencyMs=Math.max(0,Math.round(performance.now()-before));const commands=['ping'];return {latencyMs,id:info.node_id,name:info.name,kind:info.kind||'desktop',os:`${s.os} ${s.release}`,arch:s.machine,address:info.url||client.url,status:'online',lastSeen:Date.now(),uptimeSec:s.uptime??info.uptime,agentVersion:info.version,cpu:s.cpu_usage??0,cores:s.cpu_count,memTotal:s.memory.total??0,memUsed:s.memory.available===null?0:(s.memory.total??0)-(s.memory.available??0),diskTotal:s.disk.total??0,diskUsed:s.disk.used??0,tags:['delta-v1'],pluginIds:cs.filter(c=>c.metadata?.ui).map(c=>c.metadata.ui.id),components:cs.map(c=>({id:c.id,name:c.id,version:c.version,status:'ok',restartable:managed.some(m=>m.id===c.id)})),processes:managed.map(m=>({pid:m.pid??0,name:m.id,component:m.id,cpu:0,memMb:0,status:m.running?'running':m.enabled?'crashed':'stopped',restarts:m.restarts,startedAt:Date.now()-(m.uptime||0)*1000})),connection:{transport:'http',endpoint:info.url||client.url,heartbeatSec:20,reconnect:'exponential',maxBackoffSec:30,tls:(info.url||client.url).startsWith('https:'),compression:false},allowedCommands:commands,errors:[],telemetryUnavailable:['processCpu','processMemory',...(s.memory.available===null?['memory']:[]),...(s.cpu_usage===null?['cpu']:[])]};
- };
- const handlers={
- 'web.info':async(_a,c)=>{const i=await client.call('core.info');return {name:i.name,coreVersion:i.version,apiVersion:'1.0.0',startedAt:Date.now()-i.uptime*1000,features:['capabilities','external-components','storage-v1','polling'],principal:{name:c.name,role:c.scopes.includes('admin')?'owner':c.scopes.includes('call:web.nodes_command')?'operator':c.scopes.includes('call:web.dashboards_save')?'analyst':'viewer',scopes:c.scopes}}},
- 'web.plugins_list':async({_locale='en'}={})=>Promise.all((await records()).map(async r=>{
-  const endpoint=r.manifest.endpoints?.status;
-  // Plugins own diagnostic content and sanitized settings; the web has no Type/Storage policy.
-  if(!endpoint||!endpoint.startsWith(r.componentId+'.')||r.instance.status!=='active')return r;
-  const local=await client.call('core.info');
-  const status=await client.call(endpoint,{},r.instance.nodeIds[0]===local.node_id?undefined:r.instance.nodeIds[0]).catch(()=>null);
-  return {...r,instance:{...r.instance,settings:status?.settings||{},notices:status?.notices||[],...(status?.activity?{eventsPerMin:status.activity.eventsPerMin,lastSyncAt:status.activity.lastSyncAt,activityUnit:status.activity.rateLabel?.[_locale]||status.activity.rateLabel?.en,lastInputAt:status.activity.lastInputAt}:{})}};
- })),
- 'web.plugins_logs':async({id,limit=80},c)=>{const p=await find(id);const local=await client.call('core.info'),logs=[];for(const node of p.instance.nodeIds){const lines=await delegated(c,'supervisor.logs',{id:p.componentId,lines:Math.min(limit,300)},node===local.node_id?undefined:node);logs.push(...lines.map(message=>({ts:Date.now(),level:'info',message,nodeId:node})));}return logs},
- 'web.plugins_enable':async({id,enabled},c)=>{const p=await find(id);const local=await client.call('core.info');for(const node of p.instance.nodeIds)await delegated(c,enabled?'supervisor.start':'supervisor.stop',{id:p.componentId},node===local.node_id?undefined:node);return {...p.instance,status:enabled?'active':'disabled'}},
- 'web.plugins_install':async({id,request={}},c)=>{const p=await find(id),local=await client.call('core.info');const nodes=request.nodeIds?.length?request.nodeIds:[local.node_id];for(const node of nodes)await delegated(c,'packages.install',{id},node===local.node_id?undefined:node);return {...p.instance,status:'installing'};},
- 'web.plugins_uninstall':async({id,purgeData},c)=>{if(purgeData)unsupported();const p=await find(id),local=await client.call('core.info');for(const node of p.instance.nodeIds)await delegated(c,'supervisor.remove',{id:p.componentId},node===local.node_id?undefined:node)},
- 'web.plugins_update':async({id},c)=>{const p=await find(id),local=await client.call('core.info');for(const node of p.instance.nodeIds)await delegated(c,'packages.install',{id},node===local.node_id?undefined:node);return {...p.instance,status:'updating'};},
- 'web.plugins_settings':async({id,values,nodeId,_locale='en'},c)=>{const p=await find(id),local=await client.call('core.info');const node=nodeId||p.instance.nodeIds[0];if(!p.instance.nodeIds.includes(node))throw new DeltaError('bad_request','Plugin is not installed on this node');const endpoint=p.manifest.endpoints?.settings||p.componentId+'.settings';if(!endpoint.startsWith(p.componentId+'.'))throw new DeltaError('bad_request','Invalid settings endpoint');const result=await delegated(c,endpoint,{values,_locale},node===local.node_id?undefined:node);return {...p.instance,settings:{...Object.fromEntries(Object.entries(result||values).filter(([key])=>!key.startsWith('_')&&p.manifest.settings?.some(f=>f.key===key&&f.type!=='secret'))),...(Array.isArray(result?._configuredSecrets)?{_configuredSecrets:result._configuredSecrets}:{})}}},
- 'web.plugins_permissions':unsupported,
- 'web.plugins_nodes':async({id,nodeIds},c)=>{if(!Array.isArray(nodeIds)||nodeIds.some(n=>typeof n!=='string'))throw new DeltaError('bad_request','nodeIds required');const p=await find(id),local=await client.call('core.info');for(const node of nodeIds)if(!p.instance.nodeIds.includes(node))await delegated(c,'packages.install',{id},node===local.node_id?undefined:node);for(const node of p.instance.nodeIds)if(!nodeIds.includes(node))await delegated(c,'supervisor.remove',{id:p.componentId},node===local.node_id?undefined:node);return {...p.instance,nodeIds};},
- 'web.plugins_action':async({id,actionId,values,nodeId,_locale='en'},c)=>{const p=await find(id);if(!p.manifest.actions?.some(a=>a.id===actionId))unsupported();if(values!==undefined&&(!values||typeof values!=='object'||Array.isArray(values)||JSON.stringify(values).length>64000))throw new DeltaError('bad_request','Invalid action inputs');const node=nodeId||p.instance.nodeIds[0],local=await client.call('core.info');if(!p.instance.nodeIds.includes(node))throw new DeltaError('bad_request','Plugin is not installed on this node');const before=Date.now();const r=await delegated(c,p.componentId+'.'+actionId,{...values,_locale},node===local.node_id?undefined:node);return {ok:true,durationMs:Date.now()-before,output:[JSON.stringify(r,null,2)]}},
- 'web.plugins_query':async({id,viewId,args={},nodeId,_locale='en'},c)=>{const p=await find(id),view=p.manifest.views?.find(v=>v.id===viewId);if(!view||!view.capability.startsWith(p.componentId+'.'))throw new DeltaError('bad_request','Invalid plugin data view');if(!args||typeof args!=='object'||Array.isArray(args)||JSON.stringify(args).length>64000)throw new DeltaError('bad_request','Invalid view inputs');const node=nodeId||p.instance.nodeIds[0],local=await client.call('core.info');if(!p.instance.nodeIds.includes(node))throw new DeltaError('bad_request','Plugin is not installed on this node');const result=await delegated(c,view.capability,{...args,_locale},node===local.node_id?undefined:node);const parsed=z.object({rows:z.array(z.record(z.unknown())).max(100),total:z.number().int().min(0)}).safeParse(result);if(!parsed.success||JSON.stringify(result).length>2000000)throw new DeltaError('bad_request','Invalid plugin data output');return parsed.data},
- 'web.metrics_query':async({query,_locale='en'},c)=>{const p=await find(query.pluginId),m=p.manifest.metrics?.find(m=>m.id===query.metricId);if(!m)throw new DeltaError('not_found',ru.badMetric);if(query.aggregation&&!(m.aggregations||['avg']).includes(query.aggregation))throw new DeltaError('bad_request',ru.badMetric);const prepared={...query,aggregation:query.aggregation||m.defaultAggregation||m.aggregations?.[0]||'avg'};let result;if(m.queryCapability){if(!m.queryCapability.startsWith(p.componentId+'.'))throw new DeltaError('bad_request','Invalid plugin metric endpoint');result=await delegated(c,m.queryCapability,{query:prepared,_locale});}else result=await queryMetric(client,storage,prepared);const localized=p.manifest.localizations?.[_locale]?.metrics?.find(x=>x.id===m.id);const dimension=localized?.dimensions?.find(d=>d.id===query.groupBy)||m.dimensions?.find(d=>d.id===query.groupBy);const label=key=>dimension?.values?.find(v=>v.id===key)?.label||key;for(const series of [...result.series,...result.compare||[]])series.label=label(series.key.replace(/__prev$/,''))+(series.key.endsWith('__prev')?(_locale==='ru'?russian.previousLabel:ru.previousLabel):'');result.categories?.forEach(c=>c.label=dimension?.values?.find(v=>v.id===c.key)?.label||c.label||c.key);return result},
- 'web.nodes_list':async(_a,c)=>{const local=await client.call('core.info');const links=await sshSetup?.connections()||[];const n=await nodeInfo(local);if(c.scopes?.includes('admin'))n.allowedCommands.push('restart-component','exec');const nodes=[n];let peers;try{peers=await client.call('peers.list')}catch(e){if(e.code!=='not_found'&&e.code!=='forbidden')throw e;peers=[]}for(const peer of peers){if(peer.online){try{const remote=await nodeInfo({...peer,node_id:peer.node_id},peer.node_id);remote.trustedAdmin=peer.trusted_admin;const link=links.find(x=>x.peerId===peer.node_id);if(link){remote.sshConnection=link;remote.connection.transport='ssh'}if(c.scopes?.includes('admin'))remote.allowedCommands.push('restart-component','exec');nodes.push(remote);continue}catch(e){peer.error=e.message}}nodes.push({...n,trustedAdmin:peer.trusted_admin,sshConnection:links.find(x=>x.peerId===peer.node_id),id:peer.node_id,name:peer.name,address:peer.url,status:'offline',lastSeen:0,uptimeSec:0,components:[],processes:[],pluginIds:[],cpu:0,memUsed:0,memTotal:0,diskUsed:0,diskTotal:0,allowedCommands:[],errors:[{ts:Date.now(),code:'unavailable',message:peer.error||ru.offline,component:'peers',count:1}]})}return nodes},
- 'web.nodes_history':async({id,rangeMs})=>monitor.history(id,rangeMs),
- 'web.nodes_uptime':async({id,days})=>monitor.uptime(id,days),
- 'web.status':async()=>{const a=monitor.status();return {settings:{},activity:{...a,rateLabel:{ru:'записей/мин',en:'records/min'}},notices:a.error?[{id:'web.telemetry',severity:'warn',message:'Node telemetry cannot be persisted to storage.',localizations:{ru:'История узлов пока не записывается: проверьте подключение хранилища.'}}]:[]}},
- 'web.nodes_command':async({id,command,args={}},c)=>{const map={ping:['system.ping',{}],'restart-component':['supervisor.restart',{id:args.component}],exec:['exec.run',{command:JSON.parse(args.cmd||'[]')}]};if(!map[command])unsupported();const before=Date.now(),result=await delegated(c,...map[command],id);return {ok:true,durationMs:Date.now()-before,output:[JSON.stringify(result)]}},
- 'web.nodes_connection':unsupported,
- 'web.nodes_pair':async({trustAdmin=false}={},c)=>{if(trustAdmin&&!c?.scopes?.includes('admin'))throw new DeltaError('forbidden',ru.delegation);const r=await delegated(c,'peers.invite',{trust_admin:trustAdmin});return {code:r.code,expiresAt:Date.now()+(r.expires_in??300)*1000,command:r.command}},
- 'web.nodes_remove':async({id},c)=>{const r=await delegated(c,'peers.remove',{node:id});await sshSetup?.remove(id);return r},
- 'web.nodes_trust':async({id,admin},c)=>{if(!c?.scopes?.includes('admin'))throw new DeltaError('forbidden',ru.delegation);return delegated(c,'peers.trust',{node:id,admin})},
- 'web.dashboards_list':async(_a,c)=>{let ds=await listDocs(c,'dashboards');if(!ds.some(d=>d.origin==='home')){const now=Date.now();const home={id:'home',name:ru.home,origin:'home',range:'24h',refreshSec:30,pinned:false,createdAt:now,updatedAt:now,widgets:[{id:'nodes',type:'node-grid',typeVersion:'1.0.0',source:{kind:'system',feed:'nodes'},display:{},layout:{x:0,y:0,w:12,h:8}},{id:'plugins',type:'plugin-activity',typeVersion:'1.0.0',source:{kind:'system',feed:'plugins'},display:{},layout:{x:0,y:8,w:12,h:8}}]};await writeDoc(c,'dashboards',home.id,home);ds=[home,...ds]}return ds},
- 'web.dashboards_save':async({dashboard:d},c)=>{const parsed=dashboard.safeParse(d);if(!parsed.success)throw new DeltaError('bad_request',ru.badDashboard);return writeDoc(c,'dashboards',d.id,parsed.data)},
- 'web.dashboards_delete':async({id},c)=>client.call(storage+'.document_delete',{namespace:ns(c,'dashboards'),key:id}),
- 'web.events_list':async({query={},_locale='en'},c)=>events?events.list(query,c,_locale,await listDocs(c,'audit').catch(()=>[])):(await listDocs(c,'events')).filter(e=>(!query.severities||query.severities.includes(e.severity))&&(!query.sourceTypes||query.sourceTypes.includes(e.source.type))&&(!query.sourceId||query.sourceId===e.source.id)&&(!query.text||e.message.toLowerCase().includes(query.text.toLowerCase()))&&(!query.before||e.ts<query.before)).sort((a,b)=>b.ts-a.ts).slice(0,Math.min(query.limit||100,1000)),
- 'web.notifications_list':async({_locale='en'}={},c)=>{const stored=await listDocs(c,'notifications').catch(()=>[]),notes=[],local=await client.call('core.info');for(const p of await records()){const endpoint=p.manifest.endpoints?.notifications;if(!endpoint||!endpoint.startsWith(p.componentId+'.')||p.instance.status!=='active')continue;for(const node of p.instance.nodeIds){try{const rows=await delegated(c,endpoint,{_locale},node===local.node_id?undefined:node);if(!Array.isArray(rows))continue;for(const row of rows.slice(0,100)){const checked=z.object({id:z.string().max(256),ts:z.number().finite(),title:z.string().max(1000),body:z.string().max(4000).optional(),severity:z.enum(['critical','error','warn','info','debug']),link:z.string().optional()}).safeParse(row);if(!checked.success)continue;const n=checked.data,id='plugin:'+p.manifest.id+':'+node+':'+n.id;notes.push({...n,id,read:stored.find(s=>s.id===id)?.read??false,link:'/plugins/'+encodeURIComponent(p.manifest.id)})}}catch{/* A plugin feed cannot break the console inbox. */}}}return [...stored.filter(n=>!n.id.startsWith('plugin:')),...notes,...(updater&&c.scopes?.includes('admin')?await updater.notes(_locale):[])].sort((a,b)=>b.ts-a.ts)},
- 'web.notifications_mark':async({ids,read},c)=>{if(updater&&c.scopes?.includes('admin'))await updater.mark(ids,read);const notes=await handlers['web.notifications_list']({},c);for(const n of notes)if(ids==='all'||ids.includes(n.id))await writeDoc(c,'notifications',n.id,{...n,read})},
- 'web.access_list':async(_a,c)=>(await delegated(c,'tokens.list')).map(principal),
- 'web.access_create':async({input},c)=>{const parsed=z.object({name:z.string().min(2).max(48),role:z.enum(['owner','operator','analyst','viewer']),scopes:z.array(z.string()).max(64),ttlDays:z.number().int().min(1).max(3650).nullable()}).safeParse(input);if(!parsed.success)throw new DeltaError('bad_request',ru.invalidToken);const i=parsed.data;const scopes=i.role==='owner'?['admin']:[...new Set([...roleCaps[i.role],...i.scopes.flatMap(s=>permissionMap[s]||[s.replace(/^call:/,'')])])].map(s=>'call:'+s);const r=await delegated(c,'tokens.create',{name:i.name,scopes,...(i.ttlDays?{ttl_seconds:i.ttlDays*86400}:{})});return {principal:principal(r),secret:r.token}},
- 'web.access_revoke':async({id},c)=>delegated(c,'tokens.revoke',{id}),
- 'web.access_role':unsupported,
- 'web.audit_list':async({limit=50},c)=>(await listDocs(c,'audit')).sort((a,b)=>b.ts-a.ts).slice(0,limit),
- };
- // A persisted audit event for every successful management operation; never log token secrets.
- for(const name of ['web.plugins_enable','web.plugins_install','web.plugins_update','web.plugins_uninstall','web.plugins_settings','web.plugins_action','web.nodes_command','web.nodes_pair','web.nodes_remove','web.access_create','web.access_revoke','web.dashboards_save','web.dashboards_delete']){const handler=events?withEventAudit(events,name,handlers[name]):handlers[name];handlers[name]=async(a,c)=>{const r=await handler(a,c);const id=randomUUID(),event={id,ts:Date.now(),actor:c.name,action:name,target:a.id||a.input?.name||'node'};await writeDoc(c,'audit',id,event).catch(e=>console.error('Audit persistence unavailable:',e.code||e.name));return r}}
- // Translate only owned, known display strings; never rewrite arbitrary diagnostics.
- for(const [name,handler] of Object.entries(handlers))handlers[name]=async(a={},c)=>{
-  try{const result=await handler(a,c);return name==='web.plugins_list'?result.map(p=>({...p,instance:{...p.instance,...(p.instance.error?{error:{...p.instance.error,message:localMessage(p.instance.error.message,a._locale)}}:{})}})):result;}
-  catch(e){const message=localMessage(e.message,a._locale);if(e.code&&message!==e.message)throw new DeltaError(e.code,message);throw e;}
- };
- return handlers;
+  const find = async (id) => {
+    const r = (await records()).find((p) => p.manifest.id === id);
+    if (!r) throw new DeltaError('not_found', ru.noPlugin);
+    return r;
+  };
+  const principal = (r) => ({
+    id: r.id,
+    name: r.name,
+    kind: 'token',
+    role: r.scopes.includes('admin')
+      ? 'owner'
+      : r.scopes.includes('call:web.nodes_command')
+        ? 'operator'
+        : r.scopes.includes('call:web.dashboards_save')
+          ? 'analyst'
+          : 'viewer',
+    createdAt: (r.created_at || 0) * 1000,
+    scopes: r.scopes,
+    ...(r.expires_at ? { expiresAt: r.expires_at * 1000 } : {}),
+  });
+  const nodeInfo = async (info, node) => {
+    const before = performance.now();
+    const [s, cs, managed] = await Promise.all([
+      client.call('system.info', {}, node),
+      client.call('core.components', {}, node),
+      client.call('supervisor.list', {}, node).catch(() => []),
+    ]);
+    const latencyMs = Math.max(0, Math.round(performance.now() - before));
+    const commands = ['ping'];
+    return {
+      latencyMs,
+      id: info.node_id,
+      name: info.name,
+      kind: info.kind || 'desktop',
+      os: `${s.os} ${s.release}`,
+      arch: s.machine,
+      address: info.url || client.url,
+      status: 'online',
+      lastSeen: Date.now(),
+      uptimeSec: s.uptime ?? info.uptime,
+      agentVersion: info.version,
+      cpu: s.cpu_usage ?? 0,
+      cores: s.cpu_count,
+      memTotal: s.memory.total ?? 0,
+      memUsed: s.memory.available === null ? 0 : (s.memory.total ?? 0) - (s.memory.available ?? 0),
+      diskTotal: s.disk.total ?? 0,
+      diskUsed: s.disk.used ?? 0,
+      tags: ['delta-v1'],
+      pluginIds: cs.filter((c) => c.metadata?.ui).map((c) => c.metadata.ui.id),
+      components: cs.map((c) => ({
+        id: c.id,
+        name: c.id,
+        version: c.version,
+        status: 'ok',
+        restartable: managed.some((m) => m.id === c.id),
+      })),
+      processes: managed.map((m) => ({
+        pid: m.pid ?? 0,
+        name: m.id,
+        component: m.id,
+        cpu: 0,
+        memMb: 0,
+        status: m.running ? 'running' : m.enabled ? 'crashed' : 'stopped',
+        restarts: m.restarts,
+        startedAt: Date.now() - (m.uptime || 0) * 1000,
+      })),
+      connection: {
+        transport: 'http',
+        endpoint: info.url || client.url,
+        heartbeatSec: 20,
+        reconnect: 'exponential',
+        maxBackoffSec: 30,
+        tls: (info.url || client.url).startsWith('https:'),
+        compression: false,
+      },
+      allowedCommands: commands,
+      errors: [],
+      telemetryUnavailable: [
+        'processCpu',
+        'processMemory',
+        ...(s.memory.available === null ? ['memory'] : []),
+        ...(s.cpu_usage === null ? ['cpu'] : []),
+      ],
+    };
+  };
+  const handlers = {
+    'web.info': async (_a, c) => {
+      const i = await client.call('core.info');
+      return {
+        name: i.name,
+        coreVersion: i.version,
+        apiVersion: '1.0.0',
+        startedAt: Date.now() - i.uptime * 1000,
+        features: ['capabilities', 'external-components', 'storage-v1', 'polling'],
+        principal: {
+          name: c.name,
+          role: c.scopes.includes('admin')
+            ? 'owner'
+            : c.scopes.includes('call:web.nodes_command')
+              ? 'operator'
+              : c.scopes.includes('call:web.dashboards_save')
+                ? 'analyst'
+                : 'viewer',
+          scopes: c.scopes,
+        },
+      };
+    },
+    'web.plugins_list': async ({ _locale = 'en' } = {}) =>
+      Promise.all(
+        (await records()).map(async (r) => {
+          const endpoint = r.manifest.endpoints?.status;
+          // Plugins own diagnostic content and sanitized settings; the web has no Type/Storage policy.
+          if (
+            !endpoint ||
+            !endpoint.startsWith(r.componentId + '.') ||
+            r.instance.status !== 'active'
+          )
+            return r;
+          const local = await client.call('core.info');
+          const status = await client
+            .call(
+              endpoint,
+              {},
+              r.instance.nodeIds[0] === local.node_id ? undefined : r.instance.nodeIds[0],
+            )
+            .catch(() => null);
+          return {
+            ...r,
+            instance: {
+              ...r.instance,
+              settings: status?.settings || {},
+              notices: status?.notices || [],
+              ...(status?.activity
+                ? {
+                    eventsPerMin: status.activity.eventsPerMin,
+                    lastSyncAt: status.activity.lastSyncAt,
+                    activityUnit:
+                      status.activity.rateLabel?.[_locale] || status.activity.rateLabel?.en,
+                    lastInputAt: status.activity.lastInputAt,
+                  }
+                : {}),
+            },
+          };
+        }),
+      ),
+    'web.plugins_logs': async ({ id, limit = 80 }, c) => {
+      const p = await find(id);
+      const local = await client.call('core.info'),
+        logs = [];
+      for (const node of p.instance.nodeIds) {
+        const lines = await delegated(
+          c,
+          'supervisor.logs',
+          { id: p.componentId, lines: Math.min(limit, 300) },
+          node === local.node_id ? undefined : node,
+        );
+        logs.push(
+          ...lines.map((message) => ({ ts: Date.now(), level: 'info', message, nodeId: node })),
+        );
+      }
+      return logs;
+    },
+    'web.plugins_enable': async ({ id, enabled }, c) => {
+      const p = await find(id);
+      const local = await client.call('core.info');
+      for (const node of p.instance.nodeIds)
+        await delegated(
+          c,
+          enabled ? 'supervisor.start' : 'supervisor.stop',
+          { id: p.componentId },
+          node === local.node_id ? undefined : node,
+        );
+      return { ...p.instance, status: enabled ? 'active' : 'disabled' };
+    },
+    'web.plugins_install': async ({ id, request = {} }, c) => {
+      const p = await find(id),
+        local = await client.call('core.info');
+      const nodes = request.nodeIds?.length ? request.nodeIds : [local.node_id];
+      for (const node of nodes)
+        await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+      return { ...p.instance, status: 'installing' };
+    },
+    'web.plugins_uninstall': async ({ id, purgeData }, c) => {
+      if (purgeData) unsupported();
+      const p = await find(id),
+        local = await client.call('core.info');
+      for (const node of p.instance.nodeIds)
+        await delegated(
+          c,
+          'supervisor.remove',
+          { id: p.componentId },
+          node === local.node_id ? undefined : node,
+        );
+    },
+    'web.plugins_update': async ({ id }, c) => {
+      const p = await find(id),
+        local = await client.call('core.info');
+      for (const node of p.instance.nodeIds)
+        await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+      return { ...p.instance, status: 'updating' };
+    },
+    'web.plugins_settings': async ({ id, values, nodeId, _locale = 'en' }, c) => {
+      const p = await find(id),
+        local = await client.call('core.info');
+      const node = nodeId || p.instance.nodeIds[0];
+      if (!p.instance.nodeIds.includes(node))
+        throw new DeltaError('bad_request', 'Plugin is not installed on this node');
+      const endpoint = p.manifest.endpoints?.settings || p.componentId + '.settings';
+      if (!endpoint.startsWith(p.componentId + '.'))
+        throw new DeltaError('bad_request', 'Invalid settings endpoint');
+      const result = await delegated(
+        c,
+        endpoint,
+        { values, _locale },
+        node === local.node_id ? undefined : node,
+      );
+      return {
+        ...p.instance,
+        settings: {
+          ...Object.fromEntries(
+            Object.entries(result || values).filter(
+              ([key]) =>
+                !key.startsWith('_') &&
+                p.manifest.settings?.some((f) => f.key === key && f.type !== 'secret'),
+            ),
+          ),
+          ...(Array.isArray(result?._configuredSecrets)
+            ? { _configuredSecrets: result._configuredSecrets }
+            : {}),
+        },
+      };
+    },
+    'web.plugins_permissions': unsupported,
+    'web.plugins_nodes': async ({ id, nodeIds }, c) => {
+      if (!Array.isArray(nodeIds) || nodeIds.some((n) => typeof n !== 'string'))
+        throw new DeltaError('bad_request', 'nodeIds required');
+      const p = await find(id),
+        local = await client.call('core.info');
+      for (const node of nodeIds)
+        if (!p.instance.nodeIds.includes(node))
+          await delegated(c, 'packages.install', { id }, node === local.node_id ? undefined : node);
+      for (const node of p.instance.nodeIds)
+        if (!nodeIds.includes(node))
+          await delegated(
+            c,
+            'supervisor.remove',
+            { id: p.componentId },
+            node === local.node_id ? undefined : node,
+          );
+      return { ...p.instance, nodeIds };
+    },
+    'web.plugins_action': async ({ id, actionId, values, nodeId, _locale = 'en' }, c) => {
+      const p = await find(id);
+      if (!p.manifest.actions?.some((a) => a.id === actionId)) unsupported();
+      if (
+        values !== undefined &&
+        (!values ||
+          typeof values !== 'object' ||
+          Array.isArray(values) ||
+          JSON.stringify(values).length > 64000)
+      )
+        throw new DeltaError('bad_request', 'Invalid action inputs');
+      const node = nodeId || p.instance.nodeIds[0],
+        local = await client.call('core.info');
+      if (!p.instance.nodeIds.includes(node))
+        throw new DeltaError('bad_request', 'Plugin is not installed on this node');
+      const before = Date.now();
+      const r = await delegated(
+        c,
+        p.componentId + '.' + actionId,
+        { ...values, _locale },
+        node === local.node_id ? undefined : node,
+      );
+      return { ok: true, durationMs: Date.now() - before, output: [JSON.stringify(r, null, 2)] };
+    },
+    'web.plugins_query': async ({ id, viewId, args = {}, nodeId, _locale = 'en' }, c) => {
+      const p = await find(id),
+        view = p.manifest.views?.find((v) => v.id === viewId);
+      if (!view || !view.capability.startsWith(p.componentId + '.'))
+        throw new DeltaError('bad_request', 'Invalid plugin data view');
+      if (
+        !args ||
+        typeof args !== 'object' ||
+        Array.isArray(args) ||
+        JSON.stringify(args).length > 64000
+      )
+        throw new DeltaError('bad_request', 'Invalid view inputs');
+      const node = nodeId || p.instance.nodeIds[0],
+        local = await client.call('core.info');
+      if (!p.instance.nodeIds.includes(node))
+        throw new DeltaError('bad_request', 'Plugin is not installed on this node');
+      const result = await delegated(
+        c,
+        view.capability,
+        { ...args, _locale },
+        node === local.node_id ? undefined : node,
+      );
+      const parsed = z
+        .object({ rows: z.array(z.record(z.unknown())).max(100), total: z.number().int().min(0) })
+        .safeParse(result);
+      if (!parsed.success || JSON.stringify(result).length > 2000000)
+        throw new DeltaError('bad_request', 'Invalid plugin data output');
+      return parsed.data;
+    },
+    'web.metrics_query': async ({ query, _locale = 'en' }, c) => {
+      const p = await find(query.pluginId),
+        m = p.manifest.metrics?.find((m) => m.id === query.metricId);
+      if (!m) throw new DeltaError('not_found', ru.badMetric);
+      if (query.aggregation && !(m.aggregations || ['avg']).includes(query.aggregation))
+        throw new DeltaError('bad_request', ru.badMetric);
+      const prepared = {
+        ...query,
+        aggregation: query.aggregation || m.defaultAggregation || m.aggregations?.[0] || 'avg',
+      };
+      let result;
+      if (m.queryCapability) {
+        if (!m.queryCapability.startsWith(p.componentId + '.'))
+          throw new DeltaError('bad_request', 'Invalid plugin metric endpoint');
+        const local = await client.call('core.info');
+        const node = query.nodeId || p.instance.nodeIds[0];
+        if (!node || !p.instance.nodeIds.includes(node))
+          throw new DeltaError('bad_request', 'Plugin is not installed on this node');
+        result = await delegated(
+          c,
+          m.queryCapability,
+          { query: prepared, _locale },
+          node === local.node_id ? undefined : node,
+        );
+      } else result = await queryMetric(client, storage, prepared);
+      const localized = p.manifest.localizations?.[_locale]?.metrics?.find((x) => x.id === m.id);
+      const dimension =
+        localized?.dimensions?.find((d) => d.id === query.groupBy) ||
+        m.dimensions?.find((d) => d.id === query.groupBy);
+      const label = (key) => dimension?.values?.find((v) => v.id === key)?.label || key;
+      for (const series of [...result.series, ...(result.compare || [])])
+        series.label =
+          label(series.key.replace(/__prev$/, '')) +
+          (series.key.endsWith('__prev')
+            ? _locale === 'ru'
+              ? russian.previousLabel
+              : ru.previousLabel
+            : '');
+      result.categories?.forEach(
+        (c) =>
+          (c.label = dimension?.values?.find((v) => v.id === c.key)?.label || c.label || c.key),
+      );
+      return result;
+    },
+    'web.nodes_list': async (_a, c) => {
+      const local = await client.call('core.info');
+      const links = (await sshSetup?.connections()) || [];
+      const n = await nodeInfo(local);
+      if (c.scopes?.includes('admin')) n.allowedCommands.push('restart-component', 'exec');
+      const nodes = [n];
+      let peers;
+      try {
+        peers = await client.call('peers.list');
+      } catch (e) {
+        if (e.code !== 'not_found' && e.code !== 'forbidden') throw e;
+        peers = [];
+      }
+      for (const peer of peers) {
+        if (peer.online) {
+          try {
+            const remote = await nodeInfo({ ...peer, node_id: peer.node_id }, peer.node_id);
+            remote.trustedAdmin = peer.trusted_admin;
+            const link = links.find((x) => x.peerId === peer.node_id);
+            if (link) {
+              remote.sshConnection = link;
+              remote.connection.transport = 'ssh';
+            }
+            if (c.scopes?.includes('admin'))
+              remote.allowedCommands.push('restart-component', 'exec');
+            nodes.push(remote);
+            continue;
+          } catch (e) {
+            peer.error = e.message;
+          }
+        }
+        nodes.push({
+          ...n,
+          trustedAdmin: peer.trusted_admin,
+          sshConnection: links.find((x) => x.peerId === peer.node_id),
+          id: peer.node_id,
+          name: peer.name,
+          address: peer.url,
+          status: 'offline',
+          lastSeen: 0,
+          uptimeSec: 0,
+          components: [],
+          processes: [],
+          pluginIds: [],
+          cpu: 0,
+          memUsed: 0,
+          memTotal: 0,
+          diskUsed: 0,
+          diskTotal: 0,
+          allowedCommands: [],
+          errors: [
+            {
+              ts: Date.now(),
+              code: 'unavailable',
+              message: peer.error || ru.offline,
+              component: 'peers',
+              count: 1,
+            },
+          ],
+        });
+      }
+      return nodes;
+    },
+    'web.nodes_history': async ({ id, rangeMs }) => monitor.history(id, rangeMs),
+    'web.nodes_uptime': async ({ id, days }) => monitor.uptime(id, days),
+    'web.status': async () => {
+      const a = monitor.status();
+      return {
+        settings: {},
+        activity: { ...a, rateLabel: { ru: 'записей/мин', en: 'records/min' } },
+        notices: a.error
+          ? [
+              {
+                id: 'web.telemetry',
+                severity: 'warn',
+                message: 'Node telemetry cannot be persisted to storage.',
+                localizations: {
+                  ru: 'История узлов пока не записывается: проверьте подключение хранилища.',
+                },
+              },
+            ]
+          : [],
+      };
+    },
+    'web.nodes_command': async ({ id, command, args = {} }, c) => {
+      const map = {
+        ping: ['system.ping', {}],
+        'restart-component': ['supervisor.restart', { id: args.component }],
+        exec: ['exec.run', { command: JSON.parse(args.cmd || '[]') }],
+      };
+      if (!map[command]) unsupported();
+      const before = Date.now(),
+        result = await delegated(c, ...map[command], id);
+      return { ok: true, durationMs: Date.now() - before, output: [JSON.stringify(result)] };
+    },
+    'web.nodes_connection': unsupported,
+    'web.nodes_pair': async ({ trustAdmin = false } = {}, c) => {
+      if (trustAdmin && !c?.scopes?.includes('admin'))
+        throw new DeltaError('forbidden', ru.delegation);
+      const r = await delegated(c, 'peers.invite', { trust_admin: trustAdmin });
+      return {
+        code: r.code,
+        expiresAt: Date.now() + (r.expires_in ?? 300) * 1000,
+        command: r.command,
+      };
+    },
+    'web.nodes_remove': async ({ id }, c) => {
+      const r = await delegated(c, 'peers.remove', { node: id });
+      await sshSetup?.remove(id);
+      return r;
+    },
+    'web.nodes_trust': async ({ id, admin }, c) => {
+      if (!c?.scopes?.includes('admin')) throw new DeltaError('forbidden', ru.delegation);
+      return delegated(c, 'peers.trust', { node: id, admin });
+    },
+    'web.dashboards_list': async (_a, c) => {
+      let ds = await listDocs(c, 'dashboards');
+      if (!ds.some((d) => d.origin === 'home')) {
+        const now = Date.now();
+        const home = {
+          id: 'home',
+          name: ru.home,
+          origin: 'home',
+          range: '24h',
+          refreshSec: 30,
+          pinned: false,
+          createdAt: now,
+          updatedAt: now,
+          widgets: [
+            {
+              id: 'nodes',
+              type: 'node-grid',
+              typeVersion: '1.0.0',
+              source: { kind: 'system', feed: 'nodes' },
+              display: {},
+              layout: { x: 0, y: 0, w: 12, h: 8 },
+            },
+            {
+              id: 'plugins',
+              type: 'plugin-activity',
+              typeVersion: '1.0.0',
+              source: { kind: 'system', feed: 'plugins' },
+              display: {},
+              layout: { x: 0, y: 8, w: 12, h: 8 },
+            },
+          ],
+        };
+        await writeDoc(c, 'dashboards', home.id, home);
+        ds = [home, ...ds];
+      }
+      return ds;
+    },
+    'web.dashboards_save': async ({ dashboard: d }, c) => {
+      const parsed = dashboard.safeParse(d);
+      if (!parsed.success) throw new DeltaError('bad_request', ru.badDashboard);
+      return writeDoc(c, 'dashboards', d.id, parsed.data);
+    },
+    'web.dashboards_delete': async ({ id }, c) =>
+      client.call(storage + '.document_delete', { namespace: ns(c, 'dashboards'), key: id }),
+    'web.events_list': async ({ query = {}, _locale = 'en' }, c) =>
+      events
+        ? events.list(query, c, _locale, await listDocs(c, 'audit').catch(() => []))
+        : (await listDocs(c, 'events'))
+            .filter(
+              (e) =>
+                (!query.severities || query.severities.includes(e.severity)) &&
+                (!query.sourceTypes || query.sourceTypes.includes(e.source.type)) &&
+                (!query.sourceId || query.sourceId === e.source.id) &&
+                (!query.text || e.message.toLowerCase().includes(query.text.toLowerCase())) &&
+                (!query.before || e.ts < query.before),
+            )
+            .sort((a, b) => b.ts - a.ts)
+            .slice(0, Math.min(query.limit || 100, 1000)),
+    'web.notifications_list': async ({ _locale = 'en' } = {}, c) => {
+      const stored = await listDocs(c, 'notifications').catch(() => []),
+        notes = [],
+        local = await client.call('core.info');
+      for (const p of await records()) {
+        const endpoint = p.manifest.endpoints?.notifications;
+        if (
+          !endpoint ||
+          !endpoint.startsWith(p.componentId + '.') ||
+          p.instance.status !== 'active'
+        )
+          continue;
+        for (const node of p.instance.nodeIds) {
+          try {
+            const rows = await delegated(
+              c,
+              endpoint,
+              { _locale },
+              node === local.node_id ? undefined : node,
+            );
+            if (!Array.isArray(rows)) continue;
+            for (const row of rows.slice(0, 100)) {
+              const checked = z
+                .object({
+                  id: z.string().max(256),
+                  ts: z.number().finite(),
+                  title: z.string().max(1000),
+                  body: z.string().max(4000).optional(),
+                  severity: z.enum(['critical', 'error', 'warn', 'info', 'debug']),
+                  link: z.string().optional(),
+                })
+                .safeParse(row);
+              if (!checked.success) continue;
+              const n = checked.data,
+                id = 'plugin:' + p.manifest.id + ':' + node + ':' + n.id;
+              notes.push({
+                ...n,
+                id,
+                read: stored.find((s) => s.id === id)?.read ?? false,
+                link: '/plugins/' + encodeURIComponent(p.manifest.id),
+              });
+            }
+          } catch {
+            /* A plugin feed cannot break the console inbox. */
+          }
+        }
+      }
+      return [
+        ...stored.filter((n) => !n.id.startsWith('plugin:')),
+        ...notes,
+        ...(updater && c.scopes?.includes('admin') ? await updater.notes(_locale) : []),
+      ].sort((a, b) => b.ts - a.ts);
+    },
+    'web.notifications_mark': async ({ ids, read }, c) => {
+      if (updater && c.scopes?.includes('admin')) await updater.mark(ids, read);
+      const notes = await handlers['web.notifications_list']({}, c);
+      for (const n of notes)
+        if (ids === 'all' || ids.includes(n.id))
+          await writeDoc(c, 'notifications', n.id, { ...n, read });
+    },
+    'web.access_list': async (_a, c) => (await delegated(c, 'tokens.list')).map(principal),
+    'web.access_create': async ({ input }, c) => {
+      const parsed = z
+        .object({
+          name: z.string().min(2).max(48),
+          role: z.enum(['owner', 'operator', 'analyst', 'viewer']),
+          scopes: z.array(z.string()).max(64),
+          ttlDays: z.number().int().min(1).max(3650).nullable(),
+        })
+        .safeParse(input);
+      if (!parsed.success) throw new DeltaError('bad_request', ru.invalidToken);
+      const i = parsed.data;
+      const scopes =
+        i.role === 'owner'
+          ? ['admin']
+          : [
+              ...new Set([
+                ...roleCaps[i.role],
+                ...i.scopes.flatMap((s) => permissionMap[s] || [s.replace(/^call:/, '')]),
+              ]),
+            ].map((s) => 'call:' + s);
+      const r = await delegated(c, 'tokens.create', {
+        name: i.name,
+        scopes,
+        ...(i.ttlDays ? { ttl_seconds: i.ttlDays * 86400 } : {}),
+      });
+      return { principal: principal(r), secret: r.token };
+    },
+    'web.access_revoke': async ({ id }, c) => delegated(c, 'tokens.revoke', { id }),
+    'web.access_role': unsupported,
+    'web.audit_list': async ({ limit = 50 }, c) =>
+      (await listDocs(c, 'audit')).sort((a, b) => b.ts - a.ts).slice(0, limit),
+  };
+  // A persisted audit event for every successful management operation; never log token secrets.
+  for (const name of [
+    'web.plugins_enable',
+    'web.plugins_install',
+    'web.plugins_update',
+    'web.plugins_uninstall',
+    'web.plugins_settings',
+    'web.plugins_action',
+    'web.nodes_command',
+    'web.nodes_pair',
+    'web.nodes_remove',
+    'web.access_create',
+    'web.access_revoke',
+    'web.dashboards_save',
+    'web.dashboards_delete',
+  ]) {
+    const handlersReadSettings = handlers[name];
+    const handler = events ? withEventAudit(events, name, handlers[name]) : handlers[name];
+    handlers[name] = async (a, c) => {
+      if (name === 'web.plugins_settings' && a.values === undefined)
+        return handlersReadSettings(a, c);
+      const r = await handler(a, c);
+      const id = randomUUID(),
+        event = {
+          id,
+          ts: Date.now(),
+          actor: c.name,
+          action: name,
+          target: a.id || a.input?.name || 'node',
+        };
+      await writeDoc(c, 'audit', id, event).catch((e) =>
+        console.error('Audit persistence unavailable:', e.code || e.name),
+      );
+      return r;
+    };
+  }
+  // Translate only owned, known display strings; never rewrite arbitrary diagnostics.
+  for (const [name, handler] of Object.entries(handlers))
+    handlers[name] = async (a = {}, c) => {
+      try {
+        const result = await handler(a, c);
+        return name === 'web.plugins_list'
+          ? result.map((p) => ({
+              ...p,
+              instance: {
+                ...p.instance,
+                ...(p.instance.error
+                  ? {
+                      error: {
+                        ...p.instance.error,
+                        message: localMessage(p.instance.error.message, a._locale),
+                      },
+                    }
+                  : {}),
+              },
+            }))
+          : result;
+      } catch (e) {
+        const message = localMessage(e.message, a._locale);
+        if (e.code && message !== e.message) throw new DeltaError(e.code, message);
+        throw e;
+      }
+    };
+  return handlers;
 }

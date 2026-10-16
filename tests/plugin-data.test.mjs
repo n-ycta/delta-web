@@ -141,3 +141,83 @@ test('invalid/oversized table outputs fail closed', async (t) => {
     (e) => e.code === 'bad_request',
   );
 });
+
+test('custom metrics route to installed peer, never local core; reject arbitrary target', async (t) => {
+  const { client, ui, calls } = await fixture(t);
+  ui.metrics = [{ id: 'accepted', queryCapability: 'search.metrics', aggregations: ['sum'] }];
+  const original = client.call;
+  client.call = async (name, args, node) => {
+    if (name === 'core.components')
+      return node === 'desktop' ? [{ id: 'search', version: '1', metadata: { ui } }] : [];
+    if (name === 'peers.list') return [{ online: true, node_id: 'desktop' }];
+    if (name === 'core.catalog') return [{ name: 'search.metrics', admin: true, node: 'desktop' }];
+    if (name === 'supervisor.list') return [];
+    if (name === 'search.metrics') {
+      calls.push({ name, args, node });
+      return { series: [], summary: { current: 1 } };
+    }
+    return original(name, args, node);
+  };
+  const h = createBridge(client);
+  await h['web.metrics_query'](
+    { query: { pluginId: ui.id, metricId: 'accepted', range: { preset: '24h' } } },
+    owner,
+  );
+  assert.equal(calls.find((c) => c.name === 'search.metrics').node, 'desktop');
+  await assert.rejects(
+    h['web.metrics_query'](
+      {
+        query: { pluginId: ui.id, metricId: 'accepted', nodeId: 'evil', range: { preset: '24h' } },
+      },
+      owner,
+    ),
+    (e) => e.code === 'bad_request',
+  );
+  await assert.rejects(
+    h['web.metrics_query'](
+      { query: { pluginId: ui.id, metricId: 'accepted', range: { preset: '24h' } } },
+      { scopes: ['call:*'] },
+    ),
+    (e) => e.code === 'forbidden',
+  );
+});
+
+test('active remote registration wins over cached manifest and disabled local install', async (t) => {
+  const { client, ui } = await fixture(t);
+  ui.version = '1.0.0';
+  const base = client.call;
+  let remote = false;
+  client.call = async (name, args, node) => {
+    if (name === 'core.components')
+      return node === 'desktop'
+        ? [
+            {
+              id: 'search',
+              version: '1.0.1',
+              metadata: {
+                ui: {
+                  ...ui,
+                  version: '1.0.1',
+                  settings: [{ key: 'newSetting', type: 'boolean', label: 'New setting' }],
+                },
+              },
+            },
+          ]
+        : remote
+          ? []
+          : [{ id: 'search', version: '1.0.0', metadata: { ui } }];
+    if (name === 'supervisor.list')
+      return node === 'desktop' ? [] : [{ id: 'search', running: !remote, enabled: !remote }];
+    if (name === 'peers.list') return remote ? [{ node_id: 'desktop', online: true }] : [];
+    return base(name, args, node);
+  };
+  const h = createBridge(client);
+  assert.equal((await h['web.plugins_list']())[0].manifest.version, '1.0.0');
+  remote = true;
+  const updated = (await h['web.plugins_list']())[0];
+  assert.equal(updated.instance.status, 'active');
+  assert.equal(updated.instance.nodeIds[0], 'desktop');
+  assert.equal(updated.manifest.version, '1.0.1');
+  assert.equal(updated.instance.installedVersion, '1.0.1');
+  assert.equal(updated.manifest.settings[0].key, 'newSetting');
+});

@@ -3,6 +3,7 @@ import { Aggregation } from './plugin';
 import { TimeRange } from './common';
 
 export const MetricQuery = z.object({
+  nodeId: z.string().optional(),
   pluginId: z.string(),
   metricId: z.string(),
   range: TimeRange,

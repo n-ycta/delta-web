@@ -418,3 +418,34 @@ select option, select optgroup { color: var(--ink); background-color: var(--surf
  .event-log-row > :nth-child(3),.event-log-row > :nth-child(4) {min-width:0;white-space:normal;overflow-wrap:anywhere;}
  .event-log-message {grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;}
 }
+
+/* Schema-driven settings: controls stay inside their card on every viewport. */
+.plugin-settings, .plugin-settings .panel, .plugin-settings .panel-body { min-width: 0; max-width: 100%; }
+.plugin-settings .form-row { gap: 16px; padding-top: 14px; padding-bottom: 14px; }
+.plugin-settings .form-row > *, .setting-secret > .input { min-width: 0; }
+.setting-secret { flex-wrap: wrap; gap: 8px; }
+.setting-secret > .input { flex: 1 1 160px; width: auto; }
+.setting-secret > .btn, .setting-secret > .badge { flex-shrink: 0; }
+.setting-editor { position: relative; min-width: 0; }
+.setting-editor > .textarea { display: block; width: 100%; max-width: 100%; min-height: 108px; resize: vertical; padding-right: 36px; box-sizing: border-box; }
+.setting-editor > .btn { position: absolute; right: 4px; top: 4px; }
+.setting-editor-expanded { width: 100%; height: min(60dvh, 620px); min-height: 180px; resize: none; box-sizing: border-box; }
+.modal { max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); }
+.modal-body { min-width: 0; overflow-x: hidden; }
+.modal-body pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 680px) { .plugin-settings .form-row { gap: 10px; } }
+
+.profile-diff { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+.profile-diff pre { margin:0;padding:10px;border:1px solid var(--rule);border-radius:6px;max-height:200px;overflow:auto;font-size:12px; }
+@media(max-width:680px){.profile-diff{grid-template-columns:minmax(0,1fr);}}
+.action-result { margin:0;min-width:0; }
+.action-result > div { display:grid;grid-template-columns:minmax(100px,28%) minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--rule); }
+.action-result dt,.action-result dd { margin:0;min-width:0;overflow-wrap:anywhere;font-size:12px; }
+@media(max-width:480px){.action-result > div{grid-template-columns:minmax(0,1fr);gap:4px;}}
+/* Fixed dialogs must account for their offset as well as their content height. */
+.modal { top: 50%; transform: translate(-50%, -50%); max-height: calc(100dvh - 32px); }
+.modal-head, .modal-foot { flex-shrink: 0; }
+.modal-body { min-height: 0; }
+
+.modal { animation: modal-in .14s var(--ease); }
+@keyframes modal-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 6px)); } }
