@@ -1703,7 +1703,10 @@
     "invalidPhrase": "Invalid recovery phrase",
     "invalidChallenge": "Invalid or expired sign-in challenge",
     "uninstallFailed": "Could not uninstall plugin",
-    "purgeUnavailable": "Data deletion is not supported by this version. Saved data will be retained."
+    "purgeUnavailable": "Data deletion is not supported by this version. Saved data will be retained.",
+    "rememberDevice": "Remember this device for 30 days",
+    "sessionExpired": "Sign in again: your session expired or was revoked. The core responded; this is not a connection failure.",
+    "rememberNeedsUpdate": "Update the core to keep signed login across restarts. For now, uncheck Remember this device to sign in temporarily."
   },
   "pluginContract": {
     "status": "Runtime status and notices",

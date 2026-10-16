@@ -80,3 +80,11 @@ Tests: `npm run test:server` covers authorization, consent, target binding, job 
 ### Pending SSH wizard improvements (Unreleased)
 
 The owner-only `web.nodes_ssh_preflight` checks the running local core and resolves OpenSSH to an absolute executable path before host probing or SSH authentication. An outdated core has a direct **Update core** action, with explicit confirmation and progress through the existing updater; readiness is rechecked after completion. Failed setup jobs are labelled as failed rather than still connecting. These source changes do not create a new runtime release.
+
+### Restart-safe browser sessions (Unreleased)
+
+Owner bootstrap cookies last 30 days. Signed key login offers **Remember this device for 30 days** (enabled by default); the lifetime is included in the signed challenge, never accepted as an unsigned login escalation. Core stores only the token hash, Web keeps the corresponding credential in its private server-side session file, and the browser receives an HttpOnly SameSite cookie. Private signing keys and recovery phrases are never persisted by this feature. Logout, token expiry and enrolled-key revocation remain effective. An old core without the signed remember extension is reported explicitly instead of promising restart-safe login.
+
+Existing expired or ephemeral sessions cannot be recovered without authentication. Use an enrolled key or a fresh one-use installer owner link once, then use the new remembered session. Keep the same browser hostname and profile; clearing cookies/private browsing does not preserve login. A 401 now offers sign-in instead of reporting a lost core connection.
+
+Regression: `DELTA_TEST_BINARY=/path/to/updated/delta npm run test:session-restart` starts isolated core/Web processes, signs in with a restricted key, closes all three processes including the browser, restarts using their saved state, verifies access and rejects privilege escalation and revoked keys. It does not reboot or modify the user's machine.

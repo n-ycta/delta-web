@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+- Keep owner bootstrap sessions for 30 days; offer Remember this device on signed login and distinguish expired authorization from a disconnected core. Private keys remain browser-only; revoked/expired sessions still require sign-in.
+
 - Check the running core version and OpenSSH availability before SSH authentication; distinguish missing dependencies from an outdated or unavailable core.
 - Offer a direct, confirmed core update in the SSH wizard, show progress, and recheck readiness when it finishes.
 - Show a truthful failure heading instead of suggesting that a failed connection is still running.

@@ -1,2 +1,29 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {createServer} from 'node:http';import {mkdtemp,writeFile,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';import {createHash} from 'node:crypto';import {createSessions} from '../server/sessions.mjs';
 test('bootstrap is origin-bound, one-use and returns only HttpOnly cookie',async()=>{const dir=await mkdtemp(join(tmpdir(),'delta-session-'));const old=process.env.DATA_DIR;process.env.DATA_DIR=dir;let revoked=false;const s=await createSessions({call:async cap=>cap==='tokens.create'?{token:'owner-secret',id:'t1'}:(revoked=true,{})});const server=createServer((req,res)=>s.http(req,res,new URL(req.url,'http://localhost').pathname));await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;try{await writeFile(join(dir,'bootstrap.json'),JSON.stringify({hash:createHash('sha256').update('one-time-code').digest('hex'),expires:Date.now()+10000}));const post=(path,origin,cookie)=>fetch(url+path,{method:'POST',headers:{origin,'content-type':'application/json',...(cookie?{cookie}:{})},body:JSON.stringify({code:'one-time-code'})});assert.equal((await post('/session/bootstrap','https://evil.test')).status,403);const r=await post('/session/bootstrap',url);assert.equal(r.status,200);const cookie=r.headers.get('set-cookie');assert.match(cookie,/HttpOnly/);assert.match(cookie,/SameSite=Strict/);assert.equal((await r.json()).token,undefined);assert.equal(s.credential({headers:{cookie:cookie.split(';')[0]}}),'owner-secret');assert.equal((await post('/session/bootstrap',url)).status,401);await post('/session/logout',url,cookie.split(';')[0]);assert.ok(revoked);assert.equal(s.credential({headers:{cookie:cookie.split(';')[0]}}),undefined);}finally{await new Promise(r=>server.close(r));if(old===undefined)delete process.env.DATA_DIR;else process.env.DATA_DIR=old;await rm(dir,{recursive:true,force:true});}});
+
+test('owner cookie and credential survive Web restart; logout remains durable',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'delta-reboot-session-'));const old=process.env.DATA_DIR;process.env.DATA_DIR=dir;
+ let ttl=0,revoked=false;
+ const client={call:async(cap,args)=>{if(cap==='tokens.create'){ttl=args.ttl_seconds;return {token:'persistent-fixture-owner',id:'persistent-t1'}}if(cap==='tokens.revoke'){revoked=true;return {}}throw Error(cap)}};
+ let sessions=await createSessions(client);
+ const server=createServer((req,res)=>sessions.http(req,res,new URL(req.url,'http://localhost').pathname));await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
+ try{
+  await writeFile(join(dir,'bootstrap.json'),JSON.stringify({hash:createHash('sha256').update('reboot-code').digest('hex'),expires:Date.now()+10000}));
+  const r=await fetch(url+'/session/bootstrap',{method:'POST',headers:{origin:url,'content-type':'application/json'},body:JSON.stringify({code:'reboot-code'})});assert.equal(r.status,200);assert.equal(ttl,2592000);
+  const header=r.headers.get('set-cookie');assert(Number(header.match(/Max-Age=(\d+)/)[1])>=2591990);assert(Number(header.match(/Max-Age=(\d+)/)[1])<=2592000);assert.match(header,/HttpOnly/);
+  const cookie=header.split(';')[0];sessions=await createSessions(client);
+  assert.equal(sessions.credential({headers:{cookie}}),'persistent-fixture-owner');
+  assert.equal(sessions.credential({headers:{cookie:'delta_session=forged'}}),undefined);
+  const logout=await fetch(url+'/session/logout',{method:'POST',headers:{origin:url,cookie,'content-type':'application/json'},body:'{}'});assert.equal(logout.status,200);assert(revoked);
+  sessions=await createSessions(client);assert.equal(sessions.credential({headers:{cookie}}),undefined);
+ }finally{server.closeAllConnections();await new Promise(r=>server.close(r));if(old===undefined)delete process.env.DATA_DIR;else process.env.DATA_DIR=old;await rm(dir,{recursive:true,force:true});}
+});
+
+test('remember choice is bound to the core challenge, not accepted from login payload',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'delta-remember-'));const old=process.env.DATA_DIR;process.env.DATA_DIR=dir;const calls=[];
+ const sessions=await createSessions({call:async(cap,args)=>{calls.push({cap,args});if(cap==='identity.challenge')return {remember:args.remember};if(cap==='identity.login')return {token:'scoped-fixture',id:'scope1',expires_at:Math.floor(Date.now()/1000)+2592000,audience:url};return {}}});
+ const server=createServer((req,res)=>sessions.http(req,res,new URL(req.url,'http://localhost').pathname));await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
+ const post=(path,args)=>fetch(url+'/session/'+path,{method:'POST',headers:{origin:url,'content-type':'application/json'},body:JSON.stringify(args)});
+ try{assert.equal((await post('challenge',{public_key:'fixture',remember:true})).status,200);assert.equal(calls[0].args.remember,true);const r=await post('key-login',{nonce:'n',signature:'s',remember:true});assert.equal(r.status,200);assert.deepEqual(calls[1].args,{nonce:'n',signature:'s'});assert.equal((await r.json()).token,undefined);}
+ finally{server.closeAllConnections();await new Promise(r=>server.close(r));if(old===undefined)delete process.env.DATA_DIR;else process.env.DATA_DIR=old;await rm(dir,{recursive:true,force:true});}
+});

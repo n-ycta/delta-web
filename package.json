@@ -27,7 +27,8 @@
     "test:editor-browser": "node scripts/editor-layout-browser.cjs",
     "test:plugin-notice-browser": "node scripts/plugin-notice-browser.cjs",
     "test:ssh": "node tests/ssh-onboarding-live.mjs",
-    "test:ssh-browser": "node scripts/ssh-wizard-browser.cjs"
+    "test:ssh-browser": "node scripts/ssh-wizard-browser.cjs",
+    "test:session-restart": "node tests/session-restart-live.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.0.14",

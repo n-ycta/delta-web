@@ -16,9 +16,9 @@ export async function createSessions(client){
   try{let text='',size=0;for await(const c of req){size+=c.length;if(size>16384)throw new DeltaError('bad_request','Body too large');text+=c;}const a=JSON.parse(text||'{}');
    if(path==='/session/bootstrap'){
     if(bootBusy)throw new DeltaError('unauthorized','Bootstrap in use');bootBusy=true;
-    try{const f=resolve(dir,'bootstrap.json'),boot=JSON.parse(await readFile(f,'utf8'));if(boot.expires<Date.now()||!timingSafeEqual(Buffer.from(hash(String(a.code||''))),Buffer.from(boot.hash)))throw new DeltaError('unauthorized','Setup link expired or consumed');await unlink(f);const t=await client.call('tokens.create',{name:'browser-owner',scopes:['admin'],ttl_seconds:28800});await issue(res,t.token,t.id,Date.now()+28800000);reply(200,{ok:true});}finally{bootBusy=false;}return;
+    try{const f=resolve(dir,'bootstrap.json'),boot=JSON.parse(await readFile(f,'utf8'));if(boot.expires<Date.now()||!timingSafeEqual(Buffer.from(hash(String(a.code||''))),Buffer.from(boot.hash)))throw new DeltaError('unauthorized','Setup link expired or consumed');await unlink(f);const t=await client.call('tokens.create',{name:'browser-owner',scopes:['admin'],ttl_seconds:2592000});await issue(res,t.token,t.id,Date.now()+2592000000);reply(200,{ok:true});}finally{bootBusy=false;}return;
    }
-   if(path==='/session/challenge'){const c=await client.call('identity.challenge',{public_key:a.public_key,audience:origin});reply(200,c);return;}
+   if(path==='/session/challenge'){const c=await client.call('identity.challenge',{public_key:a.public_key,audience:origin,remember:a.remember===true});reply(200,c);return;}
    if(path==='/session/key-login'){const t=await client.call('identity.login',{nonce:a.nonce,signature:a.signature});if(t.audience!==origin)throw new DeltaError('forbidden','Audience mismatch');await issue(res,t.token,t.id,t.expires_at*1000);reply(200,{ok:true});return;}
    if(path==='/session/logout'){const id=cookie(req),s=sessions[id];if(s)await client.call('tokens.revoke',{id:s.tokenId}).catch(()=>{});delete sessions[id];await save();res.setHeader('set-cookie','delta_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');reply(200,{ok:true});return;}
    reply(404,{error:'not_found'});

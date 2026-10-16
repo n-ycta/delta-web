@@ -21,7 +21,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const theme = useResolvedTheme();
   const ui = useUi();
   const api = useApi();
-  const info = useQuery('info', a => a.info());
+  const info = useQuery('info', a => a.info(), { refetchMs: 15000 });
   useEffect(() => {
     if (api.mode === 'mock') useRuntimeAccess.getState().set({ role: 'owner', name: tr('runtime.demoUser'), scopes: ['admin'] });
     else useRuntimeAccess.getState().set(info.data?.principal ?? { role: 'viewer', name: '', scopes: [] });
@@ -30,6 +30,7 @@ export function Shell({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.density = prefs.density;
   }, [theme, prefs.density]);
+  const authRequired = (info.error as {code?:string;status?:number}|undefined)?.code === 'unauthorized' || (info.error as {status?:number}|undefined)?.status === 401;
   const disconnected = ui.connection.state === 'closed' || ui.connection.state === 'reconnecting';
   return (
     <div className="shell" data-collapsed={prefs.sidebarCollapsed} data-mobile-nav={ui.mobileNav}>
@@ -42,7 +43,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="grow">{tr('runtime.realNotice')}</span>
           <Button variant="ghost" size="sm" iconOnly aria-label={tr('runtime.dismissNotice')} title={tr('runtime.dismissNotice')} style={{ flexShrink: 0, color: 'inherit' }} onClick={() => prefs.set({ realNoticeHidden: true })}><X size={15} /></Button>
         </div>}
-        {disconnected && (
+        {authRequired ? <div className="banner err" role="alert"><span className="grow">{tr("polish.sessionExpired")}</span><Link to="/identity" className="btn sm">{tr("polish.login")}</Link></div> : disconnected && (
           <div className="banner err" role="status">
             <WifiOff size={14} />
             <span className="grow">{ui.connection.state === 'reconnecting' ? tr("layout.Shell.s_315bc1ad23") : tr("layout.Shell.s_b3cbff7b29", { p0: (api.endpoint) })}</span>
