@@ -11,16 +11,24 @@
 The installer checks for the node and installs it if missing. No Rust build is needed.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/n-ycta/delta-web/main/install.sh -o delta-web-install.sh
-sh delta-web-install.sh
+curl -fsSL https://raw.githubusercontent.com/n-ycta/delta-web/main/install.sh | sh
 ```
 
 ```powershell
-Invoke-WebRequest https://raw.githubusercontent.com/n-ycta/delta-web/main/install.ps1 -OutFile delta-web-install.ps1
-.\delta-web-install.ps1
+irm https://raw.githubusercontent.com/n-ycta/delta-web/main/install.ps1 | iex
 ```
 
-Open **http://127.0.0.1:7710**. Setup automatically opens a one-use owner session on desktop systems. Headless devices print an SSH tunnel instruction. Existing installations can reopen a setup session using the core installer with `--open` / `-Open`.
+These commands execute the repository installer; inspect [install.sh](install.sh) or [install.ps1](install.ps1) first if preferred. Stable component versions come from the verified official catalog, not a version hardcoded in this command.
+
+Open **http://127.0.0.1:7710**. The installer opens a one-use setup link on desktop systems; headless systems print an SSH-tunnel instruction. Create and save a recovery key during that temporary setup session. Existing installations can issue a fresh setup link using the Core installer with `--open` / `-Open`.
+
+## Sign-in and security
+
+A clean browser shows a sign-in screen, not an anonymous owner console. Sign in with an enrolled key/recovery phrase, an existing scoped API token, or a one-use setup code. Public owner registration is deliberately disabled: an existing owner controls enrollment and permissions.
+
+A valid remembered session can restore access without asking again. Setup links expire after five minutes and exchange once for a one-hour setup session. Completing key enrollment replaces and revokes that temporary credential. Signed login lasts eight hours, or up to thirty days when Remember is selected. The private key signs locally and is not submitted to Web. Logout/revocation is enforced by Core, not merely hidden UI controls.
+
+For access outside loopback, use HTTPS, configure `PUBLIC_ORIGIN` and explicitly allow that origin in the Core's `identity_origins`. Web does not forward its own privileged service token as a browser user's credential. See [SECURITY.md](SECURITY.md) for the full boundary, deployment requirements and verified tests.
 
 ## Updates from the console
 
