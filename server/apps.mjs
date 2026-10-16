@@ -19,7 +19,7 @@ export async function createApps(client,sessions,options={}){
   if(req.headers.origin&&req.headers.origin!==consoleOrigin||req.headers['sec-fetch-site']==='cross-site')throw Error('forbidden');
   await authorize(req);
   const method=path.slice('/apps/'.length);
-  if(req.method==='GET'&&method==='catalog'){reply(200,catalog);return}if(req.method==='GET'&&method==='list'){reply(200,(await installed(root)).map(id=>catalog.find(m=>m.id===id)).filter(Boolean));return}
+  if(req.method==='GET'&&method==='catalog'){reply(200,catalog);return}if(req.method==='GET'&&method==='list'){reply(200,await Promise.all((await installed(root)).map(async id=>{const item=catalog.find(m=>m.id===id);if(!item)return null;try{const m=JSON.parse(await readFile(join(root,id,'.delta-manifest.json'),'utf8'));return {...item,...(m.ui?{ui:m.ui}:{})}}catch{return item}})).then(items=>items.filter(Boolean)));return}
   if(req.method!=='POST'||!['install','remove','launch'].includes(method)){reply(405,{error:'method_not_allowed'});return}
   if(req.headers.origin!==consoleOrigin)throw Error('forbidden');
   let text='';for await(const c of req){text+=c;if(text.length>4096)throw Error('body_limit')}const a=JSON.parse(text||'{}');const item=catalog.find(v=>v.id===a.id);if(!item)throw Error('unknown_app');
