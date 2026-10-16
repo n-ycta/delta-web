@@ -24,7 +24,7 @@ const roleCaps = {
   viewer: [
     'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
-    'web.profile_get', 'web.profile_save',
+    'web.profile_get', 'web.profile_save', 'web.workspace_get', 'web.workspace_put',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
@@ -36,7 +36,7 @@ const roleCaps = {
   analyst: [
     'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
-    'web.profile_get', 'web.profile_save',
+    'web.profile_get', 'web.profile_save', 'web.workspace_get', 'web.workspace_put',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
@@ -51,7 +51,7 @@ const roleCaps = {
   operator: [
     'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
-    'web.profile_get', 'web.profile_save',
+    'web.profile_get', 'web.profile_save', 'web.workspace_get', 'web.workspace_put',
     'web.info',
     'web.plugins_list',
     'web.nodes_list',
