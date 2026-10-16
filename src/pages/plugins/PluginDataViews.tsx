@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tr } from '@/i18n';
+import { tr, locale } from '@/i18n';
 import type { PluginEntry, PluginDataView } from '@/core/contracts';
 import { useQuery } from '@/app/query';
 import { Button, Panel } from '@/ui/primitives';
@@ -36,7 +36,9 @@ function Cell({
   if (column.type === 'datetime') {
     const date = new Date(Number(value));
     return (
-      <>{Number(value) > 0 && Number.isFinite(date.getTime()) ? date.toLocaleString() : '—'}</>
+      <>
+        {Number(value) > 0 && Number.isFinite(date.getTime()) ? date.toLocaleString(locale) : '—'}
+      </>
     );
   }
   return <span style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{text}</span>;
