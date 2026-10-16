@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.6.7]
+
+- Consume shared UI 0.1.2 with readable mobile dependency rows and fail-closed refresh state.
+- Pin regression fixtures to MCP 0.1.2 and Observability 0.1.1.
+- Expose optional-service installation flags in the Windows installer wrapper.
+
 ## [v0.6.6]
 
 ### Improvements

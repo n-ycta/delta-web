@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.6",
+  "version": "0.6.7",
   "type": "module",
   "description": "Delta Console \u2014 web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "zod": "^3.23.8",
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/4fe9f464ddcbeaae522469e4a1480c1ec0e79ff5.tar.gz"
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/a702becd0ea9a1ce90d4b0e1299366d152ff9fc7.tar.gz"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
