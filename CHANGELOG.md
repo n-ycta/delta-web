@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0
+## [v0.6.0]
 
 - UI contract 1.5: generic paginated plugin data views, typed action input forms and result output.
 - Capability-delegated plugin notification feeds with safe links and per-principal read state.
