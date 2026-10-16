@@ -32,7 +32,7 @@
     "test:auth": "node tests/auth-gate-live.mjs"
   },
   "dependencies": {
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/6de29d627429486c22fa8d66496cf3dea074958c.tar.gz",
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/21ae1304b732f0803a7729c72f867348f00bb3e9.tar.gz",
     "zod": "^3.23.8"
   },
   "devDependencies": {
