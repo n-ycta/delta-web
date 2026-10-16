@@ -241,6 +241,8 @@ export class MockCoreAdapter implements CoreApi {
     });
   }
 
+  queryPluginView(_id:string,_viewId:string,_args:Record<string,unknown>={},_nodeId?:string):Promise<{rows:Record<string,unknown>[];total:number}>{return this.net(()=>({rows:[],total:0}))}
+
   queryMetric(q: MetricQuery): Promise<MetricResult> {
     return this.net(() => {
       const r = REGISTRY.find((x) => rawId(x.manifest) === q.pluginId);

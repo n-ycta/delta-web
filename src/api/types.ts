@@ -62,7 +62,8 @@ export interface CoreApi {
   updatePluginSettings(pluginId: string, values: Record<string, unknown>, nodeId?: string): Promise<PluginInstance>;
   setPluginPermissions(pluginId: string, scopes: string[]): Promise<PluginInstance>;
   setPluginNodes(pluginId: string, nodeIds: string[]): Promise<PluginInstance>;
-  runPluginAction(pluginId: string, actionId: string): Promise<CommandResult>;
+  runPluginAction(pluginId: string, actionId: string, values?: Record<string, unknown>, nodeId?: string): Promise<CommandResult>;
+  queryPluginView(pluginId:string,viewId:string,args?:Record<string,unknown>,nodeId?:string):Promise<{rows:Record<string,unknown>[];total:number}>;
 
   // data
   queryMetric(q: MetricQuery): Promise<MetricResult>;

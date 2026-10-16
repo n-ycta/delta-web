@@ -43,7 +43,8 @@ export class HttpCoreAdapter implements CoreApi {
   updatePluginSettings(id: string, values: Record<string, unknown>, nodeId?: string) { return this.call('plugins_settings', { id, values, nodeId }); }
   setPluginPermissions(id: string, scopes: string[]) { return this.call('plugins_permissions', { id, scopes }); }
   setPluginNodes(id: string, nodeIds: string[]) { return this.call('plugins_nodes', { id, nodeIds }); }
-  runPluginAction(id: string, actionId: string) { return this.call('plugins_action', { id, actionId }); }
+  runPluginAction(id: string, actionId: string, values?:Record<string,unknown>,nodeId?:string) { return this.call('plugins_action', { id, actionId, values, nodeId }); }
+  queryPluginView(id:string,viewId:string,args:Record<string,unknown>={},nodeId?:string){return this.call<{rows:Record<string,unknown>[];total:number}>('plugins_query',{id,viewId,args,nodeId})}
   queryMetric(query: MetricQuery) { return this.call('metrics_query', { query }); }
   sshPreflight(){return this.call<SSHPreflight>('nodes_ssh_preflight')}
   probeSSH(target:SSHTarget){return this.call<SSHProbe>('nodes_ssh_probe',target)}

@@ -2,7 +2,7 @@ import { tr } from '@/i18n';
 import { z } from 'zod';
 
 /** Version of the plugin ↔ panel contract implemented by this build of the console. */
-export const PANEL_CONTRACT_VERSION = '1.4.0';
+export const PANEL_CONTRACT_VERSION = '1.5.0';
 /** Contract range the console accepts from the core API itself. */
 export const CORE_API_RANGE = '^1.0.0';
 

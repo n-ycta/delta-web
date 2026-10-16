@@ -8,13 +8,13 @@ import { Id, ReverseDnsId, SemverStr } from './common';
  */
 
 export const MetricKind = z.enum([
-  'gauge',        // instantaneous value (temperature, wpm)
-  'counter',      // monotonically accumulated per bucket (keystrokes, steps)
-  'ratio',        // 0..1 (accuracy, battery)
-  'duration',     // seconds (sleep, focus time)
+  'gauge', // instantaneous value (temperature, wpm)
+  'counter', // monotonically accumulated per bucket (keystrokes, steps)
+  'ratio', // 0..1 (accuracy, battery)
+  'duration', // seconds (sleep, focus time)
   'distribution', // value histogram (key latency)
-  'categorical',  // counts per category (top apps, error keys)
-  'event',        // discrete occurrences
+  'categorical', // counts per category (top apps, error keys)
+  'event', // discrete occurrences
 ]);
 export type MetricKind = z.infer<typeof MetricKind>;
 
@@ -24,7 +24,9 @@ export type Aggregation = z.infer<typeof Aggregation>;
 export const Dimension = z.object({
   id: Id,
   label: z.string(),
-  values: z.array(z.object({ id: z.string(), label: z.string(), color: z.string().optional() })).optional(),
+  values: z
+    .array(z.object({ id: z.string(), label: z.string(), color: z.string().optional() }))
+    .optional(),
 });
 export type Dimension = z.infer<typeof Dimension>;
 
@@ -44,7 +46,15 @@ export const MetricDescriptor = z.object({
   defaultFilters: z.record(z.array(z.string())).optional(),
   /** Visualization hints, may contain ids this console does not know (they are reported, not fatal). */
   visualizations: z.array(z.string()).default([]),
-  thresholds: z.array(z.object({ value: z.number(), severity: z.enum(['warn', 'error']), label: z.string().optional() })).optional(),
+  thresholds: z
+    .array(
+      z.object({
+        value: z.number(),
+        severity: z.enum(['warn', 'error']),
+        label: z.string().optional(),
+      }),
+    )
+    .optional(),
   tags: z.array(z.string()).default([]),
 });
 export type MetricDescriptor = z.infer<typeof MetricDescriptor>;
@@ -55,20 +65,48 @@ const SettingBase = z.object({
   help: z.string().optional(),
   group: z.string().optional(),
   requiresRestart: z.boolean().optional(),
-  confirmation: z.object({ id: z.string(), title: z.string(), body: z.string(), acceptLabel: z.string() }).optional(),
+  confirmation: z
+    .object({ id: z.string(), title: z.string(), body: z.string(), acceptLabel: z.string() })
+    .optional(),
 });
 
 export const SettingField = z.discriminatedUnion('type', [
-  SettingBase.extend({ type: z.literal('string'), default: z.string().optional(), placeholder: z.string().optional(), pattern: z.string().optional(), multiline:z.boolean().optional() }),
+  SettingBase.extend({
+    type: z.literal('string'),
+    default: z.string().optional(),
+    placeholder: z.string().optional(),
+    pattern: z.string().optional(),
+    multiline: z.boolean().optional(),
+  }),
   SettingBase.extend({ type: z.literal('secret'), placeholder: z.string().optional() }),
-  SettingBase.extend({ type: z.literal('number'), default: z.number().optional(), min: z.number().optional(), max: z.number().optional(), step: z.number().optional(), unit: z.string().optional() }),
+  SettingBase.extend({
+    type: z.literal('number'),
+    default: z.number().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    step: z.number().optional(),
+    unit: z.string().optional(),
+  }),
   SettingBase.extend({ type: z.literal('boolean'), default: z.boolean().optional() }),
-  SettingBase.extend({ type: z.literal('select'), default: z.string().optional(), options: z.array(z.object({ value: z.string(), label: z.string() })).min(1) }),
-  SettingBase.extend({ type: z.literal('multiselect'), default: z.array(z.string()).optional(), options: z.array(z.object({ value: z.string(), label: z.string() })).min(1) }),
+  SettingBase.extend({
+    type: z.literal('select'),
+    default: z.string().optional(),
+    options: z.array(z.object({ value: z.string(), label: z.string() })).min(1),
+  }),
+  SettingBase.extend({
+    type: z.literal('multiselect'),
+    default: z.array(z.string()).optional(),
+    options: z.array(z.object({ value: z.string(), label: z.string() })).min(1),
+  }),
 ]);
 export type SettingField = z.infer<typeof SettingField>;
 
-export const PermissionScope = z.string().regex(/^(admin|(?:call|admin|register):[a-zA-Z0-9_.*-]+|[a-z]+(?:\.[a-z_*]+)+)$/, tr("core.contracts.plugin.s_944430b656"));
+export const PermissionScope = z
+  .string()
+  .regex(
+    /^(admin|(?:call|admin|register):[a-zA-Z0-9_.*-]+|[a-z]+(?:\.[a-z_*]+)+)$/,
+    tr('core.contracts.plugin.s_944430b656'),
+  );
 export const PermissionRequest = z.object({
   scope: PermissionScope,
   reason: z.string(),
@@ -81,12 +119,45 @@ export const PluginAction = z.object({
   label: z.string(),
   description: z.string().optional(),
   dangerous: z.boolean().default(false),
+  inputs: z.array(SettingField).default([]),
 });
+
+export const PluginDataView = z.object({
+  id: Id,
+  label: z.string(),
+  capability: z.string(),
+  inputs: z.array(SettingField).default([]),
+  refreshSec: z.number().int().min(5).max(3600).default(30),
+  columns: z
+    .array(
+      z.object({
+        key: Id,
+        label: z.string(),
+        type: z.enum(['text', 'number', 'datetime', 'link', 'badge']).default('text'),
+        urlKey: Id.optional(),
+        width: z.number().int().min(80).max(600).optional(),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+export type PluginDataView = z.infer<typeof PluginDataView>;
 
 export const NodeKind = z.enum(['vps', 'android', 'desktop', 'sbc', 'container']);
 export type NodeKind = z.infer<typeof NodeKind>;
 
-export const PluginCategory = z.enum(['input', 'health', 'finance', 'dev', 'media', 'home', 'system', 'location', 'productivity', 'other']);
+export const PluginCategory = z.enum([
+  'input',
+  'health',
+  'finance',
+  'dev',
+  'media',
+  'home',
+  'system',
+  'location',
+  'productivity',
+  'other',
+]);
 export type PluginCategory = z.infer<typeof PluginCategory>;
 
 export const PluginManifest = z.object({
@@ -101,12 +172,27 @@ export const PluginManifest = z.object({
   category: PluginCategory.default('other'),
   homepage: z.string().url().optional(),
   repository: z.string().url().optional(),
-  defaultLocale: z.enum(['en','ru']).default('en'),
+  defaultLocale: z.enum(['en', 'ru']).default('en'),
   localizations: z.record(z.record(z.unknown())).optional(),
-  endpoints: z.object({status:z.string().optional(),settings:z.string().optional()}).optional(),
-  screenshots: z.array(z.object({ url: z.string().url(), alt: z.string().default(''), locale: z.enum(['en','ru']).optional() })).default([]),
+  endpoints: z
+    .object({
+      status: z.string().optional(),
+      settings: z.string().optional(),
+      notifications: z.string().optional(),
+    })
+    .optional(),
+  screenshots: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        alt: z.string().default(''),
+        locale: z.enum(['en', 'ru']).optional(),
+      }),
+    )
+    .default([]),
   permissions: z.array(PermissionRequest).default([]),
   settings: z.array(SettingField).default([]),
+  views: z.array(PluginDataView).max(10).default([]),
   metrics: z.array(MetricDescriptor).default([]),
   actions: z.array(PluginAction).default([]),
   capabilities: z.array(z.string()).default([]),
@@ -114,15 +200,32 @@ export const PluginManifest = z.object({
     targets: z.array(NodeKind).min(1),
     minAgent: SemverStr.optional(),
   }),
-  changelog: z.array(z.object({ version: SemverStr, date: z.string(), notes: z.array(z.string()) })).optional(),
+  changelog: z
+    .array(z.object({ version: SemverStr, date: z.string(), notes: z.array(z.string()) }))
+    .optional(),
 });
 export type PluginManifest = z.infer<typeof PluginManifest>;
 export type PluginManifestInput = z.input<typeof PluginManifest>;
 
-export const PluginStatus = z.enum(['active', 'disabled', 'error', 'degraded', 'installing', 'updating', 'available', 'incompatible']);
+export const PluginStatus = z.enum([
+  'active',
+  'disabled',
+  'error',
+  'degraded',
+  'installing',
+  'updating',
+  'available',
+  'incompatible',
+]);
 export type PluginStatus = z.infer<typeof PluginStatus>;
 
-export const PluginNotice = z.object({id:z.string(),severity:z.enum(['info','warn','err']),message:z.string(),actionId:Id.optional(),localizations:z.record(z.string()).optional()});
+export const PluginNotice = z.object({
+  id: z.string(),
+  severity: z.enum(['info', 'warn', 'err']),
+  message: z.string(),
+  actionId: Id.optional(),
+  localizations: z.record(z.string()).optional(),
+});
 export const PluginInstance = z.object({
   notices: z.array(PluginNotice).optional(),
   pluginId: ReverseDnsId,
@@ -137,7 +240,9 @@ export const PluginInstance = z.object({
   eventsPerMin: z.number().optional(),
   activityUnit: z.string().optional(),
   lastInputAt: z.number().optional(),
-  error: z.object({ code: z.string(), message: z.string(), hint: z.string().optional() }).optional(),
+  error: z
+    .object({ code: z.string(), message: z.string(), hint: z.string().optional() })
+    .optional(),
 });
 export type PluginInstance = z.infer<typeof PluginInstance>;
 
@@ -151,13 +256,13 @@ export interface PluginEntry {
 
 /** Capabilities the console understands. Anything else is reported as "unknown" but tolerated. */
 export const KNOWN_CAPABILITIES: Record<string, string> = {
-  'metrics.timeseries': tr("core.contracts.plugin.s_944f01fb2d"),
-  'metrics.realtime': tr("core.contracts.plugin.s_ddf80a0661"),
-  'events.stream': tr("core.contracts.plugin.s_9ad64a41fa"),
-  'actions': tr("core.contracts.plugin.s_82abc91d7b"),
+  'metrics.timeseries': tr('core.contracts.plugin.s_944f01fb2d'),
+  'metrics.realtime': tr('core.contracts.plugin.s_ddf80a0661'),
+  'events.stream': tr('core.contracts.plugin.s_9ad64a41fa'),
+  actions: tr('core.contracts.plugin.s_82abc91d7b'),
   'status.read': tr('pluginContract.status'),
   'settings.read': tr('pluginContract.settings'),
-  'settings.live': tr("core.contracts.plugin.s_c52a75b7a8"),
-  'export.csv': tr("core.contracts.plugin.s_4dc23635b8"),
-  'storage.local': tr("core.contracts.plugin.s_3befbc9a45"),
+  'settings.live': tr('core.contracts.plugin.s_c52a75b7a8'),
+  'export.csv': tr('core.contracts.plugin.s_4dc23635b8'),
+  'storage.local': tr('core.contracts.plugin.s_3befbc9a45'),
 };

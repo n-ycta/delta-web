@@ -14,5 +14,11 @@
   "previousLabel": " · предыдущий период",
   "sdkMissingToken": "Не задан DELTA_TOKEN для подключения плагина",
   "sdkUnknownCapability": "Неизвестная capability",
-  "sdkHandlerFailure": "Ошибка обработчика плагина. Проверьте его локальные журналы."
+  "sdkHandlerFailure": "Ошибка обработчика плагина. Проверьте его локальные журналы.",
+  "invalidActionInputs": "Некорректные параметры действия",
+  "invalidPluginTarget": "Плагин не установлен на этом узле",
+  "invalidDataView": "Некорректное представление данных плагина",
+  "invalidViewInputs": "Некорректные параметры представления",
+  "invalidViewOutput": "Некорректный ответ плагина",
+  "invalidSettingsEndpoint": "Некорректная возможность настроек"
 }

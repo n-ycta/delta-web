@@ -1869,5 +1869,15 @@
     "error_remote_core_old": "The running core on the VPS still lacks peer trust after setup. The local computer passed its checks. Check the server service and update its core to 0.4.0 or newer.",
     "updateCoreNow": "Update core",
     "coreUpdating": "Updating the core. The connection may briefly disappear; checks will repeat when it returns."
+  },
+  "pluginData": {
+    "clearSecret": "Clear saved secret",
+    "refresh": "Refresh",
+    "apply": "Apply filters",
+    "empty": "No records",
+    "previous": "Previous",
+    "next": "Next",
+    "run": "Run action",
+    "output": "Action output"
   }
 }

@@ -88,3 +88,23 @@ Owner bootstrap cookies last 30 days. Signed key login offers **Remember this de
 Existing expired or ephemeral sessions cannot be recovered without authentication. Use an enrolled key or a fresh one-use installer owner link once, then use the new remembered session. Keep the same browser hostname and profile; clearing cookies/private browsing does not preserve login. A 401 now offers sign-in instead of reporting a lost core connection.
 
 Regression: `DELTA_TEST_BINARY=/path/to/updated/delta npm run test:session-restart` starts isolated core/Web processes, signs in with a restricted key, closes all three processes including the browser, restarts using their saved state, verifies access and rejects privilege escalation and revoked keys. It does not reboot or modify the user's machine.
+
+## Generic plugin input/output (console 0.6.0, contract 1.5)
+
+The console knows no business-specific plugin IDs. Plugins can declare:
+
+```json
+{
+  "contract": "^1.5.0",
+  "actions": [{"id":"preview","label":"Preview","inputs":[{"key":"text","label":"Text","type":"string","multiline":true,"default":""}]}],
+  "views": [{"id":"items","label":"Records","capability":"example.items","refreshSec":30,"inputs":[{"key":"search","label":"Search","type":"string","default":""}],"columns":[{"key":"title","label":"Title","type":"link","urlKey":"url"},{"key":"createdAt","label":"Created","type":"datetime"}]}],
+  "endpoints": {"notifications":"example.notifications"}
+}
+```
+
+- Actions receive their typed field values and `_locale` through `web.plugins_action`. The generic form and result modal display inputs and JSON output. Never put secrets in action output. `dangerous` actions still require confirmation.
+- A view receives `{...inputs,offset,limit,_locale}` through `web.plugins_query` and must return `{rows:object[],total:number}` (at most 100 rows, 2 MB). Plugins implement filtering, ordering and pagination. Column types are `text`, `number`, `datetime` (Unix milliseconds), `badge`, and `link` (HTTPS only). An optional column `width` (80–600 px) controls readable minimum width. Text is React-escaped; plugin HTML/JavaScript is never executed. Tables scroll inside their container on small screens.
+- Each declared endpoint must be inside its component namespace. Actions/views target an installed node. Every call preserves the user's capability/admin scope; the service token cannot grant extra rights.
+- A notification feed returns up to 100 `{id,ts,severity,title,body?}` items. Reads require the caller's permission for that feed; unavailable/unauthorized feeds are isolated. IDs are namespaced by plugin and node, links are forced to the plugin page, and read/unread state is stored per console principal.
+- Sanitized settings may include `_configuredSecrets: ["apiKey"]` to show saved state without returning values. Untouched secret fields are omitted on save; the generic clear button sends an explicit empty string. Plugins remain responsible for validating and privately persisting settings.
+- Declare `contract: "^1.5.0"` when these views are required, so older consoles show incompatibility instead of silently hiding the UI.

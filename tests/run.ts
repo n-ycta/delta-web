@@ -103,5 +103,12 @@ test('dismissal tracks content and is scoped to plugin, node and connection',()=
  eq(dismissNotice({},key,fp)[key],fp);
  const many=Object.fromEntries(Array.from({length:600},(_,i)=>[String(i),'old']));eq(Object.keys(dismissNotice(many,key,fp)).length,500);
 });
+test('generic plugin views and typed action inputs require contract 1.5', () => {
+  const manifest = { ...M.typing, contract:'^1.5.0', actions:[{id:'preview',label:'Preview',inputs:[{key:'text',type:'string',label:'Text',multiline:true}]}], views:[{id:'items',label:'Items',capability:'example.items',columns:[{key:'title',label:'Title',type:'link',urlKey:'url',width:260}]}] };
+  const r=v(manifest);ok(r.report.compatible);eq(r.manifest!.views[0].columns[0].width,260);eq(r.manifest!.actions[0].inputs[0].type,'string');
+  const old=validateManifest(manifest,{knownVisualizations:known,panelContract:'1.4.0'});ok(!old.report.compatible);
+  ok(!v({...manifest,views:[{...manifest.views[0],columns:[{key:'x',label:'X',type:'html'}]}]}).report.compatible);
+});
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

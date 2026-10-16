@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- UI contract 1.5: generic paginated plugin data views, typed action input forms and result output.
+- Capability-delegated plugin notification feeds with safe links and per-principal read state.
+- Generic configured-secret indicators and explicit clear; saved markers are never resent as secrets.
+- Installed-node routing and authorization checks for plugin views/actions. No plugin-specific integration code.
+
+
 ## Release policy
 
 - Collect compatible fixes in **Unreleased**; do not publish a separate release for every small commit.

@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "contract": "^1.4.0",
       "description": "A modular control panel for your nodes, data and automation.",
       "publisher": "Delta",
@@ -367,7 +367,13 @@
       "name": "nodes_ssh_preflight",
       "params": {},
       "admin": true
+    },
+    {
+      "name": "plugins_query",
+      "description": "Read a declared plugin-owned data view with caller-scoped delegation",
+      "params": {},
+      "admin": false
     }
   ],
-  "version": "0.5.1"
+  "version": "0.6.0"
 }

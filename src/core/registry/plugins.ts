@@ -11,7 +11,7 @@ function placeholder(raw: unknown, inst: PluginInstance): PluginManifest {
   return {
     id: String(r.id ?? inst.pluginId), name: String(r.name ?? r.id ?? tr("core.registry.plugins.s_18ace30e43")), version: String(r.version ?? '0.0.0'),
     contract: String(r.contract ?? '?'), publisher: String(r.publisher ?? '—'), description: String(r.description ?? ''), icon: 'file-warning',
-    category: 'other', defaultLocale: 'en', screenshots: [], permissions: [], settings: [], metrics: [], actions: [], capabilities: [], runtime: { targets: ['vps'] },
+    category: 'other', defaultLocale: 'en', screenshots: [], permissions: [], settings: [], views: [], metrics: [], actions: [], capabilities: [], runtime: { targets: ['vps'] },
   };
 }
 
