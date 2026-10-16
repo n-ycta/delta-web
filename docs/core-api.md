@@ -16,4 +16,4 @@ Metric queries use validated schemas, aggregation, dimensions and aligned previo
 
 Operations include plugin discovery and settings, node/peer information, scoped capabilities, supervisor controls, persistent dashboards, token management, trust setup, package installation and update jobs. Administrative operations require owner or explicitly granted administrative scopes. Peer routing also requires explicit trust on the destination; a local grant cannot bypass destination policy. Availability is determined by the running version/capability catalog, not by this document alone.
 
-Native hosts use Host Bridge 1.0 with credential-private Rust calls. They must advertise actual features and must not pretend that Web's MCP, SSH or update services are available merely because the same UI package is bundled.
+Native hosts use Host Bridge 1.0 with credential-private Rust calls. They must advertise actual features and must not pretend that the independent MCP, SSH or update services are available merely because the same UI package is bundled.

@@ -44,7 +44,7 @@
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
     "vite": "^8.3.4",
-    "delta-mcp": "https://github.com/n-ycta/delta-mcp/archive/e95df6d84f5f3c89c940e10a9a974328103bf29a.tar.gz",
+    "delta-mcp": "https://github.com/n-ycta/delta-mcp/archive/dc96fb0f2653b20b27ca537e74aec33d220b9801.tar.gz",
     "delta-updater": "https://github.com/n-ycta/delta-updater/archive/f79f30ffb4e9ecbb81d58dfd5db35b1c1d737d1a.tar.gz",
     "delta-provision": "https://github.com/n-ycta/delta-provision/archive/9c57538faf2f3609e0e8b7f76c61ff3c7bf1c64d.tar.gz",
     "delta-observability": "https://github.com/n-ycta/delta-observability/archive/bd3a37d62436201d03f4411c05acec05e2e3c17b.tar.gz"

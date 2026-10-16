@@ -1,6 +1,6 @@
 # Extending the shared interface
 
-Screen, widget and UI contract implementations now live in [delta-ui](https://github.com/n-ycta/delta-ui). Web owns browser hosting and server services. Do not add another copy of a screen to Web or a native host.
+Screen, widget and UI contract implementations now live in [delta-ui](https://github.com/n-ycta/delta-ui). Web owns browser hosting, sessions and its compatibility facade. Headless service implementations belong to delta-mcp, delta-updater, delta-provision and delta-observability. Do not add another copy of a screen to Web or a native host.
 
 ## Declarative plugin manifests
 

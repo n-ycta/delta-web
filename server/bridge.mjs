@@ -22,6 +22,7 @@ const permissionMap = {
 };
 const roleCaps = {
   viewer: [
+    'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
@@ -32,6 +33,7 @@ const roleCaps = {
     'web.notifications_mark',
   ],
   analyst: [
+    'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
@@ -45,6 +47,7 @@ const roleCaps = {
     'web.notifications_mark',
   ],
   operator: [
+    'dependencies.status', 'dependencies.check',
     'observability.history', 'observability.uptime', 'observability.query', 'observability.events', 'observability.status', 'observability.audit',
     'web.info',
     'web.plugins_list',
@@ -589,7 +592,7 @@ export function createBridge(
           { query: prepared, _locale },
           node === local.node_id ? undefined : node,
         );
-      } else result = await client.forward('observability.query', {query:prepared,_locale});
+      } else {try{result = await client.forward('observability.query', {query:prepared,_locale});}catch(e){if(['not_found','unavailable'].includes(e.code))throw new DeltaError('missing_dependency','Install or enable Delta Observability to query Storage-backed metrics. Plugin-owned metric endpoints remain independent.');throw e}}
       const localized = p.manifest.localizations?.[_locale]?.metrics?.find((x) => x.id === m.id);
       const dimension =
         localized?.dimensions?.find((d) => d.id === query.groupBy) ||

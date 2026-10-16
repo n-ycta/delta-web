@@ -13,7 +13,7 @@ export function createServices(client){
 }
 export const withEventAudit=(events,action,handler)=>async(a={},c)=>{try{const r=await handler(a,c);await events.audit(action,a,c).catch(()=>{});return r}catch(e){await events.audit(action,a,c,e).catch(()=>{});throw e}};
 export async function proxyMcp(req,res,path){
- const base=new URL(process.env.DELTA_MCP_URL||'http://127.0.0.1:7720');
+ const base=new URL(process.env.DELTA_MCP_URL||'http://127.0.0.1:7730');
  if(!['127.0.0.1','[::1]','localhost'].includes(base.hostname)||base.protocol!=='http:'||base.username||base.password)throw new DeltaError('forbidden','MCP proxy must target an explicit local service');
  if(req.method!=='POST'){res.writeHead(405);res.end();return}
  if(req.headers.origin&&req.headers.origin!==(process.env.PUBLIC_ORIGIN||'http://'+req.headers.host)){res.writeHead(403);res.end();return}

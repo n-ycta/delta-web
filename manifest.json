@@ -16,7 +16,8 @@
           "vps",
           "desktop",
           "container"
-        ]
+        ],
+        "minAgent": "0.4.3"
       },
       "capabilities": [
         "actions"
@@ -223,10 +224,7 @@
         "ru": {
           "description": "Запросить временные ряды метрик"
         }
-      },
-      "requires": [
-        "metrics"
-      ]
+      }
     },
     {
       "name": "nodes_list",

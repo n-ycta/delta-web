@@ -1,4 +1,4 @@
-> Architecture: this repository is now the browser/server host. Shared screens and frontend tests live in [delta-ui](https://github.com/n-ycta/delta-ui), pinned to an immutable commit in package-lock.json. Sessions, MCP, SSH, update workers and server capabilities stay here. UI updates are currently bundled at host build time, not independently hot-swapped.
+> Architecture: this repository is now the browser/server host. Shared screens and frontend tests live in [delta-ui](https://github.com/n-ycta/delta-ui), pinned to an immutable commit in package-lock.json. Browser sessions and the compatibility facade stay here. MCP, updates, SSH provisioning and observability run as independent headless plugins. UI updates are currently bundled at host build time, not independently hot-swapped.
 
 # Delta Web
 
@@ -24,19 +24,19 @@ Open **http://127.0.0.1:7710**. Setup automatically opens a one-use owner sessio
 
 ## Updates from the console
 
-Open **Settings → Updates** to check and install stable official releases of the core, Web itself and installed managed plugins. Checks run hourly by default while the Web service is running, even with the browser closed. Available versions and completed/failed jobs appear in the notification center.
+Open **Settings → Updates** to check and install stable official releases of the core, Web itself and installed managed plugins. Checks run hourly by default while the optional Delta Updater service is running, even with the browser closed. Available versions and completed/failed jobs appear in the notification center.
 
 Automatic installation is **off by default**. Enabling it requires confirmation and saving the setting; core and plugin automation can be selected separately. Manual installation always asks for confirmation. Only a node owner can manage updates.
 
 Updates use published checksums and pinned catalog versions. The core is updated first, ordinary plugins next, Web last. A separate local worker survives restarts; on a systemd installation it runs in a separate user unit. Disabled plugins stay disabled. A failed core health check restores the previous executable and checks the same node identity. Source builds or system-packaged core binaries are not overwritten. This is not a substitute for database backups before incompatible future migrations.
 
-After updating Web, use **Reload console** to load its new interface. To get this update center from an older Web version, first update **Delta Web** on the existing Plugins page. Core 0.3.4 or later is required for pinned plugin updates and preserving disabled state; the update center can upgrade an officially installed older core first.
+After updating Web, use **Reload console** to load its new interface. To get this update center from an older Web version, first update **Delta Web** on the existing Plugins page. This split requires Core 0.4.3 or later within 0.4.x; 0.4.4 supplies the generic installer and supervised profile environment fixes. Upgrade Core before installing the split services.
 
 ## Event journal
 
-The Events page records **observed** core connectivity, peer availability, plugin/process state changes and successful/failed console management actions. It is not an OS-wide log or a claim that every command outside the console is captured. Observation and page refresh run every five seconds; Pause freezes page updates, Refresh explicitly fetches the latest records.
+With Delta Observability installed, the Events page records **observed** core connectivity, peer availability, plugin/process state changes and successful/failed console management actions. It is not an OS-wide log or a claim that every command outside the console is captured. Observation and page refresh run every five seconds; Pause freezes page updates, Refresh explicitly fetches the latest records.
 
-History is stored privately under the node profile (`data/events`), independent of the selected Storage backend, and retained for 30 days / 5,000 events. Existing caller audit history is also shown. Global lifecycle changes are visible to callers allowed to read events; private console-action history is visible only to that caller and the owner. Settings, token values, command arguments, process output and typing content are never included in event records.
+History is stored privately under the node profile (`data/events`), independent of the selected Storage backend, and retained for 30 days / 5,000 events. Private console actions recorded by the observability service are also shown. Older storage-backed audit history is not automatically imported. Global lifecycle changes are visible to callers allowed to read events; private console-action history is visible only to that caller and the owner. Settings, token values, command arguments, process output and typing content are never included in event records.
 
 ## Explore
 
@@ -47,7 +47,7 @@ History is stored privately under the node profile (`data/events`), independent 
 - HttpOnly browser sessions, public-key/seed login, scoped tokens and role previews.
 - Multiple MCP gateways with independent secrets, tool allowlists and data restrictions.
 
-The live adapter never forwards the service's administrative token as a browser user. The original user's bearer or server-side cookie session is used for API calls. The service token is used only after delegated permission checks.
+The live adapter never forwards the service's administrative token as a browser user. The original user's bearer or server-side cookie session is used for API calls. Independent services receive invocation-bound forwarding: Core rechecks the original caller for both the facade and destination capability.
 
 ## Plugin manifest localization
 
@@ -72,11 +72,11 @@ One canonical contract; no duplicated technical IDs:
 }
 ```
 
-Locale patches can change display fields only. Metrics/settings/options are matched by stable IDs or keys; versions, scope IDs, types and units cannot be overridden by translations. EN is the default; switching language reloads module-level labels consistently. UI catalogs live in `src/i18n/en.json` and `ru.json`. Runtime protocol errors are English with stable machine-readable codes.
+Locale patches can change display fields only. Metrics/settings/options are matched by stable IDs or keys; versions, scope IDs, types and units cannot be overridden by translations. EN is the default; switching language reloads module-level labels consistently. UI catalogs live in `delta-ui/src/i18n/en.json` and `ru.json`. Runtime protocol errors are English with stable machine-readable codes.
 
 ## MCP gateways
 
-In **MCP gateways**, select an Analytics/Operations preset or choose tools explicitly. Set plugin/node allowlists, maximum query days/rows and recursive redacted field names. The displayed client JSON contains a secret: save it privately. Each profile owns its own kernel token; revocation invalidates that token.
+With Delta MCP installed, in **MCP gateways**, select an Analytics/Operations preset or choose tools explicitly. Set plugin/node allowlists, maximum query days/rows and recursive redacted field names. The displayed client JSON contains a secret: save it privately. Each profile owns its own kernel token; revocation invalidates that token.
 
 Endpoints: `POST /mcp/:profileId`, bearer authentication, stateless Streamable HTTP / JSON-RPC, protocol `2025-06-18`. Supports initialize, ping, notifications and tools. No SSE or resource subscription is required for this tool-only implementation. Use an MCP client supporting remote HTTP URL + headers; client-specific setup may vary. Only the published safe tool catalog is exposed. Redaction is structural, not a promise to scrub arbitrary log text.
 
@@ -93,11 +93,11 @@ npm run test:server
 npm run test:i18n
 ```
 
-`VITE_CORE_MODE=mock` selects realistic isolated demo scenarios; the default is live `/api`. `npm start` serves the built UI and the external plugin bridge. The supervisor supplies `DELTA_URL` and an ephemeral token. `DATA_DIR` holds private session/MCP/catalog files. Set `PUBLIC_ORIGIN=https://your-console.example` and use a TLS proxy before exposing the console beyond loopback. Configure that origin in core `identity_origins` for key login.
+`VITE_CORE_MODE=mock` selects realistic isolated demo scenarios; the default is live `/api`. `npm start` serves the built UI and the external plugin bridge. The supervisor supplies `DELTA_URL` and an ephemeral token. `DATA_DIR` holds private browser session and catalog files. MCP credentials belong to the MCP plugin. Set `PUBLIC_ORIGIN=https://your-console.example` and use a TLS proxy before exposing the console beyond loopback. Configure that origin in core `identity_origins` for key login.
 
 Browser tests require a running local core and all source plugins; use the core's `scripts/setup-local.mjs` and untracked test credentials. Screenshots in the core README are real browser captures with generated QA aggregates.
 
-**Current limits:** live polling rather than a system-wide event stream; system historical CPU/memory is not stored yet; plugin processes are not OS-sandboxed. The store accepts the official indexed publisher, not arbitrary pasted repository URLs. See [Delta setup/security](https://github.com/n-ycta/delta#security-and-access).
+**Current limits:** live polling rather than a system-wide event stream; historical telemetry requires Delta Observability and an available Storage provider; plugin processes are not OS-sandboxed. The store accepts the official indexed publisher, not arbitrary pasted repository URLs. See [Delta setup/security](https://github.com/n-ycta/delta#security-and-access).
 
 Licensed under [Apache 2.0](LICENSE). Third-party dependencies retain their own licenses.
 
@@ -126,13 +126,13 @@ The compact sidebar uses a centred 64px rail, 44px navigation targets, 20px navi
 
 Categorical `bubbles` is generic: circle area is proportional to count, top-N 1–50, coverage share and accessible table. It also supports table/bar/donut views; donut folds the omitted tail into Other. Plugin metrics may declare `queryCapability` in their own component namespace. The bridge delegates with caller authorization; plugin-private queries never inherit the Web service admin token. Type owns all word schemas, privacy notices and consent. Saved generated dashboards gain newly declared metrics without moving existing widgets.
 
-Source activity uses plugin-published rates and explicit units (keystrokes/min vs records/min), not a decorative bar or unknown `/m`. Node CPU/memory/latency/availability are sampled every 15 seconds into storage source `dev.delta.web.node`, retained 90 days. Availability means observed checks, not guaranteed continuous uptime. Missing historical periods stay missing; history starts when the updated Web sampler runs.
+Source activity uses plugin-published rates and explicit units (keystrokes/min vs records/min), not a decorative bar or unknown `/m`. Node CPU/memory/latency/availability are sampled every 15 seconds into storage source `dev.delta.web.node`, retained 90 days. Availability means observed checks, not guaranteed continuous uptime. Missing historical periods stay missing; history starts when Delta Observability and Storage are running.
 
 ## Connect a Linux VPS over SSH
 
-Update the local core to **0.4.0+** and Web to **0.5.0+**, then open **Nodes → Add device**. Enter the server IP/hostname, SSH port and username, verify its host fingerprint, and choose password or private-key authentication. Encrypted private keys are supported. Select capability-only, computer-to-server administration, or equal administrative access in both directions. Administrative access requires explicit acknowledgement.
+With Core **0.4.3+**, Web **0.6.6+** and Delta Provision installed, open **Nodes → Add device**. Enter the server IP/hostname, SSH port and username, verify its host fingerprint, and choose password or private-key authentication. Encrypted private keys are supported. Select capability-only, computer-to-server administration, or equal administrative access in both directions. Administrative access requires explicit acknowledgement.
 
-The wizard installs/reuses a bare Linux node, not another Web panel. Root setup configures an unprivileged delta service account and boot persistence; non-root setup requires an existing systemd user lingering configuration. A separate restricted key maintains a core-supervised bidirectional SSH tunnel. No router port forwarding or manually configured VPN is needed for a publicly reachable SSH VPS. Setup credentials are not saved. Use the local console or HTTPS, not a public plaintext Web URL.
+Delta Provision installs/reuses a bare Linux node, not another Web panel. Root setup configures an unprivileged delta service account and boot persistence; non-root setup requires an existing systemd user lingering configuration. A separate restricted key maintains a core-supervised bidirectional SSH tunnel. No router port forwarding or manually configured VPN is needed for a publicly reachable SSH VPS. Setup credentials are not saved. Use the local console or HTTPS, not a public plaintext Web URL.
 
 The controller needs OpenSSH; the server must allow SSH TCP forwarding and must not force the reverse listener onto a public address. The wizard verifies its actual loopback binding before pairing. Completed connections survive closing Web and core restart. Incoming trust can be changed in **Node → Connection**; removing the node removes the local tunnel and private key. The initiating computer must be online. Invitation-based setup over an existing protected network remains available. See [the extension guide](docs/extending.md#ssh-server-onboarding) for limits, security and tests.
 
@@ -149,6 +149,6 @@ Requires Delta Core >=0.4.3, <0.5.0. Web is the browser host and compatibility f
 
 Dependencies are declared in the manifest. Missing, disabled, offline or incompatible optional providers gate only their declared features. The generic installer exposes optional selection and checks the graph before executing packages. See Core's dependency contract for explicit provider bindings and removal safeguards.
 
-Upgrade Core first. For the MCP cutover, stop the legacy Web process before starting the new MCP service; profile IDs and issued credentials are preserved. Configure `DELTA_MCP_URL` only when the local MCP listener differs from `http://127.0.0.1:7720`. Remote access requires an HTTPS reverse proxy or an authenticated tunnel.
+Upgrade Core first. For the MCP cutover, stop the legacy Web process before starting the new MCP service; profile IDs and issued credentials are preserved. Configure `DELTA_MCP_URL` only when the local MCP listener differs from `http://127.0.0.1:7730`. Remote access requires an HTTPS reverse proxy or an authenticated tunnel.
 
 Server tests consume immutable source archives of the independent service packages as development-only dependencies. Production Web has no SSH library or service implementation dependency.

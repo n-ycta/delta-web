@@ -3,6 +3,7 @@ import {createSessions} from './sessions.mjs';
 import {createServer} from 'node:http';import {readFile} from 'node:fs/promises';import {resolve,extname,sep} from 'node:path';import {DeltaClient,servePlugin} from './delta-sdk.mjs';import {createBridge} from './bridge.mjs';
 const client=new DeltaClient(),root=resolve('dist'),controller=new AbortController();
 const manifest=JSON.parse(await readFile(new URL('../manifest.json',import.meta.url),'utf8'));
+const core=await client.call('core.info');if(!/^0\.4\.(?:[3-9]|[1-9][0-9]+)$/.test(String(core.version)))throw Error('Delta Core >=0.4.3 <0.5.0 required before starting this Web version');
 const services=createServices(client),sessions=await createSessions(client);
 const server=createServer(async(req,res)=>{
  try{
