@@ -9,8 +9,8 @@
 - Forward service calls with the original principal through Core, never with Web's administrative credential.
 
 ### Upgrade notes
-- Upgrade Core to 0.4.3 before this Web version. Install the optional service plugins for their corresponding functions; missing services do not block unrelated Web features.
-- MCP profiles migrate only after legacy Web is stopped or upgraded. Keep a private profile backup before the cutover. The default independent listener is localhost:7720; existing Web `/mcp/:id` addresses are proxied.
+- Upgrade Core to 0.4.4 before this Web version. Install the optional service plugins for their corresponding functions; missing services do not block unrelated Web features.
+- MCP profiles migrate only after legacy Web is stopped or upgraded. Keep a private profile backup before the cutover. The default independent listener is localhost:7730 (MCP 0.1.1); existing Web `/mcp/:id` addresses are proxied.
 - Existing owner keys work. Narrowly scoped compatibility keys may need explicit destination-service scopes. Dependency installation is ordered, not an atomic group rollback.
 - Native hosts and independent signed UI updates remain incomplete; this release does not close all P0/P1 requirements.
 
