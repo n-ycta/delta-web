@@ -160,3 +160,11 @@ Dependencies are declared in the manifest. Missing, disabled, offline or incompa
 Upgrade Core first. For the MCP cutover, stop the legacy Web process before starting the new MCP service; profile IDs and issued credentials are preserved. Configure `DELTA_MCP_URL` only when the local MCP listener differs from `http://127.0.0.1:7730`. Remote access requires an HTTPS reverse proxy or an authenticated tunnel.
 
 Server tests consume immutable source archives of the independent service packages as development-only dependencies. Production Web has no SSH library or service implementation dependency.
+
+## Portable applications (experimental)
+
+The Console now offers reviewed static apps under Plugins > Applications. Media installs from a SHA-256-pinned `delta-app-v1` release, not a Node.js process. Only authenticated global administrators may install, remove or launch apps; the server verifies the user's own credential, never substitutes its service admin token.
+
+App assets are served by a separate, credential-free server (default `127.0.0.1:7711`), with one browser origin per app. For local use, `http://deltaapp-dev-delta-media.localhost:7711` is distinct from Console on `localhost:7710`. For remote use, set `PUBLIC_ORIGIN=https://console.example.com` and `APP_PUBLIC_ORIGIN=https://{app}.apps.example.com`, then reverse-proxy those app subdomains to `APP_HOST`/`APP_PORT` (default 127.0.0.1/7711). Preserve Host and serve HTTPS. Do not proxy app assets under the Console origin or copy Console authentication cookies to app origins.
+
+The app server serves verified static assets only: no Core API, session endpoint, filesystem paths or service credential. Media files stay in the app origin's browser storage. App removal deletes installed code, not the user's browser media library. Native APK/Desktop hosts use per-app custom protocols and the same package verifier rather than this HTTP server.
