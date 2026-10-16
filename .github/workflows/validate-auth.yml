@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: n-ycta/delta
-          ref: e841d9ad283b78cfc383f1fc8653e77e2c050216
+          ref: 044d89dbf5ed3da8f3689e2f537eb0658a4df833
           path: core-fixture
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -26,5 +26,7 @@ jobs:
           DELTA_TEST_BINARY: ${{ github.workspace }}/core-fixture/target/debug/delta
         run: |
           export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from 'playwright'; console.log(chromium.executablePath())")
+          export DELTA_RECOVERY_SCRIPT="$GITHUB_WORKSPACE/core-fixture/scripts/recover-web.mjs"
+          npm run test:recovery
           npm run test:auth
           npm run test:session-restart

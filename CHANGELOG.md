@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.6.9]
+
+- Recover existing browser-owner access on the original node without reinstalling, creating a profile or changing plugin data.
+- Explain unregistered keys, origin mismatches and expired recovery links; enroll imported/generated keys before verified signed login.
+- Consume shared UI 0.1.5: owner display name, nickname and avatar; hidden recovery phrases with show, copy and Markdown export controls.
+- Store profiles privately and durably; retain owner display settings across access-key rotation.
+- Make one-use bootstrap consumption atomic and retryable when Core is temporarily unavailable.
+- Correct portable-app owner authorization and preserve existing host/plugin permission boundaries.
+- Fix banner and notification gutters on desktop and mobile.
+
 ## [v0.6.8]
 
 - Require explicit sign-in before management screens mount; stale demo settings cannot impersonate a production owner.

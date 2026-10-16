@@ -1,3 +1,4 @@
+import {createProfiles} from './profile.mjs';
 import {createApps} from './apps.mjs';
 import {createServices,proxyMcp} from './services.mjs';
 import {createSessions} from './sessions.mjs';
@@ -40,4 +41,4 @@ const server=createServer(async(req,res)=>{
  }catch(e){res.writeHead(e.code==='ENOENT'?404:503);res.end('Delta service unavailable')}
 });
 server.listen(Number(process.env.PORT||7710),process.env.HOST||'127.0.0.1');for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>controller.abort());
-await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',services.monitor,services.updater,services.events,services.ssh),...services.handlers},{signal:controller.signal});server.close();apps.close();
+await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',services.monitor,services.updater,services.events,services.ssh),...services.handlers,...createProfiles()},{signal:controller.signal});server.close();apps.close();
