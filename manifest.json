@@ -5,7 +5,7 @@
     "ui": {
       "id": "dev.delta.web",
       "name": "Delta Web",
-      "version": "0.6.18",
+      "version": "0.6.19",
       "contract": "^1.4.0",
       "description": "Browser host for Delta UI with optional headless service integrations.",
       "publisher": "Delta",
@@ -490,5 +490,5 @@
       "admin": false
     }
   ],
-  "version": "0.6.18"
+  "version": "0.6.19"
 }
