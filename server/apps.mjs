@@ -154,7 +154,7 @@ export async function createApps(client, sessions, options = {}) {
         const item = catalog.find((v) => v.id === a.id);
         if (!item) throw Error("unknown_app");
         if (method === 'call') {
-          const allowed = ['media.providers','media.search','media.resolve','media.library','media.play','media.pause','media.seek','media.next','media.previous','media.queue','media.playlists','media.settings','media.stats','media.session','media.sync'];
+          const allowed = ['media.providers','media.search','media.resolve','media.library','media.play','media.pause','media.seek','media.next','media.previous','media.queue','media.playlists','media.settings','media.stats','media.session','media.sync','downloads.status','downloads.create','downloads.job','downloads.cancel','downloads.read','downloads.remove'];
           if (item.id !== 'dev.delta.media' || !allowed.includes(a.capability) || !(await installed(root)).includes(item.id)) throw Error('forbidden');
           reply(200, await new DeltaClient(client.url, callerToken).call(a.capability, a.args || {}));
           return;

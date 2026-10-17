@@ -95,6 +95,16 @@ test("app management verifies owner, origin, package hashes and serves no privil
     assert.equal(mediaReply.status,200);assert.deepEqual(await mediaReply.json(),{plays:3});
     assert.deepEqual(forwarded,[{authorization:'Bearer owner',capability:'media.stats',args:{}}]);
 
+    for (const operation of ['status','create','job','cancel','read','remove']) {
+      const capability = 'downloads.' + operation;
+      const args = { id: 'cache-test' };
+      assert.equal((await api('POST','call','owner',base,{capability,args})).status,200);
+      assert.deepEqual(forwarded.at(-1),{authorization:'Bearer owner',capability,args});
+      assert.equal((await api('POST','call','viewer',base,{capability,args})).status,403);
+      assert.equal((await api('POST','call','owner','https://untrusted.invalid',{capability,args})).status,403);
+    }
+    assert.equal((await api('POST','call','owner',base,{capability:'downloads.settings'})).status,403);
+
     const launch = await (await api("POST", "launch")).json();
     assert.equal(
       new URL(launch.url).hostname,
