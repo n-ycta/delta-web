@@ -155,7 +155,8 @@ export async function createApps(client, sessions, options = {}) {
         if (!item) throw Error("unknown_app");
         if (method === 'call') {
           const allowed = ['media.providers','media.browse','media.search','media.resolve','media.library','media.play','media.pause','media.seek','media.next','media.previous','media.queue','media.playlists','media.settings','media.stats','media.session','media.sync','downloads.status','downloads.create','downloads.job','downloads.cancel','downloads.read','downloads.remove'];
-          if (item.id !== 'dev.delta.media' || !allowed.includes(a.capability) || !(await installed(root)).includes(item.id)) throw Error('forbidden');
+          const grants = item.id === 'dev.delta.media' ? allowed : item.id === 'dev.delta.vector' ? ["vector.task_list","vector.task_create","vector.task_update","vector.task_delete","vector.entry_list","vector.entry_create","vector.entry_update","vector.entry_delete","vector.practice_list","vector.practice_create","vector.practice_update","vector.practice_delete","vector.project_list","vector.project_create","vector.project_update","vector.project_delete","vector.direction_list","vector.direction_create","vector.direction_update","vector.direction_delete","vector.skill_list","vector.skill_create","vector.skill_update","vector.skill_delete","vector.evidence_list","vector.evidence_create","vector.evidence_update","vector.evidence_delete","vector.experiment_list","vector.experiment_create","vector.experiment_update","vector.experiment_delete","vector.status","vector.task_complete","vector.task_reopen","vector.practice_log","vector.calendar","vector.summary","vector.settings_get","vector.settings_update","vector.export"] : [];
+          if (!grants.includes(a.capability) || !(await installed(root)).includes(item.id)) throw Error('forbidden');
           reply(200, await new DeltaClient(client.url, callerToken).call(a.capability, a.args || {}));
           return;
         }
@@ -205,7 +206,8 @@ export async function createApps(client, sessions, options = {}) {
           busy = false;
         }
       } catch (e) {
-        const code = [
+        const safeCallError=['conflict','not_found','bad_request','capacity','unavailable'].includes(e.code) ? e.code : null;
+        const code = safeCallError || ([
           "unauthorized",
           "forbidden",
           "unknown_app",
@@ -215,7 +217,7 @@ export async function createApps(client, sessions, options = {}) {
           "manifest_mismatch",
         ].includes(e.message)
           ? e.message
-          : "app_operation_failed";
+          : "app_operation_failed");
         reply(
           code === "unauthorized" ? 401 : code === "forbidden" ? 403 : 400,
           { error: code },
