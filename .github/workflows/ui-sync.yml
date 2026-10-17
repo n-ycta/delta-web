@@ -1,0 +1,43 @@
+name: Sync Delta UI
+# Picks up every green delta-ui main commit: re-pin, bump patch, tag and release (see delta-ui docs/HOST-UI-SYNC.md).
+on:
+  schedule: [{cron: '7,37 * * * *'}]
+  workflow_dispatch:
+  repository_dispatch: {types: [delta-ui-updated]}
+permissions: {contents: write, actions: write}
+concurrency: {group: ui-sync, cancel-in-progress: false}
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Resolve newest verified delta-ui commit
+        id: ui
+        env: {GH_TOKEN: ${{ github.token }}}
+        run: |
+          sha=$(gh api "repos/n-ycta/delta-ui/actions/workflows/verify.yml/runs?branch=main&status=success&event=push&per_page=1" --jq '.workflow_runs[0].head_sha')
+          test -n "$sha" && echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - run: npm ci --ignore-scripts
+      - name: Re-pin
+        id: pin
+        run: node node_modules/@delta/ui/scripts/host-ui-sync.mjs "${{ steps.ui.outputs.sha }}"
+      - if: steps.pin.outputs.changed == 'true'
+        name: Verify with the new UI
+        run: |
+          npm ci --ignore-scripts
+          npm ci
+          npm run build
+          npm test && npm run test:server && npm run test:i18n
+      - if: steps.pin.outputs.changed == 'true'
+        name: Commit, tag and release
+        env: {GH_TOKEN: ${{ github.token }}, V: "v${{ steps.pin.outputs.version }}"}
+        run: |
+          git config user.name "delta-ui-sync[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Pin shared UI ${{ steps.ui.outputs.sha }} ($V)"
+          git tag "$V"
+          git push origin HEAD:main "$V"
+          gh workflow run release.yml --ref "$V"
