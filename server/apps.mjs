@@ -81,6 +81,7 @@ export async function createApps(client, sessions, options = {}) {
       ? await options.authorize(token)
       : await new DeltaClient(client.url, token).call("web.info");
     if (!info.principal?.scopes?.includes("admin")) throw Error("forbidden");
+    return token;
   }
   return {
     staticServer,
@@ -103,7 +104,7 @@ export async function createApps(client, sessions, options = {}) {
           req.headers["sec-fetch-site"] === "cross-site"
         )
           throw Error("forbidden");
-        await authorize(req);
+        const callerToken = await authorize(req);
         const method = path.slice("/apps/".length);
         if (req.method === "GET" && method === "catalog") {
           reply(200, catalog);
@@ -138,7 +139,7 @@ export async function createApps(client, sessions, options = {}) {
         }
         if (
           req.method !== "POST" ||
-          !["install", "remove", "launch"].includes(method)
+          !["install", "remove", "launch", "call"].includes(method)
         ) {
           reply(405, { error: "method_not_allowed" });
           return;
@@ -147,11 +148,17 @@ export async function createApps(client, sessions, options = {}) {
         let text = "";
         for await (const c of req) {
           text += c;
-          if (text.length > 4096) throw Error("body_limit");
+          if (text.length > (method === 'call' ? 1_000_000 : 4096)) throw Error("body_limit");
         }
         const a = JSON.parse(text || "{}");
         const item = catalog.find((v) => v.id === a.id);
         if (!item) throw Error("unknown_app");
+        if (method === 'call') {
+          const allowed = ['media.providers','media.search','media.resolve','media.library','media.play','media.pause','media.seek','media.next','media.previous','media.queue','media.playlists','media.settings','media.stats','media.session','media.sync'];
+          if (item.id !== 'dev.delta.media' || !allowed.includes(a.capability) || !(await installed(root)).includes(item.id)) throw Error('forbidden');
+          reply(200, await new DeltaClient(client.url, callerToken).call(a.capability, a.args || {}));
+          return;
+        }
         if (method === "launch") {
           if (!(await installed(root)).includes(item.id))
             throw Error("not_installed");

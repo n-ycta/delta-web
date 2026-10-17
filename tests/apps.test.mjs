@@ -43,7 +43,7 @@ test("app management verifies owner, origin, package hashes and serves no privil
   ];
   const seen = [];
   const apps = await createApps(
-    { url: "http://unused" },
+    { get url(){return base;} },
     { credential: () => undefined },
     {
       root: dir,
@@ -56,9 +56,15 @@ test("app management verifies owner, origin, package hashes and serves no privil
       fetch: async () => new Response(delivered),
     },
   );
-  const server = createServer((req, res) =>
-    apps.http(req, res, new URL(req.url, "http://localhost").pathname),
-  );
+  const forwarded=[];
+  const server = createServer(async(req,res)=>{
+    if(req.url==='/v1/call'){
+      let body='';for await(const chunk of req)body+=chunk;
+      forwarded.push({authorization:req.headers.authorization,...JSON.parse(body)});
+      res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({ok:true,result:{plays:3}}));return;
+    }
+    return apps.http(req,res,new URL(req.url,'http://localhost').pathname);
+  });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   await new Promise((r) => apps.staticServer.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + server.address().port;
@@ -82,6 +88,13 @@ test("app management verifies owner, origin, package hashes and serves no privil
       403,
     );
     assert.equal((await api("POST", "install")).status, 200);
+    assert.equal((await api('POST','call','owner',base,{capability:'tokens.list'})).status,403);
+    assert.equal((await api('POST','call','viewer',base,{capability:'media.stats'})).status,403);
+    assert.equal((await api('POST','call','owner','https://untrusted.invalid',{capability:'media.stats'})).status,403);
+    const mediaReply=await api('POST','call','owner',base,{capability:'media.stats'});
+    assert.equal(mediaReply.status,200);assert.deepEqual(await mediaReply.json(),{plays:3});
+    assert.deepEqual(forwarded,[{authorization:'Bearer owner',capability:'media.stats',args:{}}]);
+
     const launch = await (await api("POST", "launch")).json();
     assert.equal(
       new URL(launch.url).hostname,
