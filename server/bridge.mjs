@@ -102,7 +102,7 @@ const dashboard = z.object({
           }),
           z.object({
             kind: z.literal('system'),
-            feed: z.enum(['nodes', 'events', 'alerts', 'plugins', 'note']),
+            feed: z.enum(['nodes', 'events', 'alerts', 'plugins', 'note', 'app']),
             params: z.record(z.unknown()).optional(),
           }),
         ]),

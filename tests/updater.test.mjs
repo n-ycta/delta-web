@@ -200,7 +200,7 @@ test('plugin-only update on old core is blocked, and corrupt/unsafe archive or u
     await f.cleanup();
   }
 });
-test('failed component stops the sequence and leaves the Web update pending', async () => {
+test('failed component stops the sequence and terminalizes the Web update as skipped', async () => {
   const f = await fixture();
   try {
     const original = f.u.call;
@@ -212,7 +212,7 @@ test('failed component stops the sequence and leaves the Web update pending', as
     const q = (await f.u.status()).job;
     const result = await f.u.runJob(q.id);
     assert.equal(result.status, 'failed');
-    assert.equal(result.items.at(-1).status, 'pending');
+    assert.equal(result.items.at(-1).status, 'skipped');
     assert.equal(result.items[1].status, 'failed');
   } finally {
     await f.cleanup();

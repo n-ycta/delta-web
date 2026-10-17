@@ -30,3 +30,12 @@ test('generic notice action preserves caller authority and forwards UI locale to
  await h['web.plugins_action']({id,actionId:'authorize',_locale:'ru'},{name:'owner',scopes:['admin']});assert.deepEqual(forwarded,{_locale:'ru'});
  await assert.rejects(h['web.plugins_action']({id,actionId:'undeclared'},{name:'owner',scopes:['admin']}),e=>e.code==='not_found');
 });
+
+test('application dashboard widget roundtrips with its surface and valid layout',async()=>{
+ let saved;
+ const h=createBridge({call:async(name,args)=>{if(name==='storage.document_put'){if(args.namespace.startsWith('dashboards_'))saved=args;return args.document || args.value || {ok:true}};throw Error(name)}});
+ const widget={id:'media-player',type:'app',typeVersion:'1.0.0',source:{kind:'system',feed:'app'},display:{app:'dev.delta.media',surface:'player'},layout:{x:0,y:0,w:6,h:4}};
+ await h['web.dashboards_save']({dashboard:{id:'test',name:'Media',origin:'user',range:'24h',refreshSec:0,pinned:false,createdAt:1,updatedAt:1,widgets:[widget]}},{name:'owner',scopes:['admin']});
+ assert(saved, 'app source must pass the real server validator');
+ assert(JSON.stringify(saved).includes('"surface":"player"'));
+});
