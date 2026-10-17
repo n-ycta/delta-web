@@ -1,3 +1,15 @@
+## [v0.6.18]
+
+- Pin shared Delta UI 0.3.2 (0935e3f) automatically (ui-sync).
+- Preserve the authenticated shell through transient Web restarts; distinguish actual authorization rejection and localize reconnect feedback.
+- Acknowledge update actions immediately, refresh active jobs every second, group components in collapsible node sections, highlight progress and expose bounded cross-node parallelism when supported.
+- Preserve a single plugin frame across visible surfaces and suppress stale already-open placeholders.
+- Add screen-scale magnetic window snapping with alignment guides and Alt bypass; commit layout changes only at gesture end.
+- Add Studio address/search and back/forward/reload controls, with an external-browser fallback for sites that refuse framing.
+- Back up and migrate only redundant whole-app Console/Media desktops; retain customized arrangements.
+- Update the verified Media UI catalog to 0.3.6 and permit the explicit browse capability.
+- Add actual-component reconnect, update, snapping and frame-ownership browser regressions.
+
 ## [v0.6.17]
 
 - Pin shared Delta UI 0.3.1 (7d88a05) automatically (ui-sync).
