@@ -1,3 +1,12 @@
+## [v0.6.17]
+
+- Pin shared Delta UI 0.3.1 (7d88a05) automatically (ui-sync).
+- Reflow the mobile plugin catalog into fluid cards, a two-column tab selector and a dedicated search/filter toolbar at 320px and wider.
+- Center segmented-control icons explicitly and provide 44px touch targets.
+- Keep the mobile dock manager reachable with a short label, aligned navigation slots and a separate now-playing row.
+- Remove the unrelated history-service notice from the catalog; keep history guidance on history screens.
+- Add RU/EN light/dark browser checks for mobile overflow, icon centers, hit-testing, installation controls, manager and hidden-dock reveal.
+
 ## [v0.6.16]
 
 - Pin shared Delta UI 0.3.0 (5a000ee) automatically (ui-sync).

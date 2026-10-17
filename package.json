@@ -1,7 +1,7 @@
 {
   "name": "delta-console",
   "private": true,
-  "version": "0.6.16",
+  "version": "0.6.17",
   "type": "module",
   "description": "Delta Console — web control panel plugin for a modular personal-data & automation ecosystem",
   "scripts": {
@@ -33,7 +33,7 @@
     "test:recovery": "node tests/recovery-live.mjs"
   },
   "dependencies": {
-    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/5a000ee8bf6689a6fdef66409a1eb9abce46dde7.tar.gz",
+    "@delta/ui": "https://github.com/n-ycta/delta-ui/archive/7d88a052d2691ca2ba06bedd60f8c1c06b9a6674.tar.gz",
     "zod": "^3.23.8"
   },
   "devDependencies": {
