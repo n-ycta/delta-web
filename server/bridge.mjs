@@ -183,7 +183,7 @@ export function createBridge(
     for (const peer of peers.filter((p) => p.online)) {
       try {
         const list = await client.call('core.components', {}, peer.node_id);
-        for (const c of list.filter((c) => c.metadata?.ui))
+        for (const c of list.filter((c) => c.metadata?.ui && c.metadata.ui.id !== 'dev.delta.vector'))
           remote.push({ ...c, nodeId: peer.node_id });
         const managed = await client.call('supervisor.list', {}, peer.node_id).catch(() => []);
         for (const m of managed)

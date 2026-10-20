@@ -1,3 +1,10 @@
+## [v0.6.22]
+
+- Pin Delta UI 0.3.6 (f5c2782) with stable iframe DOM order across application switches, late handshake recovery and bounded control icons.
+- Publish LifeOS 0.3.2, including calendar geometry and pending-draft preservation.
+- Retire Vector from the persisted local manifest catalog with a one-time metadata backup; retain custom offline plugins and all application data.
+- Exclude retired Vector metadata from remote plugin listings.
+
 ## [v0.6.21]
 
 - Bound HTTP socket draining during shutdown so open browser connections cannot hang a supervised Web restart.
