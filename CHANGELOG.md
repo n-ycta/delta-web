@@ -1,3 +1,10 @@
+## [v0.6.20]
+
+- Pin shared Delta UI 0.3.5 (5e33e4f) automatically (ui-sync).
+- Replace the retired Vector catalog entry with Delta LifeOS 0.3.1 and thirteen composable surfaces.
+- Grant only explicit LifeOS capabilities and deny retired Vector access.
+- Migrate workbench app identities with a backup while preserving widget geometry and notes.
+
 ## [v0.6.19]
 
 - Pin shared Delta UI 0.3.2 (6f9fa64) automatically (ui-sync).
