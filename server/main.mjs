@@ -1,3 +1,4 @@
+import {trackHttpServer} from './shutdown.mjs';
 import {createWorkspaces} from './workspaces.mjs';
 import {createProfiles} from './profile.mjs';
 import {createApps} from './apps.mjs';
@@ -41,5 +42,6 @@ const server=createServer(async(req,res)=>{
   res.setHeader('content-type',types[extname(file)]||'application/octet-stream');res.end(data);
  }catch(e){res.writeHead(e.code==='ENOENT'?404:503);res.end('Delta service unavailable')}
 });
+const closeServer=trackHttpServer(server);
 server.listen(Number(process.env.PORT||7710),process.env.HOST||'127.0.0.1');for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>controller.abort());
-await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',services.monitor,services.updater,services.events,services.ssh),...services.handlers,...createProfiles(),...createWorkspaces()},{signal:controller.signal});server.close();apps.close();
+await servePlugin(client,manifest,{...createBridge(client,process.env.STORAGE_COMPONENT||'storage',services.monitor,services.updater,services.events,services.ssh),...services.handlers,...createProfiles(),...createWorkspaces()},{signal:controller.signal});await Promise.all([closeServer(),apps.close()]);

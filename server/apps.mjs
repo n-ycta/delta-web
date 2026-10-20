@@ -1,3 +1,4 @@
+import {trackHttpServer} from './shutdown.mjs';
 /** Authenticated app management + a distinct asset-only origin for each application. */
 import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
@@ -67,6 +68,7 @@ export async function createApps(client, sessions, options = {}) {
       res.end("App unavailable");
     }
   });
+  const closeServer=trackHttpServer(staticServer);
   if (!options.noListen)
     staticServer.listen(
       Number(process.env.APP_PORT || 7711),
@@ -86,7 +88,7 @@ export async function createApps(client, sessions, options = {}) {
   return {
     staticServer,
     close() {
-      staticServer.close();
+      return closeServer();
     },
     async http(req, res, path) {
       const reply = (status, value) => {

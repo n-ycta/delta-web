@@ -1,3 +1,8 @@
+## [v0.6.21]
+
+- Bound HTTP socket draining during shutdown so open browser connections cannot hang a supervised Web restart.
+- Cover partial-request connections with an actual socket regression.
+
 ## [v0.6.20]
 
 - Pin shared Delta UI 0.3.5 (5e33e4f) automatically (ui-sync).
