@@ -652,8 +652,10 @@ export function createBridge(
           sshConnection: links.find((x) => x.peerId === peer.node_id),
           id: peer.node_id,
           name: peer.name,
-          address: peer.url,
-          status: 'offline',
+          kind: peer.kind || 'desktop',
+          os: peer.kind || '',
+          address: peer.url || '',
+          status: peer.online === false ? 'offline' : 'online',
           lastSeen: 0,
           uptimeSec: 0,
           components: [],
@@ -699,6 +701,7 @@ export function createBridge(
       const r = await delegated(c, 'peers.invite', { trust_admin: trustAdmin });
       return {
         code: r.code,
+        url: r.url,
         expiresAt: Date.now() + (r.expires_in ?? 300) * 1000,
         command: r.command,
       };
