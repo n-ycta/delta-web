@@ -39,3 +39,19 @@ test('application dashboard widget roundtrips with its surface and valid layout'
  assert(saved, 'app source must pass the real server validator');
  assert(JSON.stringify(saved).includes('"surface":"player"'));
 });
+test('nodes_pair sends a normalized reachable hub URL to peers.invite and returns the pairing link',async()=>{
+ const calls=[];const mk=info=>createBridge({call:async(n,a)=>{if(n==='storage.document_put')return {};calls.push([n,a]);if(n==='core.info')return info;if(n==='peers.invite')return {code:'c',url:a.url,link:'delta://pair?url=x&code=c',command:'delta join',expires_in:60};throw Error(n)}});
+ const admin={scopes:['admin']};
+ let r=await mk({url:'http://127.0.0.1:7700'})['web.nodes_pair']({url:'hub.lan:7700/'},admin);
+ assert.deepEqual(calls.at(-1),['peers.invite',{trust_admin:false,url:'http://hub.lan:7700'}]);assert.equal(r.link,'delta://pair?url=x&code=c');assert.equal(r.url,'http://hub.lan:7700');assert(r.expiresAt>Date.now());
+ calls.length=0;
+ for(const bad of ['http://127.0.0.1:7700','localhost:7700','http://[::1]:7700','http://[::ffff:127.0.0.1]:7700','http://0.0.0.0:7700','http://hub.lan:0','http://u:p@hub.lan','http://hub.lan/?a=1','http://hub.lan/#x'])
+  await assert.rejects(mk({})['web.nodes_pair']({url:bad,_locale:'ru'},admin),e=>e.code==='hub_url_required'&&/URL хаба/.test(e.message));
+ assert.equal(calls.length,0);
+ await h_core({public_url:'https://pub.example',url:'http://127.0.0.1:7700'},'https://pub.example');
+ await h_core({url:'http://10.0.0.5:7700'},'http://10.0.0.5:7700');
+ async function h_core(info,want){await mk(info)['web.nodes_pair']({},admin);assert.equal(calls.at(-1)[1].url,want)}
+ calls.length=0;
+ await assert.rejects(mk({url:'http://127.0.0.1:7700'})['web.nodes_pair']({},admin),e=>e.code==='hub_url_required'&&/hub URL/.test(e.message));
+ assert(!calls.some(c=>c[0]==='peers.invite'));
+});

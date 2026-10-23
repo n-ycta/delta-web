@@ -10,6 +10,21 @@ const ru = JSON.parse(readFileSync(new URL('./locales/en.json', import.meta.url)
 const russian = JSON.parse(readFileSync(new URL('./locales/ru.json', import.meta.url)));
 const localMessage = (message, locale) =>
   locale === 'ru' ? russian[Object.keys(ru).find((k) => ru[k] === message)] || message : message;
+// Normalizes a hub URL to origin-style http(s)://host[:port]; null if unusable (credentials, query, loopback, port 0).
+export const hubAddress = (raw) => {
+  const t = typeof raw === 'string' ? raw.trim().replace(/\/+$/, '') : '';
+  if (!t) return null;
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : `http://${t}`);
+    const h = u.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    const mapped = h.match(/^::ffff:(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]+:[0-9a-f]+))$/);
+    const local = /^(127\.|0\.0\.0\.0$|::1?$|localhost$)/.test(h) || h.endsWith('.localhost') || (mapped && (!mapped[1] || /^(127\.|0\.)/.test(mapped[1]) || /^(7f..|0):/.test(mapped[2] || '')));
+    if (!['http:', 'https:'].includes(u.protocol) || !h || u.username || u.password || u.search || u.hash || local || u.port === '0') return null;
+    return (u.origin + u.pathname).replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+};
 const permissionMap = {
   'metrics.read': ['web.metrics_query'],
   'events.read': ['web.events_list'],
@@ -695,13 +710,25 @@ export function createBridge(
       return { ok: true, durationMs: Date.now() - before, output: [JSON.stringify(result)] };
     },
     'web.nodes_connection': unsupported,
-    'web.nodes_pair': async ({ trustAdmin = false } = {}, c) => {
+    'web.nodes_pair': async ({ trustAdmin = false, url, hubUrl, _locale = 'en' } = {}, c) => {
       if (trustAdmin && !c?.scopes?.includes('admin'))
         throw new DeltaError('forbidden', ru.delegation);
-      const r = await delegated(c, 'peers.invite', { trust_admin: trustAdmin });
+      const bad = (key) => new DeltaError('hub_url_required', localMessage(ru[key], _locale));
+      // Order: explicit request URL, then the core's own address. PUBLIC_ORIGIN is the web origin, and
+      // the Host header is client-controlled and carries the web port, so neither is used.
+      const explicit = url ?? hubUrl;
+      let hub = hubAddress(explicit);
+      if (!hub && String(explicit ?? '').trim()) throw bad('hubUrlInvalid');
+      if (!hub) {
+        const i = await client.call('core.info');
+        hub = hubAddress(i?.public_url) || hubAddress(i?.url);
+      }
+      if (!hub) throw bad('hubUrlRequired');
+      const r = await delegated(c, 'peers.invite', { trust_admin: trustAdmin, url: hub });
       return {
         code: r.code,
         url: r.url,
+        link: r.link,
         expiresAt: Date.now() + (r.expires_in ?? 300) * 1000,
         command: r.command,
       };

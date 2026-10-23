@@ -20,5 +20,7 @@
   "invalidDataView": "Invalid plugin data view",
   "invalidViewInputs": "Invalid view inputs",
   "invalidViewOutput": "Invalid plugin data output",
-  "invalidSettingsEndpoint": "Invalid settings endpoint"
+  "invalidSettingsEndpoint": "Invalid settings endpoint",
+  "hubUrlInvalid": "Enter a reachable hub URL (LAN, VPN or public http(s) address, no credentials, query or loopback).",
+  "hubUrlRequired": "Set a reachable hub URL (LAN, VPN or public address) in the pairing dialog or in the node config."
 }
