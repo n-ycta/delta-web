@@ -1,3 +1,10 @@
+## [v0.6.24]
+
+- Pin shared Delta UI 0.3.7 (569ae44) automatically (ui-sync).
+- Fix: creating a `web.nodes_pair` invitation now passes a reachable hub URL (`url`/`hubUrl` from the request) to the core's `peers.invite`; the response contains `link`. Loopback hosts, port 0, userinfo, query and fragment are rejected with a clear `hub_url_required` error (en/ru).
+- Shared UI nodes panel: no `NaN%`, no 1970 last contact (the "20 749 days" value), one online/total definition; missing CPU telemetry shows a dash; node rows are cards on phones.
+- Shared UI: plugin API calls are local-first with peer lookup only after not_found; catalog apps auto-update only to a newer semver.
+
 ## [v0.6.23]
 
 - Pin shared Delta UI 0.3.7 (eaecc24) automatically (ui-sync).
